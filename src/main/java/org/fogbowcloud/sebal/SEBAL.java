@@ -1,8 +1,6 @@
 package org.fogbowcloud.sebal;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
@@ -128,6 +126,10 @@ public class SEBAL {
 		return rho * cp * (Ta1 - Ta2) / rah;
 	}
 	
+	double HQuente(double Rn, double G) {
+		return Rn - G;
+	}
+	
 	static final double k = 0.41;
 	
 	double uAsterisk(double ux, double zx, double d, double z0m) {
@@ -184,8 +186,16 @@ public class SEBAL {
 		return (1 - alpha) * RSDown - 100 * tauW24h;
 	}
 	
-	double z0m(double NDVI, double maxNDVI) {
-		return 0.005 + 0.5 * Math.pow((NDVI / maxNDVI), 2.5);
+	double z0mxy(double SAVI) {
+		//TODO Parametrizar os variaveis obtidas de forma empirica
+		double z0mx = -5.809;
+		double z0my = 5.62;
+		return SAVI = z0mx + SAVI * z0my;
+	}
+	
+	double z0m(double h) {
+		//TODO Parametrizar os variaveis obtidas de forma empirica
+		return h * 0.12;
 	}
 	
 	double hc(double z0m) {
@@ -217,33 +227,38 @@ public class SEBAL {
 	
 	public void run(Satellite satellite, Image image) {
 		
-		Map<ImagePixel, ImagePixelOutput> pixelOutput = new HashMap<ImagePixel, ImagePixelOutput>();
-		
 		double maxNDVI = 0;
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
 			maxNDVI = Math.max(output.getNDVI(), maxNDVI);
-			pixelOutput.put(imagePixel, output);
+			imagePixel.setOutput(output);
 		}
 		
-		ImagePixelOutput pixelQuenteOutput = pixelOutput.get(
-				image.pixelQuente());
-		double z0m = z0m(pixelQuenteOutput.getNDVI(), maxNDVI);
-		double hc = hc(z0m);
-		double d0 = d0(hc);
+		ImagePixelOutput pixelQuenteOutput = image.pixelQuente().output();
+		
+		// TODO Escolhendo a weather station mais proxima ao pixelQuente
+		// TODO A altura da vegetacao deve ser parametrizada
+		double h = 0.2;
+		double z0m = z0m(h);
 		
 		double uAsterisk = uAsterisk(image.pixelQuente().ux(), 
-				image.pixelQuente().zx(), d0, z0m);
-		double u200 = u200(uAsterisk, d0, z0m);
-		double uAsteriskxy = uAsteriskxy(u200, d0, z0m);
+				image.pixelQuente().zx(), image.pixelQuente().d(), z0m);
+		double u200 = u200(uAsterisk, image.pixelQuente().d(), z0m);
 		
+		double uAsteriskxy = uAsteriskxy(u200, image.pixelQuente().d(), 
+				z0mxy(image.pixelQuente().output().SAVI()));
 		double rahxy = rahxy(uAsteriskxy, image.pixelQuente().d());
 		
 		double rahxyCorr = Double.MAX_VALUE;
+//		double H = HQuente(image.pixelQuente().output().Rn(), image.pixelQuente().output().G());
+		double dTQuente = dTQuente(rahxy, image.pixelQuente().output().Rn(), image.pixelQuente().output().G());
+		double b = b(image.pixelQuente().Ta(), image.pixelFrio().Ta(), rahxy, 
+				image.pixelQuente().output().Rn(), image.pixelQuente().output().G());
+		double a =  a(b, image.pixelFrio().Ta());
 		
-		while(Math.abs(rahxyCorr - rahxy) > 0.0001) {
+		//TODO configuracao
+		while(Math.abs(rahxyCorr - rahxy) > 0.01) {
 			rahxy = rahxyCorr;
-			double H = H(image.pixelQuente().Ta(), image.pixelFrio().Ta(), rahxyCorr);
 			double L = Lxy(uAsteriskxy, pixelQuenteOutput.getTs(), H);
 			double uAsteriskCorrxy = uAsteriskCorrxy(u200, d0, z0m, psim(L));
 			rahxyCorr = rahCorrxy(d0, psiH1(L), psiH2(L), uAsteriskCorrxy);
@@ -287,6 +302,7 @@ public class SEBAL {
 		
 		double SAVI = SAVI(rho[2], rho[3]);
 		System.out.println("SAVI " + SAVI);
+		output.setSAVI(SAVI);
 		
 		double EVI = EVI(rho[0], rho[2], rho[3]);
 		System.out.println("EVI " + EVI);
@@ -315,9 +331,11 @@ public class SEBAL {
 		
 		double Rn = Rn(alpha, RSDown, RLDown, RLUp, epsilonZero);
 		System.out.println("Rn " + Rn);
+		output.setRn(Rn);
 		
 		double G = G(TS, alpha, NDVI, Rn);
 		System.out.println("G " + G);
+		output.setG(G);
 		
 		return output;
 	}

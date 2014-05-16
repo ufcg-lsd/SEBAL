@@ -29,10 +29,17 @@ public class Main {
 		LandsatGeotiffReaderPlugin readerPlugin = new LandsatGeotiffReaderPlugin();
 		LandsatGeotiffReader reader = new LandsatGeotiffReader(readerPlugin);
 		Product product = reader.readProductNodes(file, null);
-		readPixels(product);
+//		readPixels(product);
 
-		SEBAL sebal = new SEBAL();
-		sebal.run(new JSONSatellite("landsat5"), readPixels(product));
+		long begin = System.currentTimeMillis();
+		try {
+			Image image = readPixels(product);
+			SEBAL sebal = new SEBAL();
+			sebal.run(new JSONSatellite("landsat5"), image);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		System.out.println(System.currentTimeMillis() - begin);
 	}
 
 	private static Image readPixels(Product product) throws Exception {

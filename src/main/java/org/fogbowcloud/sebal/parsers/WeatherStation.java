@@ -214,8 +214,10 @@ public class WeatherStation {
 	}
 
 	public double zx(double lat, double lon) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		return station.get(0).optDouble("altitude");
+//		List<JSONObject> station = findNearestStation(lat, lon);
+//		return station.get(0).optDouble("altitude");
+		//TODO Procurar a altitude do sensor da velocidade do vento
+		return 3;
 	}
 
 	public double d(double lat, double lon) {

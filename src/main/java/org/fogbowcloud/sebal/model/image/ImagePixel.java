@@ -4,6 +4,10 @@ public interface ImagePixel {
 
 	Image image();
 	
+	ImagePixelOutput output();
+	
+	void setOutput(ImagePixelOutput output);
+	
 	// Radiancia
 	double[] L();
 	
