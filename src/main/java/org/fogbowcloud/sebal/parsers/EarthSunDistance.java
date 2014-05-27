@@ -1,6 +1,7 @@
 package org.fogbowcloud.sebal.parsers;
 
 import java.io.File;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class EarthSunDistance {
@@ -9,6 +10,7 @@ public class EarthSunDistance {
 	
 	public EarthSunDistance() throws Exception {
 		Scanner scn = new Scanner(new File("earth-sun-distance"));
+		scn.useLocale(Locale.ROOT);
 		while (scn.hasNext()) {
 			int day = scn.nextInt();
 			double distance = scn.nextDouble();

@@ -12,4 +12,5 @@ public interface Image {
 	
 	ImagePixel pixelQuente();
 
+	void choosePixelsQuenteFrio();
 }

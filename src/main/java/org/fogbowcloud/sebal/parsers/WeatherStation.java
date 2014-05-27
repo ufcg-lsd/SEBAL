@@ -224,6 +224,10 @@ public class WeatherStation {
 		return 0;
 	}
 	
+	public double hc(double lat, double lon) {
+		return 0.2;
+	}
+	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {
 		new WeatherStation();
 	}

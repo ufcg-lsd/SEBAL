@@ -29,4 +29,6 @@ public interface ImagePixel {
 	// Deslocamento do plano zero
 	double d();
 	
+	// Altura da vegetacao
+	double hc();
 }

@@ -37,7 +37,7 @@ public class Main {
 			SEBAL sebal = new SEBAL();
 			sebal.run(new JSONSatellite("landsat5"), image);
 		} catch (Exception e) {
-			// TODO: handle exception
+			e.printStackTrace();
 		}
 		System.out.println(System.currentTimeMillis() - begin);
 	}
@@ -104,13 +104,16 @@ public class Main {
 				double d = station.d(geoPos.getLat(), geoPos.getLon());
 				imagePixel.d(d);
 
+				double hc = station.hc(geoPos.getLat(), geoPos.getLon());
+				imagePixel.hc(hc);
+				
 				imagePixel.image(image);
 
 				image.addPixel(imagePixel);
 			}
 		}
-
-		image.choosePixelsQuenteFrio();
+		
+//		image.choosePixelsQuenteFrio();
 		return image;
 	}
 }

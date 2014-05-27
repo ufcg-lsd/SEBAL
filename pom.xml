@@ -20,16 +20,25 @@
 	</build>
 
 	<repositories>
+<!-- 		<repository> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>true</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 			<id>geo-solutions</id> -->
+<!-- 			<name>geo-solutions</name> -->
+<!-- 			<url>http://maven.geo-solutions.it/</url> -->
+<!-- 		</repository> -->
+		
 		<repository>
 			<snapshots>
 				<enabled>true</enabled>
 			</snapshots>
-			<id>geo-solutions</id>
-			<name>geo-solutions</name>
-			<url>http://maven.geo-solutions.it/</url>
+			<id>maven.ourgrid.org</id>
+			<name>maven.ourgrid.org</name>
+			<url> http://maven.ourgrid.org/repos</url>
 		</repository>
 	</repositories>
-
+	
 	<dependencies>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -63,6 +72,6 @@
 			<artifactId>zip4j</artifactId>
 			<version>1.2.3</version>
 		</dependency>
-            
+
 	</dependencies>
 </project>

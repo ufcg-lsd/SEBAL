@@ -11,6 +11,7 @@ public class DefaultImagePixel implements ImagePixel {
 	private double zx;
 	private double d;
 	private ImagePixelOutput output;
+	private double hc;
 	
 	public void L(double[] L) {
 		this.L = L;
@@ -92,6 +93,15 @@ public class DefaultImagePixel implements ImagePixel {
 	@Override
 	public void setOutput(ImagePixelOutput output) {
 		this.output = output;
+	}
+
+	@Override
+	public double hc() {
+		return hc;
+	}
+	
+	public void hc(double hc) {
+		this.hc = hc;
 	}
 
 }

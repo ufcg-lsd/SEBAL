@@ -7,6 +7,8 @@ public class ImagePixelOutput {
 	private double sAVI;
 	private double Rn;
 	private double G;
+	private double H;
+	private double lambdaE;
 
 	public double getNDVI() {
 		return NDVI;
@@ -46,5 +48,21 @@ public class ImagePixelOutput {
 	
 	public double G() {
 		return G;
+	}
+
+	public double getLambdaE() {
+		return lambdaE;
+	}
+
+	public void setLambdaE(double lambdaE) {
+		this.lambdaE = lambdaE;
+	}
+
+	public double getH() {
+		return H;
+	}
+
+	public void setH(double h) {
+		H = h;
 	}
 }
