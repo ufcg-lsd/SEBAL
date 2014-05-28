@@ -10,6 +10,7 @@ import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.GeoPos;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.PixelPos;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
@@ -29,7 +30,6 @@ public class Main {
 		LandsatGeotiffReaderPlugin readerPlugin = new LandsatGeotiffReaderPlugin();
 		LandsatGeotiffReader reader = new LandsatGeotiffReader(readerPlugin);
 		Product product = reader.readProductNodes(file, null);
-//		readPixels(product);
 
 		long begin = System.currentTimeMillis();
 		try {
@@ -55,15 +55,10 @@ public class Main {
 		Band bandAt = product.getBandAt(0);
 		bandAt.ensureRasterData();
 
-		Double sunElevation = null;
-		List<String> mtlLines = IOUtils
-				.readLines(new FileInputStream(MTL_FILE));
-		for (String mtlLine : mtlLines) {
-			if (mtlLine.contains("SUN_ELEVATION")) {
-				sunElevation = Double.valueOf(mtlLine.split("=")[1].trim());
-			}
-		}
-
+		MetadataElement metadataRoot = product.getMetadataRoot();
+		Double sunElevation = metadataRoot.getElement("L1_METADATA_FILE").getElement(
+				"IMAGE_ATTRIBUTES").getAttribute("SUN_ELEVATION").getData().getElemDouble();
+		
 		for (int i = 0; i < bandAt.getSceneRasterWidth(); i++) {
 			for (int j = 0; j < bandAt.getSceneRasterHeight(); j++) {
 
@@ -113,7 +108,6 @@ public class Main {
 			}
 		}
 		
-//		image.choosePixelsQuenteFrio();
 		return image;
 	}
 }

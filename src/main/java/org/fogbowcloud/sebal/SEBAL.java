@@ -228,18 +228,16 @@ public class SEBAL {
 	
 	public void run(Satellite satellite, Image image) {
 		
-		double maxNDVI = 0;
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
-			maxNDVI = Math.max(output.getNDVI(), maxNDVI);
 			imagePixel.setOutput(output);
 		}
 		image.choosePixelsQuenteFrio();
 		ImagePixel pixelQuente = image.pixelQuente();
-		ImagePixelOutput pixelQuenteOutput = image.pixelQuente().output();
+		ImagePixelOutput pixelQuenteOutput = pixelQuente.output();
 		
 		ImagePixel pixelFrio = image.pixelFrio();
-		ImagePixelOutput pixelFrioOutput = image.pixelFrio().output();
+		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
 
 		
 		// TODO Escolhendo a weather station mais proxima ao pixelQuente
@@ -274,7 +272,7 @@ public class SEBAL {
 //			double b = b(pixelQuente.Ta(), pixelFrio.Ta(), rahxy, 
 //					pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
 //			double a =  a(b, pixelFrio.Ta());
-			i ++;
+			i++;
 		}
 		
 		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);

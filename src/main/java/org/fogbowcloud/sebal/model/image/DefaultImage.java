@@ -29,11 +29,11 @@ public class DefaultImage implements Image {
 		for (ImagePixel pixel : pixels) {
 			double ndvi = pixel.output().getNDVI();
 			if (ndvi >= 0.1 && ndvi <= 0.2) {
+				this.pixelQuente = pixel;
 			}
-			this.pixelQuente = pixel;
 			if (ndvi <= -0.1 && ndvi >= -0.2) {
+				this.pixelFrio = pixel;
 			}
-			this.pixelFrio = pixel;
 			if (pixelFrio != null && pixelQuente != null) {
 				break;
 			}
