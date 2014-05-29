@@ -1,8 +1,13 @@
 package org.fogbowcloud.sebal;
 
-import java.util.Arrays;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
 
-import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
@@ -117,7 +122,7 @@ public class SEBAL {
 		if (NDVI < 0) {
 			return Rn * 0.5;
 		}
-		return ((TS - 273.15)/(alpha * ((0.0038 * alpha) + (0.0074 * Math.pow(alpha, 2)))) * (1 - (0.98 * Math.pow(NDVI, 4)))) * Rn;
+		return ((TS - 273.15)/alpha * (0.0038 * alpha + 0.0074 * Math.pow(alpha, 2)) * (1 - 0.98 * Math.pow(NDVI, 4))) * Rn;
 	}
 	
 	static final double rho = 1.15;
@@ -226,13 +231,14 @@ public class SEBAL {
 		return 2 * Math.log((1 + y) / 2) + Math.log((1 + Math.pow(y, 2)) / 2) - 2 * Math.atan(y) + 0.5;
 	}
 	
-	public void run(Satellite satellite, Image image) {
+	public void run(Satellite satellite, Image image, String fileName) {
 		
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
 			imagePixel.setOutput(output);
 		}
 		image.choosePixelsQuenteFrio();
+		
 		ImagePixel pixelQuente = image.pixelQuente();
 		ImagePixelOutput pixelQuenteOutput = pixelQuente.output();
 		
@@ -260,7 +266,7 @@ public class SEBAL {
 		int i = 1;
 		//TODO configuracao
 		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
-			System.out.println(i);
+//			System.out.println(i);
 //			double dT = (Hcal * rahxy)/(rho * cp);
 			rahxy = rahxyCorr;
 			double L = Lxy(uAsteriskCorrxy, pixelQuenteOutput.getTs(), Hcal);
@@ -282,6 +288,17 @@ public class SEBAL {
 			double lambdaE = output.Rn() - output.G() - output.getH();
 			output.setLambdaE(lambdaE);
 			imagePixel.setOutput(output);
+			File file = new File(fileName);
+			try {
+				FileUtils.writeStringToFile(file, imagePixel.geoLoc().getI() + 
+						"," + imagePixel.geoLoc().getJ() + "," + 
+						imagePixel.geoLoc().getLat()+ "," + imagePixel.geoLoc().getLon()
+						+ "," + imagePixel.output().getH() + "," + imagePixel.output().G()
+						+ "," + imagePixel.output().Rn() + "," + imagePixel.output().getLambdaE() + "\n", true);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
 		}
 	}
 
@@ -297,16 +314,16 @@ public class SEBAL {
 					satellite.ESUN(i + 1), imagePixel.cosTheta());
 			rho[i] = rhoI;
 		}
-		System.out.println("rho " + Arrays.toString(rho));
+//		System.out.println("rho " + Arrays.toString(rho));
 		
 		double alphaToa = alphaToa(rho[0], rho[1], rho[2], rho[3], rho[4], rho[6]);
-		System.out.println("alphaToa " + alphaToa);
+//		System.out.println("alphaToa " + alphaToa);
 		
 		double tauSW = tauSW(imagePixel.z());
-		System.out.println("tauSW " + tauSW);
+//		System.out.println("tauSW " + tauSW);
 		
 		double alpha = alpha(alphaToa, tauSW);
-		System.out.println("alpha " + alpha);
+//		System.out.println("alpha " + alpha);
 		
 		double RSDown = RSDown(imagePixel.cosTheta(), 
 				earthSunDistance.get(imagePixel.image().getDay()), tauSW);
@@ -315,43 +332,43 @@ public class SEBAL {
 		
 		double NDVI = NDVI(rho[2], rho[3]);
 		output.setNDVI(NDVI);
-		System.out.println("NDVI " + NDVI);
+//		System.out.println("NDVI " + NDVI);
 		
 		double SAVI = SAVI(rho[2], rho[3]);
-		System.out.println("SAVI " + SAVI);
+//		System.out.println("SAVI " + SAVI);
 		output.setSAVI(SAVI);
 		
 		double EVI = EVI(rho[0], rho[2], rho[3]);
-		System.out.println("EVI " + EVI);
+//		System.out.println("EVI " + EVI);
 		
 		double IAF = IAF(SAVI);
-		System.out.println("IAF " + IAF);
+//		System.out.println("IAF " + IAF);
 		
 		double epsilonNB = epsilonNB(IAF);
-		System.out.println("epsilonNB " + epsilonNB);
+//		System.out.println("epsilonNB " + epsilonNB);
 		
 		double epsilonZero = epsilonZero(IAF);
-		System.out.println("epsilonZero " + epsilonZero);
+//		System.out.println("epsilonZero " + epsilonZero);
 		
 		double TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[5]);
 		output.setTs(TS);
-		System.out.println("TS " + TS);
+//		System.out.println("TS " + TS);
 		
 		double RLUp = RLUp(epsilonZero, TS);
-		System.out.println("RLUp " + RLUp);
+//		System.out.println("RLUp " + RLUp);
 		
 		double epsilonA = epsilonA(tauSW);
-		System.out.println("epsilonA " + epsilonA);
+//		System.out.println("epsilonA " + epsilonA);
 		
 		double RLDown = RLDown(epsilonA, imagePixel.Ta());
-		System.out.println("RLDown " + RLDown);
+//		System.out.println("RLDown " + RLDown);
 		
 		double Rn = Rn(alpha, RSDown, RLDown, RLUp, epsilonZero);
-		System.out.println("Rn " + Rn);
+//		System.out.println("Rn " + Rn);
 		output.setRn(Rn);
 		
 		double G = G(TS, alpha, NDVI, Rn);
-		System.out.println("G " + G);
+//		System.out.println("G " + G);
 		output.setG(G);
 		
 		return output;

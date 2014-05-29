@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
@@ -39,6 +41,7 @@ public class WeatherStation {
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-YYYY");
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
 	
+	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
 	private HttpClient httpClient;
 	
@@ -133,17 +136,29 @@ public class WeatherStation {
 	}
 
 	private JSONArray readStation(HttpClient httpClient, String id, String inicio, String fim)
-			throws IOException, ClientProtocolException {
-		HttpGet dataGet = new HttpGet(
-				"http://www.inmet.gov.br/projetos/rede/pesquisa/gera_serie_txt.php?"
+			throws Exception {
+		String url = "http://www.inmet.gov.br/projetos/rede/pesquisa/gera_serie_txt.php?"
 						+ "&mRelEstacao=" + id 
 						+ "&btnProcesso=serie"
 						+ "&mRelDtInicio=" + inicio
 						+ "&mRelDtFim=" + fim
-						+ "&mAtributos=1,1,,,1,1,,1,1,,,,,,,,");
-		HttpResponse dataResponse = httpClient.execute(dataGet);
-		String data = EntityUtils.toString(dataResponse.getEntity());
-		data = data.substring(data.indexOf("<pre>") + 5, data.indexOf("</pre>"));
+						+ "&mAtributos=1,1,,,1,1,,1,1,,,,,,,,";
+		String data = cache.get(url);
+		if (data == null) {
+			try {
+				HttpGet dataGet = new HttpGet(url);
+				HttpResponse dataResponse = httpClient.execute(dataGet);
+				data = EntityUtils.toString(dataResponse.getEntity());
+				data = data.substring(data.indexOf("<pre>") + 5, data.indexOf("</pre>"));
+				cache.put(url, data);
+			} catch (Exception e) {
+				cache.put(url, "FAILED");
+				throw e;
+			}
+		} else if (data.equals("FAILED")) {
+			throw new Exception();
+		}
+		
 		String[] meta = data.split(SEP)[4].trim().split("\n");
 		
 		JSONArray dataArray = new JSONArray();

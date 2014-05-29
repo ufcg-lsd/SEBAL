@@ -12,6 +12,7 @@ public class DefaultImagePixel implements ImagePixel {
 	private double d;
 	private ImagePixelOutput output;
 	private double hc;
+	private GeoLoc geoLoc;
 	
 	public void L(double[] L) {
 		this.L = L;
@@ -102,6 +103,15 @@ public class DefaultImagePixel implements ImagePixel {
 	
 	public void hc(double hc) {
 		this.hc = hc;
+	}
+
+	@Override
+	public GeoLoc geoLoc() {
+		return this.geoLoc;
+	}
+
+	public void geoLoc(GeoLoc geoLoc) {
+		this.geoLoc = geoLoc;
 	}
 
 }

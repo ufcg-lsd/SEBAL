@@ -3,11 +3,11 @@ package org.fogbowcloud.sebal.model.image;
 public interface ImagePixel {
 
 	Image image();
-	
 	ImagePixelOutput output();
 	
 	void setOutput(ImagePixelOutput output);
 	
+	GeoLoc geoLoc();
 	// Radiancia
 	double[] L();
 	

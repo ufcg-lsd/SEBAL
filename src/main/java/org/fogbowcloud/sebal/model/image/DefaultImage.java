@@ -38,6 +38,12 @@ public class DefaultImage implements Image {
 				break;
 			}
 		}
+		if (pixelFrio == null) {
+			pixelFrio = pixels.get((int) (Math.random() * pixels.size()));
+		}
+		if (pixelQuente == null) {
+			pixelQuente = pixels.get((int) (Math.random() * pixels.size()));
+		}
 	}
 	
 	@Override
