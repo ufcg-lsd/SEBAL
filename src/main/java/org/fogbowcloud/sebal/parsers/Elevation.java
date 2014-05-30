@@ -23,8 +23,6 @@ public class Elevation {
     public static final int SRTM1_FILE_SIZE = (SRTM1_INTERVALS + 1) * (SRTM1_INTERVALS + 1) * 2;
     private static final int INVALID_VALUE_LIMIT = -15000; // Won't interpolate below this elevation in Meters, guess is: -0x8000
 
-    private HgtReader reader = new HgtReader();
-    
     private RandomAccessFile file;
 
 	private int getIntervalCount() throws IOException {
@@ -52,37 +50,13 @@ public class Elevation {
         return (dHeight12 * dDiff) / dLength12;
     }
 
-    /**
-     * Gets the associated HGT file name for the given way point. Usually the
-     * format is <tt>[N|S]nn[W|E]mmm.hgt</tt> where <i>nn</i> is the integral latitude
-     * without decimals and <i>mmm</i> is the longitude.
-     *
-     * @param latLon the coordinate to get the filename for
-     * @return the file name of the HGT file
-     */
-    public String getHgtFileName(double latD, double lonD) {
-        int lat = (int) latD;
-        int lon = (int) lonD;
-
-        String latPref = "N";
-        if (lat < 0) latPref = "S";
-
-        String lonPref = "E";
-        if (lon < 0) {
-            lonPref = "W";
-        }
-
-        return String.format("%s%02d%s%03d%s", latPref, Math.abs(lat), lonPref, Math.abs(lon), ".hgt");
-    }
-
-    
     public Double z(Double latitude, Double longitude) throws Exception {
     	int roundLat = Math.abs(latitude.intValue());
     	int roundLon = Math.abs(longitude.intValue());
     	String latChar = latitude >= 0 ? "N" : "S";
     	
-    	String hgtFile = String.format("%s%02dW%03d", latChar, roundLat, roundLon) + ".hgt";
-//    	String hgtFile = getHgtFileName(latitude, longitude);
+    	String hgtFile = String.format("%s%02dW%03d", latChar, latitude < 0 ? roundLat + 1 : roundLat, 
+    			longitude < 0 ? roundLon + 1 : roundLon) + ".hgt";
 		if (!new File(hgtFile).exists()) {
 			String zipURL = "http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/" + hgtFile + ".zip";
 			IOUtils.copy(new URL(zipURL).openStream(), new FileOutputStream(hgtFile));
@@ -90,19 +64,12 @@ public class Elevation {
 			zipFile.extractAll(".");
 		}
 		
-		System.out.println("Lat: " + latitude);
-		System.out.println("Lon: " + longitude);
-		
-//		return reader.getElevationFromHgt(Math.abs(latitude), Math.abs(longitude), new File(hgtFile));
-
 		file = new RandomAccessFile(hgtFile, "r");
 		
         if (file == null || longitude == null || latitude == null) {
         	return null;
         }
         
-        
-
         // cut off the decimal places
         int longitudeAsInt = longitude.intValue();
         int latitudeAsInt = latitude.intValue();

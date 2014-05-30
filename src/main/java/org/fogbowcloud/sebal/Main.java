@@ -82,16 +82,9 @@ public class Main {
 				imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
 				GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-//				if (geoPos.getLat() == null || geoPos.getLon() == null) {
-//					System.out.println("No geoPos found, skipping pixel.");
-//					continue;
-//				}
-				
-//				double z = elevation.z(Double.valueOf(geoPos.getLat()),
-//						Double.valueOf(geoPos.getLon()));
-//				System.out.println("z=" + z);
-//				imagePixel.z(z);
-				imagePixel.z(400);
+				double z = elevation.z(Double.valueOf(geoPos.getLat()),
+						Double.valueOf(geoPos.getLon()));
+				imagePixel.z(z);
 				
 				GeoLoc geoLoc = new GeoLoc();
 				geoLoc.setI(i);
