@@ -278,24 +278,26 @@ public class SEBAL {
 		}
 		
 		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
+		StringBuilder stringBuilder = new StringBuilder();
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = imagePixel.output();
 			output.setH(H);
 			double lambdaE = output.Rn() - output.G() - output.getH();
 			output.setLambdaE(lambdaE);
 			imagePixel.setOutput(output);
-			File file = new File(fileName);
-			try {
-				FileUtils.writeStringToFile(file, imagePixel.geoLoc().getI() + 
-						"," + imagePixel.geoLoc().getJ() + "," + 
-						imagePixel.geoLoc().getLat()+ "," + imagePixel.geoLoc().getLon()
-						+ "," + imagePixel.output().getH() + "," + imagePixel.output().G()
-						+ "," + imagePixel.output().Rn() + "," + imagePixel.output().getLambdaE() + "\n", true);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
+			stringBuilder.append(imagePixel.geoLoc().getI() + 
+					"," + imagePixel.geoLoc().getJ() + "," + 
+					imagePixel.geoLoc().getLat()+ "," + imagePixel.geoLoc().getLon()
+					+ "," + imagePixel.output().getH() + "," + imagePixel.output().G()
+					+ "," + imagePixel.output().Rn() + "," + imagePixel.output().getLambdaE() + "\n");
 		}
+		File file = new File(fileName);
+		try {
+			FileUtils.writeStringToFile(file, stringBuilder.toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 	}
 
 	private ImagePixelOutput processPixel(Satellite satellite, ImagePixel imagePixel) {

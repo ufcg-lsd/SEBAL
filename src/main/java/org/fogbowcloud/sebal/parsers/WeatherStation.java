@@ -225,7 +225,7 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
-		return Double.parseDouble(record.optString("VelocidadeVento"));
+		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
 	}
 
 	public double zx(double lat, double lon) {

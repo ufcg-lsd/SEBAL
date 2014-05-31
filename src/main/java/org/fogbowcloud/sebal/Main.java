@@ -31,11 +31,13 @@ public class Main {
 		
 		int iBegin = Integer.parseInt(args[0]);
 		int iFinal = Integer.parseInt(args[1]);
-		String fileName = args[2];
+		int jBegin = Integer.parseInt(args[2]);
+		int jFinal = Integer.parseInt(args[3]);
+		String fileName = args[4];
 
 		long begin = System.currentTimeMillis();
 		try {
-			Image image = readPixels(product,  iBegin, iFinal);
+			Image image = readPixels(product,  iBegin, iFinal, jBegin, jFinal);
 			SEBAL sebal = new SEBAL();
 			sebal.run(new JSONSatellite("landsat5"), image, fileName);
 		} catch (Exception e) {
@@ -44,7 +46,8 @@ public class Main {
 		System.out.println(System.currentTimeMillis() - begin);
 	}
 
-	private static Image readPixels(Product product, int iBegin, int iFinal) throws Exception {
+	private static Image readPixels(Product product, int iBegin, int iFinal,
+			int jBegin, int jFinal) throws Exception {
 
 		DefaultImage image = new DefaultImage();
 		Elevation elevation = new Elevation();
@@ -64,10 +67,9 @@ public class Main {
 		for (int i = 0; i < bandAt.getSceneRasterWidth(); i++) {
 			for (int j = 0; j < bandAt.getSceneRasterHeight(); j++) {
 				
-				if ((i < iBegin || i > iFinal)) {
+				if ((i < iBegin || i > iFinal) || (j < jBegin || j > jFinal)) {
 					continue;
 				}
-				 
 				DefaultImagePixel imagePixel = new DefaultImagePixel();
 				
 				double[] LArray = new double[product.getNumBands()];
@@ -81,10 +83,12 @@ public class Main {
 
 				imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
+//				System.out.println(i + " " + j);
+				
 				GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-				double z = elevation.z(Double.valueOf(geoPos.getLat()),
+				Double z = elevation.z(Double.valueOf(geoPos.getLat()),
 						Double.valueOf(geoPos.getLon()));
-				imagePixel.z(z);
+				imagePixel.z(z == null ? 400 : z);
 				
 				GeoLoc geoLoc = new GeoLoc();
 				geoLoc.setI(i);
