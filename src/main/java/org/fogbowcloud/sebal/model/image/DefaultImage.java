@@ -26,24 +26,44 @@ public class DefaultImage implements Image {
 
 	@Override
 	public void choosePixelsQuenteFrio() {
-		for (ImagePixel pixel : pixels) {
-			double ndvi = pixel.output().getNDVI();
-			if (ndvi >= 0.1 && ndvi <= 0.2) {
-				this.pixelQuente = pixel;
-			}
-			if (ndvi <= -0.1 && ndvi >= -0.2) {
-				this.pixelFrio = pixel;
-			}
-			if (pixelFrio != null && pixelQuente != null) {
-				break;
-			}
-		}
-		if (pixelFrio == null) {
-			pixelFrio = pixels.get((int) (Math.random() * pixels.size()));
-		}
-		if (pixelQuente == null) {
-			pixelQuente = pixels.get((int) (Math.random() * pixels.size()));
-		}
+//		for (ImagePixel pixel : pixels) {
+//			double ndvi = pixel.output().getNDVI();
+//			if (ndvi >= 0.1 && ndvi <= 0.2) {
+//				this.pixelQuente = pixel;
+//			}
+//			if (ndvi <= -0.1 && ndvi >= -0.2) {
+//				this.pixelFrio = pixel;
+//			}
+//			if (pixelFrio != null && pixelQuente != null) {
+//				break;
+//			}
+//		}
+//		if (pixelFrio == null) {
+//			pixelFrio = pixels.get((int) (Math.random() * pixels.size()));
+//		}
+//		if (pixelQuente == null) {
+//			pixelQuente = pixels.get((int) (Math.random() * pixels.size()));
+//		}
+		DefaultImagePixel pixelQuenteLocal = new DefaultImagePixel();
+		pixelQuenteLocal.ux(4.39);
+		pixelQuenteLocal.zx(6);
+		pixelQuenteLocal.hc(4);
+		pixelQuenteLocal.d(2.67);
+		
+		ImagePixelOutput outputQuente = new ImagePixelOutput();
+		outputQuente.setG(92.18);
+		outputQuente.setRn(470.46);
+		outputQuente.setSAVI(0.16);
+		outputQuente.setTs(35.23 + 273.15);
+		pixelQuenteLocal.setOutput(outputQuente);
+		
+		DefaultImagePixel pixelFrioLocal = new DefaultImagePixel();
+		ImagePixelOutput outputFrio = new ImagePixelOutput();
+		outputFrio.setTs(26.65 + 273.15);
+		pixelFrioLocal.setOutput(outputFrio);
+		
+		this.pixelQuente = pixelQuenteLocal;
+		this.pixelFrio = pixelFrioLocal;
 	}
 	
 	@Override

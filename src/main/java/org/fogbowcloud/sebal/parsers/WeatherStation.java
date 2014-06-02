@@ -232,15 +232,15 @@ public class WeatherStation {
 //		List<JSONObject> station = findNearestStation(lat, lon);
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
-		return 3;
+		return 6;
 	}
 
 	public double d(double lat, double lon) {
-		return 0;
+		return 2.67;
 	}
 	
 	public double hc(double lat, double lon) {
-		return 0.2;
+		return 4.;
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {

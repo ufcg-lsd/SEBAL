@@ -125,7 +125,8 @@ public class SEBAL {
 	static final double cp = 1004;
 	
 	double H(double Ta1, double Ta2, double rah) {
-		return rho * cp * (Ta1 - Ta2) / rah;
+		// TODO Checar esse abs
+		return rho * cp * Math.abs(Ta1 - Ta2) / rah;
 	}
 	
 	double HQuente(double Rn, double G) {
@@ -259,8 +260,12 @@ public class SEBAL {
 		
 		double uAsteriskCorrxy = uAsteriskxy;
 		double rahxyCorr = Double.MAX_VALUE;
+		double aQuente = 0;
+		double bQuente = 0;
+		
 		int i = 1;
 		//TODO configuracao
+		double H = Hcal;
 		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
 //			System.out.println(i);
 //			double dT = (Hcal * rahxy)/(rho * cp);
@@ -271,17 +276,19 @@ public class SEBAL {
 			double psiH1 = psiH1(L);
 			double psiH2 = psiH2(L);
 			rahxyCorr = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
-//			double b = b(pixelQuente.Ta(), pixelFrio.Ta(), rahxy, 
-//					pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
-//			double a =  a(b, pixelFrio.Ta());
+			double dTQuente = dTQuente(rahxyCorr, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
+			bQuente = dTQuente / (pixelQuenteOutput.getTs() - pixelFrioOutput.getTs());
+			aQuente =  a(bQuente, pixelFrioOutput.getTs() - 273.15);
+			H = H(bQuente * (pixelQuenteOutput.getTs() - 273.15), aQuente * -1, rahxyCorr); 
 			i++;
 		}
 		
-		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
+//		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
 		StringBuilder stringBuilder = new StringBuilder();
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = imagePixel.output();
-			output.setH(H);
+			double hPixel = iterH(imagePixel, aQuente, bQuente);
+			output.setH(hPixel);
 			double lambdaE = output.Rn() - output.G() - output.getH();
 			output.setLambdaE(lambdaE);
 			imagePixel.setOutput(output);
@@ -292,12 +299,52 @@ public class SEBAL {
 					+ "," + imagePixel.output().Rn() + "," + imagePixel.output().getLambdaE() + "\n");
 		}
 		File file = new File(fileName);
+		if (file.exists()) {
+			file.delete();
+		}
 		try {
 			FileUtils.writeStringToFile(file, stringBuilder.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
+	}
+
+	private double iterH(ImagePixel imagePixel, double aQuente, double bQuente) {
+		double z0m = z0m(imagePixel.hc());
+		double uAsterisk = uAsterisk(imagePixel.ux(), 
+				imagePixel.zx(), imagePixel.d(), z0m);
+		double u200 = u200(uAsterisk, imagePixel.d(), z0m);
+		double d0 = imagePixel.d();
+		
+		ImagePixelOutput imagePixelOutput = imagePixel.output();
+		
+		double z0mxy = z0mxy(imagePixelOutput.SAVI());
+		double uAsteriskxy = uAsteriskxy(u200, d0, z0mxy);
+		double rahxy = rahxy(uAsteriskxy);
+		
+		double uAsteriskCorrxy = uAsteriskxy;
+		double rahxyCorr = Double.MAX_VALUE;
+		
+		int i = 1;
+		//TODO configuracao
+		double H = H(bQuente * (imagePixelOutput.getTs() - 273.15), aQuente * -1, rahxy);
+		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
+//			System.out.println(i);
+//			double dT = (Hcal * rahxy)/(rho * cp);
+			rahxy = rahxyCorr;
+			double L = Lxy(uAsteriskCorrxy, imagePixelOutput.getTs(), H);
+			double psim = psim(L);
+			uAsteriskCorrxy = uAsteriskCorrxy(u200, d0, z0mxy, psim);
+			double psiH1 = psiH1(L);
+			double psiH2 = psiH2(L);
+			rahxyCorr = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
+//			double dTQuente = dTQuente(rahxyCorr, imagePixelOutput.Rn(), imagePixelOutput.G());
+			H = H(bQuente * (imagePixelOutput.getTs() - 273.15), aQuente * -1, rahxyCorr); 
+			i++;
+		}
+		
+		return H;
 	}
 
 	private ImagePixelOutput processPixel(Satellite satellite, ImagePixel imagePixel) {
