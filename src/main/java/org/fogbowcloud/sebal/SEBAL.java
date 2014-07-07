@@ -2,8 +2,12 @@ package org.fogbowcloud.sebal;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.velocity.runtime.directive.Foreach;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
@@ -120,14 +124,15 @@ public class SEBAL {
 			return Rn * 0.5;
 		}
 		return ((TS - 273.15)/alpha * (0.0038 * alpha + 0.0074 * Math.pow(alpha, 2)) * (1 - 0.98 * Math.pow(NDVI, 4))) * Rn;
+		//		return Math.abs((TS - 273.15)*(0.0038 + 0.0074 * alpha)*(1-0.98*Math.pow(NDVI, 4))) * Rn;
 	}
 
 	static final double rho = 1.15;
 	static final double cp = 1004;
 
-	double H(double Ta1, double Ta2, double rah) {
-		// TODO Checar esse abs
-		return rho * cp * Math.abs(Ta1 - Ta2) / rah;
+	double H(double a, double b, double Ts, double rah) {
+		double H = (rho * cp) * (a + b * Ts) / rah;
+		return H;
 	}
 
 	double HQuente(double Rn, double G) {
@@ -141,7 +146,7 @@ public class SEBAL {
 	}
 
 	double u200(double uAsterisk, double d, double z0m) {
-		return uAsterisk * Math.log((200 - d) / z0m) / k;
+		return (uAsterisk * Math.log((200 - d) / z0m)) / k;
 	}
 
 	double uAsteriskxy(double u200, double dxy, double z0mxy) {
@@ -165,7 +170,8 @@ public class SEBAL {
 	static final double g = 9.81;
 
 	double Lxy(double uAsteriskxy, double TSxy, double Hxy) {
-		return -1 * (rho * cp * Math.pow(uAsteriskxy, 3) * TSxy) / (k * g * Hxy);
+		double L = -1 * (rho * cp * Math.pow(uAsteriskxy, 3) * TSxy) / (k * g * Hxy);
+		return L;
 	}
 
 	double uAsteriskCorrxy(double u200, double dxy, double z0mxy, double psimxy) {
@@ -215,22 +221,52 @@ public class SEBAL {
 	}
 
 	double psiH1(double L) {
-		double y = Math.pow((1 - (16 * (0.1 / L))), 0.25);
-		return 2 * Math.log((1 + Math.pow(y, 2)) / 2);
+		double psiH1 = 0;
+		if (L == 0) {
+			psiH1 = 0;
+		}
+		else if(L > 0) {
+			psiH1 = -5*(0.1/L);
+		}
+		else {
+			double y = Math.pow((1 - (16 * (0.1 / L))), 0.25);
+			psiH1 = 2 * Math.log((1 + Math.pow(y, 2)) / 2);
+		}
+		return psiH1;
 	}
 
 	double psiH2(double L) {
-		double y = Math.pow((1 - (16 * (2 / L))), 0.25);
-		return 2 * Math.log((1 + Math.pow(y, 2)) / 2);
+		double psiH2 = 0;
+		if (L == 0) {
+			psiH2 = 0;
+		}
+		else if(L > 0) {
+			psiH2 = -5*(2./L);
+		}
+		else {
+			double y = Math.pow((1 - (16 * (2 / L))), 0.25);
+			psiH2 = 2 * Math.log((1 + Math.pow(y, 2)) / 2);
+		}
+		return psiH2;
 	}
 
 	double psim(double L) {
-		double y = Math.pow((1 - (16 * (200 / L))), 0.25);
-		return 2 * Math.log((1 + y) / 2) + Math.log((1 + Math.pow(y, 2)) / 2) - 2 * Math.atan(y) + 0.5;
+		double psim = 0;
+		if (L > 0) {
+			psim = -5*(200/L);
+		}
+		else if (L == 0) {
+			psim = 0;
+		}
+		else {
+			double y = Math.pow((1 - (16 * (200 / L))), 0.25);
+			psim = 2 * Math.log((1 + y) / 2) + Math.log((1 + Math.pow(y, 2)) / 2) - 2 * Math.atan(y) + 0.5 * Math.PI;
+		}
+		return psim;
 	}
 
 	public void run(Satellite satellite, Image image, String fileName) {
-
+		//Start Process Pixel Thread
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
 			imagePixel.setOutput(output);
@@ -242,6 +278,7 @@ public class SEBAL {
 
 		ImagePixel pixelFrio = image.pixelFrio();
 		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
+		//Join
 
 
 		// TODO Escolhendo a weather station mais proxima ao pixelQuente
@@ -250,7 +287,7 @@ public class SEBAL {
 
 		double uAsterisk = uAsterisk(pixelQuente.ux(), 
 				pixelQuente.zx(), pixelQuente.d(), z0m);
-
+		
 		double u200 = u200(uAsterisk, pixelQuente.d(), z0m);
 		double d0 = pixelQuente.d();
 
@@ -262,71 +299,120 @@ public class SEBAL {
 		double uAsteriskCorrxy = uAsteriskxy;
 		double rahxyCorr = Double.MAX_VALUE;
 
-		int i = 1;
+		//		int i = 1;
 		//TODO configuracao
 		//		double H = Hcal;
 
-		HOutput hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, Hcal, u200, pixelQuenteOutput,
-				pixelFrioOutput, d0, z0mxy, null , null, true);
+		List<HOutput> hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, Hcal, u200, pixelQuenteOutput,
+				pixelFrioOutput, d0, z0mxy, null , null, true, true);
 
 		//		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
 
-		double aQuente = hOutput.getA();
-		double bQuente = hOutput.getB();
 
-		StringBuilder stringBuilder = createFileLines(image, aQuente, bQuente);
+		//Run HThread
+		StringBuilder stringBuilder = createFileLines(image, hOutput);
 		createResultsFile(fileName, stringBuilder);
 	}
 
-	private StringBuilder createFileLines(Image image, double aQuente, double bQuente) {
+	private StringBuilder createFileLines(Image image, List<HOutput> listHOutput) {
 		StringBuilder stringBuilder = new StringBuilder();
+		String string = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal," +
+				"bInicial,bFinal,rahInicial,rahFinal,uInicial,uFinal,lInicial,lFinal"
+				+",g,rn,lambdaE,Ts,ndvi,savi,alpha\n";
+		stringBuilder.append(string);
+		StringBuilder stringBuilderElevation = new StringBuilder();
+		stringBuilderElevation.append("i,j,lat,lon,elevation\n");
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = imagePixel.output();
-			double hPixel = iterH(imagePixel, aQuente, bQuente);
-			output.setH(hPixel);
+			List<HOutput> hPixel = iterH(imagePixel, listHOutput);
+			//			output.setH(hPixel);
 			double lambdaE = lambdaE(output);
 			output.setLambdaE(lambdaE);
 			imagePixel.setOutput(output);
-			stringBuilder.append(generateResultLine(imagePixel));
+			String elevationOutput = imagePixel.geoLoc().getI() + "," + imagePixel.geoLoc().getJ()
+					+ "," + imagePixel.geoLoc().getLat() + "," + imagePixel.geoLoc().getLon()
+					+ "," + imagePixel.z() + "\n";
+			stringBuilderElevation.append(elevationOutput);
+			stringBuilder.append(generateResultLine(imagePixel, hPixel));
 		}
+		createResultsFile("result3.csv", stringBuilderElevation);
 		return stringBuilder;
 	}
 
-	private HOutput hOutput(double rahxyCorr, double rahxy, double uAsteriskCorrxy, double Hcal,
+	public List<HOutput> hOutput(double rahxyCorr, double rahxy, double uAsteriskCorrxy, double Hcal,
 			double u200, ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput,
-			double d0, double z0mxy, Double aQuente, Double bQuente, boolean makeCalculation) {
+			double d0, double z0mxy, Double aQuente, Double bQuente, boolean makeCalculation, boolean isPixelQuente) {
 
-		HOutput hOutput = new HOutput();
 		double H = Hcal;
-
+		int i = 0;
+		List<HOutput> listH = new ArrayList<HOutput>();
 		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
+			HOutput hOutput = new HOutput();
 			//			System.out.println(i);
 			//			double dT = (Hcal * rahxy)/(rho * cp);
-			rahxy = rahxyCorr;
 			double L = Lxy(uAsteriskCorrxy, pixelQuenteOutput.getTs(), H);
 			double psim = psim(L);
 			uAsteriskCorrxy = uAsteriskCorrxy(u200, d0, z0mxy, psim);
 			double psiH1 = psiH1(L);
 			double psiH2 = psiH2(L);
-			rahxyCorr = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
-			double dTQuente = dTQuente(rahxyCorr, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
-			if (makeCalculation) {
-				bQuente = b(pixelQuenteOutput, pixelFrioOutput, dTQuente);
-				aQuente =  a(bQuente, pixelFrioOutput.getTs() - 273.15);
-			}
-			double ta1 = bQuente * (pixelQuenteOutput.getTs() - 273.15);
-			double ta2 = aQuente * -1;
-			H = H(ta1, ta2, rahxyCorr); 
+			double dTQuente = dTQuente(rahxy, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
+			bQuente = b(pixelQuenteOutput, pixelFrioOutput, dTQuente); 
+			aQuente =  a(bQuente, pixelFrioOutput.getTs() - 273.15);
+			H = H(aQuente, bQuente, (pixelQuenteOutput.getTs()- 273.15), rahxy); 
+			rahxyCorr = rahxy;
+			rahxy = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
+			//			double ta1 = bQuente * (pixelQuenteOutput.getTs() - 273.15);
+			//			double ta2 = aQuente * -1;
+			i++;
+
+			hOutput.setA(aQuente);
+			hOutput.setB(bQuente);
+			hOutput.setH(H);
+			listH.add(hOutput);
 		}
 
-		hOutput.setA(aQuente);
-		hOutput.setB(bQuente);
-		hOutput.setH(H);
-
-		return hOutput;
+		return listH;
 	}
 
-	private double iterH(ImagePixel imagePixel, double aQuente, double bQuente) {
+	public List<HOutput> hOutputPixel(double uAsterisk, double rahxy, double u200, 
+			ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput,
+			double d0, double z0mxy, List<HOutput> listHOutput) {
+
+		double H;
+		int i = 0;
+		List<HOutput> listH = new ArrayList<HOutput>();
+		double uAsteriskCorrxy = uAsterisk;
+		double rahCorrxy = rahxy;
+		for (HOutput hOut : listHOutput) {
+
+			HOutput hOutput = new HOutput();
+			//			System.out.println(i);
+			//			double dT = (Hcal * rahxy)/(rho * cp);
+			double aQuente =  hOut.getA();
+			double bQuente = hOut.getB(); 
+			H = H(aQuente, bQuente, (pixelQuenteOutput.getTs()- 273.15), rahCorrxy); 
+			double L = Lxy(uAsteriskCorrxy, pixelQuenteOutput.getTs(), H);
+			double psim = psim(L);
+			uAsteriskCorrxy = uAsteriskCorrxy(u200, d0, z0mxy, psim);
+			double psiH1 = psiH1(L);
+			double psiH2 = psiH2(L);
+			rahCorrxy = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
+			double dTQuente = dTQuente(rahCorrxy, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
+			i++;
+
+			hOutput.setA(aQuente);
+			hOutput.setB(bQuente);
+			hOutput.setH(H);
+			hOutput.setRah(rahCorrxy);
+			hOutput.setuAsterisk(uAsteriskCorrxy);
+			hOutput.setL(L);
+			listH.add(hOutput);
+		}
+
+		return listH;
+	}
+
+	public List<HOutput> iterH(ImagePixel imagePixel, List<HOutput> listHOutput) {
 		double z0m = z0m(imagePixel.hc());
 		double uAsterisk = uAsterisk(imagePixel.ux(), 
 				imagePixel.zx(), imagePixel.d(), z0m);
@@ -338,38 +424,47 @@ public class SEBAL {
 		double z0mxy = z0mxy(imagePixelOutput.SAVI());
 		double uAsteriskxy = uAsteriskxy(u200, d0, z0mxy);
 		double rahxy = rahxy(uAsteriskxy);
-
-		double uAsteriskCorrxy = uAsteriskxy;
-		double rahxyCorr = Double.MAX_VALUE;
+		imagePixel.output().setZ0mxy(z0mxy);
 
 		int i = 1;
 		//TODO configuracao
-		double H = H(bQuente * (imagePixelOutput.getTs() - 273.15), aQuente * -1, rahxy);
-		//		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
-		//			// System.out.println(i);
-		//			// double dT = (Hcal * rahxy)/(rho * cp);
-		//			rahxy = rahxyCorr;
-		//			double L = Lxy(uAsteriskCorrxy, imagePixelOutput.getTs(), H);
-		//			double psim = psim(L);
-		//			uAsteriskCorrxy = uAsteriskCorrxy(u200, d0, z0mxy, psim);
-		//			double psiH1 = psiH1(L);
-		//			double psiH2 = psiH2(L);
-		//			rahxyCorr = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
-		//			//			double dTQuente = dTQuente(rahxyCorr, imagePixelOutput.Rn(), imagePixelOutput.G());
-		//			H = H(bQuente * (imagePixelOutput.getTs() - 273.15), aQuente * -1, rahxyCorr); 
-		//			i++;
-		//		}
-		HOutput hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, H, u200, imagePixelOutput,
-				imagePixelOutput, d0, z0mxy, aQuente, bQuente, false);
-		return hOutput.getH();
+		//		double H = H(aQuente, bQuente, (imagePixelOutput.getTs() - 273.15), rahxy);
+
+		List<HOutput> hOutput = hOutputPixel(uAsterisk, rahxy, u200, imagePixelOutput,
+				imagePixelOutput, d0, z0mxy, listHOutput);
+		return hOutput;
 	}
 
-	private String generateResultLine(ImagePixel imagePixel) {
-		return imagePixel.geoLoc().getI() + 
-				"," + imagePixel.geoLoc().getJ() + "," + 
-				imagePixel.geoLoc().getLat()+ "," + imagePixel.geoLoc().getLon()
-				+ "," + imagePixel.output().getH() + "," + imagePixel.output().G()
-				+ "," + imagePixel.output().Rn() + "," + lambdaE(imagePixel.output()) + "\n";
+	public String generateResultLine(ImagePixel imagePixel, List<HOutput> hOuts) {
+		int i = imagePixel.geoLoc().getI();
+		int j = imagePixel.geoLoc().getJ();
+		double lat = imagePixel.geoLoc().getLat();
+		double lon = imagePixel.geoLoc().getLon();
+		double g = imagePixel.output().G();
+		double rn = imagePixel.output().Rn();
+		double lambdaE = lambdaE(imagePixel.output());
+
+		double hFinal = hOuts.get(hOuts.size() - 1).getH();
+		double hInicial = hOuts.get(0).getH();
+		double aFinal = hOuts.get(hOuts.size() - 1).getA();
+		double aInicial = hOuts.get(0).getA();
+		double bFinal = hOuts.get(hOuts.size() - 1).getB();
+		double bInicial = hOuts.get(0).getB();
+		double uFinal = hOuts.get(hOuts.size() - 1).getuAsterisk();
+		double uInicial = hOuts.get(0).getuAsterisk();
+		double lFinal = hOuts.get(hOuts.size() - 1).getL();
+		double lInicial = hOuts.get(0).getL();
+		double rahFinal = hOuts.get(hOuts.size() - 1).getRah();
+		double rahInicial = hOuts.get(0).getRah();
+
+		return i + "," + j + "," + lat + "," + lon
+				+ "," + hInicial + "," + hFinal + "," + aInicial + "," + aFinal + "," + 
+				bInicial + "," + bFinal + "," + rahInicial + "," + rahFinal + "," +
+				uInicial + "," + uFinal + "," + lInicial + "," + lFinal + "," +g + "," + 
+				rn + "," + lambdaE + "," + imagePixel.output().getTs() + "," + imagePixel.output().getNDVI() +  
+				"," + imagePixel.output().SAVI() + "," + imagePixel.output().getAlpha() + "," + 
+				Arrays.toString(imagePixel.L()) + "," + imagePixel.output().getZ0mxy() + "," + 
+				imagePixel.output().getEpsilonZero() + "," + imagePixel.output().getEpsilonNB() + "\n";
 	}
 
 	private void createResultsFile(String fileName, StringBuilder stringBuilder) {
@@ -385,7 +480,7 @@ public class SEBAL {
 		}
 	}
 
-	private double lambdaE(ImagePixelOutput output) {
+	public double lambdaE(ImagePixelOutput output) {
 		return output.Rn() - output.G() - output.getH();
 	}
 
@@ -395,7 +490,8 @@ public class SEBAL {
 	}
 
 
-	private ImagePixelOutput processPixel(Satellite satellite, ImagePixel imagePixel) {
+	public ImagePixelOutput processPixel(Satellite satellite, ImagePixel imagePixel) {
+		ImagePixelOutput output = new ImagePixelOutput();
 		double[] LLambda = imagePixel.L();
 
 		double[] rho = new double[7];
@@ -408,7 +504,7 @@ public class SEBAL {
 			rho[i] = rhoI;
 		}
 		//		System.out.println("rho " + Arrays.toString(rho));
-
+		output.setRho(rho);
 		double alphaToa = alphaToa(rho[0], rho[1], rho[2], rho[3], rho[4], rho[6]);
 		//		System.out.println("alphaToa " + alphaToa);
 
@@ -421,7 +517,6 @@ public class SEBAL {
 		double RSDown = RSDown(imagePixel.cosTheta(), 
 				earthSunDistance.get(imagePixel.image().getDay()), tauSW);
 
-		ImagePixelOutput output = new ImagePixelOutput();
 
 		double NDVI = NDVI(rho[2], rho[3]);
 		output.setNDVI(NDVI);
@@ -438,9 +533,11 @@ public class SEBAL {
 		//		System.out.println("IAF " + IAF);
 
 		double epsilonNB = epsilonNB(IAF);
+		output.setEpsilonNB(epsilonNB);
 		//		System.out.println("epsilonNB " + epsilonNB);
 
 		double epsilonZero = epsilonZero(IAF);
+		output.setEpsilonZero(epsilonZero);
 		//		System.out.println("epsilonZero " + epsilonZero);
 
 		double TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[5]);
@@ -459,6 +556,7 @@ public class SEBAL {
 		double Rn = Rn(alpha, RSDown, RLDown, RLUp, epsilonZero);
 		//		System.out.println("Rn " + Rn);
 		output.setRn(Rn);
+		output.setAlpha(alpha);
 
 		double G = G(TS, alpha, NDVI, Rn);
 		//		System.out.println("G " + G);

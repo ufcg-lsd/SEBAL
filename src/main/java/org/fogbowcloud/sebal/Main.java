@@ -2,6 +2,7 @@ package org.fogbowcloud.sebal;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Locale;
 
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
@@ -48,7 +49,8 @@ public class Main {
 
 	private static Image readPixels(Product product, int iBegin, int iFinal,
 			int jBegin, int jFinal) throws Exception {
-
+		
+		Locale.setDefault(Locale.ROOT);
 		DefaultImage image = new DefaultImage();
 		Elevation elevation = new Elevation();
 		WeatherStation station = new WeatherStation();
@@ -86,15 +88,16 @@ public class Main {
 //				System.out.println(i + " " + j);
 				
 				GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-				Double z = elevation.z(Double.valueOf(geoPos.getLat()),
-						Double.valueOf(geoPos.getLon()));
+				double latitude = Double.valueOf(String.format("%.6g%n", geoPos.getLat()));
+				double longitude = Double.valueOf(String.format("%.6g%n",geoPos.getLon()));
+				Double z = elevation.z(latitude, longitude);
 				imagePixel.z(z == null ? 400 : z);
 				
 				GeoLoc geoLoc = new GeoLoc();
 				geoLoc.setI(i);
 				geoLoc.setJ(j);
-				geoLoc.setLat(geoPos.getLat());
-				geoLoc.setLon(geoPos.getLon());
+				geoLoc.setLat(latitude);
+				geoLoc.setLon(longitude);
 				imagePixel.geoLoc(geoLoc);
 				
 				double Ta = station.Ta(geoPos.getLat(), geoPos.getLon(),

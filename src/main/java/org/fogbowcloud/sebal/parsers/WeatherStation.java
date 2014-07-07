@@ -225,22 +225,23 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
-		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
+//		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
+		return 4.388;
 	}
 
 	public double zx(double lat, double lon) {
 //		List<JSONObject> station = findNearestStation(lat, lon);
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
-		return 6;
+		return 6.;
 	}
 
 	public double d(double lat, double lon) {
-		return 2.67;
+		return 4. * 2/3;
 	}
 	
 	public double hc(double lat, double lon) {
-		return 4.;
+		return 4.0;
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {
