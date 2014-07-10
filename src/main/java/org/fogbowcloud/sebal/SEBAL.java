@@ -1,19 +1,25 @@
 package org.fogbowcloud.sebal;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.velocity.runtime.directive.Foreach;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
+import org.fogbowcloud.sebal.parsers.JSonParser;
+import org.json.JSONObject;
 
 public class SEBAL {
 
@@ -278,7 +284,21 @@ public class SEBAL {
 
 		ImagePixel pixelFrio = image.pixelFrio();
 		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
-		//Join
+		try {
+			Socket socket = new Socket("localhost",1234);
+//			DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
+			JSONObject pixelQuenteJSon = JSonParser.parseDefaultImagePixelToJson(pixelQuente); 	
+			OutputStreamWriter out = new OutputStreamWriter(
+					socket.getOutputStream(), StandardCharsets.UTF_8);
+			out.write(pixelQuenteJSon.toString());
+			out.flush();
+			out.close();
+			socket.close();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 
 		// TODO Escolhendo a weather station mais proxima ao pixelQuente
@@ -287,7 +307,7 @@ public class SEBAL {
 
 		double uAsterisk = uAsterisk(pixelQuente.ux(), 
 				pixelQuente.zx(), pixelQuente.d(), z0m);
-		
+
 		double u200 = u200(uAsterisk, pixelQuente.d(), z0m);
 		double d0 = pixelQuente.d();
 

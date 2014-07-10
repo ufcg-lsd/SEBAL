@@ -69,7 +69,7 @@ public class Main {
 		for (int i = 0; i < bandAt.getSceneRasterWidth(); i++) {
 			for (int j = 0; j < bandAt.getSceneRasterHeight(); j++) {
 				
-				if ((i < iBegin || i > iFinal) || (j < jBegin || j > jFinal)) {
+				if ((i < 3000 || i > 3005) || (j < 3000 || j > 3005)) {
 					continue;
 				}
 				DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -91,7 +91,7 @@ public class Main {
 				double latitude = Double.valueOf(String.format("%.6g%n", geoPos.getLat()));
 				double longitude = Double.valueOf(String.format("%.6g%n",geoPos.getLon()));
 				Double z = elevation.z(latitude, longitude);
-				imagePixel.z(z == null ? 400 : z);
+				imagePixel.z(442);
 				
 				GeoLoc geoLoc = new GeoLoc();
 				geoLoc.setI(i);
