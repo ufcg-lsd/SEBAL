@@ -1,12 +1,9 @@
 package org.fogbowcloud.sebal;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,8 +15,8 @@ import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
-import org.fogbowcloud.sebal.parsers.JSonParser;
-import org.json.JSONObject;
+import org.fogbowcloud.sebal.slave.TaskType;
+import org.python.modules.math;
 
 public class SEBAL {
 
@@ -84,20 +81,31 @@ public class SEBAL {
 	}
 
 	double IAF(double SAVI) {
-		if (SAVI == 0.69) {
+		double SAVItemp = round(SAVI, 2);
+		if (SAVItemp == 0.69) {
 			return 6.;
 		}
 		if (SAVI < 0.1) {
 			return 0;
 		}
-		return -1 * (Math.log((0.69 - SAVI) / 0.59) / 0.91); 
+		Double IAF = -1. * (Math.log((0.69 - SAVI) / 0.59) / 0.91);
+		return IAF; 
+	}
+
+	public double round(double value, int places) {
+		if (places < 0) throw new IllegalArgumentException();
+
+		BigDecimal bd = new BigDecimal(value);
+		bd = bd.setScale(places, RoundingMode.DOWN);
+		return bd.doubleValue();
 	}
 
 	double epsilonNB(double IAF) {
 		if (IAF >= 3.) {
 			return 0.98;
 		}
-		return 0.97 + 0.0033 * IAF;
+		Double epsilonNB = 0.97 + 0.0033 * IAF;
+		return epsilonNB;
 	}
 
 	double epsilonZero(double IAF) {
@@ -108,7 +116,9 @@ public class SEBAL {
 	}
 
 	double TS(double K2, double epsilonNB, double K1, double LLambda6) {
-		return K2 / Math.log((epsilonNB * K1 / LLambda6) + 1);
+
+		Double ts = K2 / Math.log((epsilonNB * K1 / LLambda6) + 1);
+		return ts;
 	}
 
 	static final double sigma = 5.67 * Math.pow(10, -8);
@@ -190,16 +200,28 @@ public class SEBAL {
 		return (Math.log(z2 / z1) - psih2xy + psih1xy) / (uAsteriskxy * k);
 	}
 
-	double ET24h(double lambda24h, double Rn24h) {
-		return lambda24h * Rn24h;
+	double ET24h(double le24h) {
+		return (le24h*86.4)/2450.;
 	}
 
 	double lambdaInst(double lambda, double ET, double Rn, double G) {
 		return (lambda * ET) / (Rn - G);
 	}
 
-	double Rn24h(double alpha, double RSDown, double tauW24h) {
-		return (1 - alpha) * RSDown - 100 * tauW24h;
+	double Rn24h(double alpha, double tauW24h) {
+		return Rsolar()*(1-alpha)-110*tauW24h;
+	}
+
+	double tau24h() {
+		return Rsolar()/Ra2();
+	}
+
+	double Rsolar() {
+		return 259.42;
+	}
+
+	double LE24h(double frEvapo, double Rn24h) {
+		return frEvapo * Rn24h;
 	}
 
 	double z0mxy(double SAVI) {
@@ -271,51 +293,62 @@ public class SEBAL {
 		return psim;
 	}
 
-	public void run(Satellite satellite, Image image, String fileName) {
-		//Start Process Pixel Thread
+	public void run(Satellite satellite, Image image, String fileName, String taskType) {
+		// Start Process Pixel Thread
+
+		if(taskType.equals(TaskType.F1) || taskType.equals(TaskType.F1F2)) {
+			image = processPixelQuentePixelFrio(image, satellite);
+		}
+
+		ImagePixel pixelQuente = image.pixelQuente();
+		ImagePixelOutput pixelQuenteOutput = pixelQuente.output();
+		ImagePixel pixelFrio = image.pixelFrio();
+		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
+
+		//		try {
+		//			Socket socket = new Socket("localhost",3000);
+		//			JSONObject pixelQuenteJSon = JSonParser.parseDefaultImagePixelToJson(pixelQuente); 	
+		//			OutputStreamWriter out = new OutputStreamWriter(
+		//					socket.getOutputStream(), StandardCharsets.UTF_8);
+		//			out.write(pixelQuenteJSon.toString());
+		//			out.flush();
+		//			out.close();
+		//			socket.close();
+		//		} catch (UnknownHostException e) {
+		//			e.printStackTrace();
+		//		} catch (IOException e) {
+		//			e.printStackTrace();
+		//		}
+
+		// TODO Escolhendo a weather station mais proxima ao pixelQuente
+		// TODO A altura da vegetacao deve ser parametrizada
+		// Task Type - F2
+		if (taskType.equals(TaskType.F2) || taskType.equals(TaskType.F1F2)) {
+			pixelHProcess(image, fileName, pixelQuente, pixelQuenteOutput, pixelFrioOutput);
+		}
+	}
+
+	public Image processPixelQuentePixelFrio(Image image, Satellite satellite) {
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
 			imagePixel.setOutput(output);
 		}
 		image.choosePixelsQuenteFrio();
+		return image;
+	}
 
-		ImagePixel pixelQuente = image.pixelQuente();
-		ImagePixelOutput pixelQuenteOutput = pixelQuente.output();
+	public void pixelHProcess(Image image, String fileName, ImagePixel pixelQuente,
+			ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput) {
 
-		ImagePixel pixelFrio = image.pixelFrio();
-		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
-		try {
-			Socket socket = new Socket("localhost",1234);
-//			DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
-			JSONObject pixelQuenteJSon = JSonParser.parseDefaultImagePixelToJson(pixelQuente); 	
-			OutputStreamWriter out = new OutputStreamWriter(
-					socket.getOutputStream(), StandardCharsets.UTF_8);
-			out.write(pixelQuenteJSon.toString());
-			out.flush();
-			out.close();
-			socket.close();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-
-		// TODO Escolhendo a weather station mais proxima ao pixelQuente
-		// TODO A altura da vegetacao deve ser parametrizada
 		double z0m = z0m(pixelQuente.hc());
-
 		double uAsterisk = uAsterisk(pixelQuente.ux(), 
 				pixelQuente.zx(), pixelQuente.d(), z0m);
-
 		double u200 = u200(uAsterisk, pixelQuente.d(), z0m);
 		double d0 = pixelQuente.d();
-
 		double Hcal = HQuente(pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
 		double z0mxy = z0mxy(pixelQuenteOutput.SAVI());
 		double uAsteriskxy = uAsteriskxy(u200, d0, z0mxy);
 		double rahxy = rahxy(uAsteriskxy);
-
 		double uAsteriskCorrxy = uAsteriskxy;
 		double rahxyCorr = Double.MAX_VALUE;
 
@@ -325,10 +358,7 @@ public class SEBAL {
 
 		List<HOutput> hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, Hcal, u200, pixelQuenteOutput,
 				pixelFrioOutput, d0, z0mxy, null , null, true, true);
-
 		//		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
-
-
 		//Run HThread
 		StringBuilder stringBuilder = createFileLines(image, hOutput);
 		createResultsFile(fileName, stringBuilder);
@@ -336,16 +366,19 @@ public class SEBAL {
 
 	private StringBuilder createFileLines(Image image, List<HOutput> listHOutput) {
 		StringBuilder stringBuilder = new StringBuilder();
-		String string = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal," +
-				"bInicial,bFinal,rahInicial,rahFinal,uInicial,uFinal,lInicial,lFinal"
-				+",g,rn,lambdaE,Ts,ndvi,savi,alpha\n";
+		String string = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal,bInicial,"
+				+ "bFinal,rahInicial,rahFinal,uInicial,uFinal,lInicial,lFinal,g,"
+				+ "rn,lambdaE,Ts,NDVI,SAVI,Alpha,L1,L2,L3,L4,L5,L6,L7,Z0mxy,"
+				+ "EpsilonZero,getEpsilonNB,RLDown,EpsilonA,RLUp,IAF,EVI,"
+				+ "RSDown,TauSW,AlphaToa,Ta,d,ux,zx,hc,fracao Evapo,tau24h,"
+				+ "rn24h,et24h,le24h\n";
 		stringBuilder.append(string);
 		StringBuilder stringBuilderElevation = new StringBuilder();
 		stringBuilderElevation.append("i,j,lat,lon,elevation\n");
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = imagePixel.output();
 			List<HOutput> hPixel = iterH(imagePixel, listHOutput);
-			//			output.setH(hPixel);
+			output.setH(hPixel.get(hPixel.size() - 1).getH());
 			double lambdaE = lambdaE(output);
 			output.setLambdaE(lambdaE);
 			imagePixel.setOutput(output);
@@ -355,7 +388,7 @@ public class SEBAL {
 			stringBuilderElevation.append(elevationOutput);
 			stringBuilder.append(generateResultLine(imagePixel, hPixel));
 		}
-		createResultsFile("result3.csv", stringBuilderElevation);
+		createResultsFile("result-elevation.csv", stringBuilderElevation);
 		return stringBuilder;
 	}
 
@@ -364,7 +397,6 @@ public class SEBAL {
 			double d0, double z0mxy, Double aQuente, Double bQuente, boolean makeCalculation, boolean isPixelQuente) {
 
 		double H = Hcal;
-		int i = 0;
 		List<HOutput> listH = new ArrayList<HOutput>();
 		while (Math.abs((1. - (rahxyCorr / rahxy)) * 100.0) > 0.01) {
 			HOutput hOutput = new HOutput();
@@ -383,7 +415,6 @@ public class SEBAL {
 			rahxy = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
 			//			double ta1 = bQuente * (pixelQuenteOutput.getTs() - 273.15);
 			//			double ta2 = aQuente * -1;
-			i++;
 
 			hOutput.setA(aQuente);
 			hOutput.setB(bQuente);
@@ -399,7 +430,6 @@ public class SEBAL {
 			double d0, double z0mxy, List<HOutput> listHOutput) {
 
 		double H;
-		int i = 0;
 		List<HOutput> listH = new ArrayList<HOutput>();
 		double uAsteriskCorrxy = uAsterisk;
 		double rahCorrxy = rahxy;
@@ -417,8 +447,7 @@ public class SEBAL {
 			double psiH1 = psiH1(L);
 			double psiH2 = psiH2(L);
 			rahCorrxy = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
-			double dTQuente = dTQuente(rahCorrxy, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
-			i++;
+			//			double dTQuente = dTQuente(rahCorrxy, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
 
 			hOutput.setA(aQuente);
 			hOutput.setB(bQuente);
@@ -446,7 +475,6 @@ public class SEBAL {
 		double rahxy = rahxy(uAsteriskxy);
 		imagePixel.output().setZ0mxy(z0mxy);
 
-		int i = 1;
 		//TODO configuracao
 		//		double H = H(aQuente, bQuente, (imagePixelOutput.getTs() - 273.15), rahxy);
 
@@ -460,9 +488,10 @@ public class SEBAL {
 		int j = imagePixel.geoLoc().getJ();
 		double lat = imagePixel.geoLoc().getLat();
 		double lon = imagePixel.geoLoc().getLon();
-		double g = imagePixel.output().G();
-		double rn = imagePixel.output().Rn();
-		double lambdaE = lambdaE(imagePixel.output());
+		ImagePixelOutput output = imagePixel.output();
+		double g = output.G();
+		double rn = output.Rn();
+		double lambdaE = lambdaE(output);
 
 		double hFinal = hOuts.get(hOuts.size() - 1).getH();
 		double hInicial = hOuts.get(0).getH();
@@ -476,15 +505,23 @@ public class SEBAL {
 		double lInicial = hOuts.get(0).getL();
 		double rahFinal = hOuts.get(hOuts.size() - 1).getRah();
 		double rahInicial = hOuts.get(0).getRah();
-
+		double rn24h = Rn24h(output.getAlpha(), tau24h());
+		double frEvapo = frEvapo(lambdaE, rn, g);
+		double le24h = LE24h(frEvapo, rn24h);
+		double et24h = ET24h(le24h);
 		return i + "," + j + "," + lat + "," + lon
 				+ "," + hInicial + "," + hFinal + "," + aInicial + "," + aFinal + "," + 
 				bInicial + "," + bFinal + "," + rahInicial + "," + rahFinal + "," +
-				uInicial + "," + uFinal + "," + lInicial + "," + lFinal + "," +g + "," + 
-				rn + "," + lambdaE + "," + imagePixel.output().getTs() + "," + imagePixel.output().getNDVI() +  
-				"," + imagePixel.output().SAVI() + "," + imagePixel.output().getAlpha() + "," + 
-				Arrays.toString(imagePixel.L()) + "," + imagePixel.output().getZ0mxy() + "," + 
-				imagePixel.output().getEpsilonZero() + "," + imagePixel.output().getEpsilonNB() + "\n";
+				uInicial + "," + uFinal + "," + lInicial + "," + lFinal + "," + g + "," + 
+				rn + "," + lambdaE + "," + output.getTs() + "," + output.getNDVI() +  
+				"," + output.SAVI() + "," + output.getAlpha() + "," + 
+				Arrays.toString(imagePixel.L()) + "," + output.getZ0mxy() + "," + 
+				output.getEpsilonZero() + "," + output.getEpsilonNB() + "," + output.getRLDown() + "," + output.getEpsilonA()
+				+ "," + output.getRLUp() + "," +  + output.getIAF() + "," + output.getEVI() + "," + output.getRSDown() 
+				+ "," + output.getTauSW() + "," + output.getAlphaToa() + "," + imagePixel.Ta() 
+				+ "," + imagePixel.d() + "," + imagePixel.ux() + "," + imagePixel.zx() 
+				+ "," + imagePixel.hc() + "," + frEvapo + "," + tau24h() 
+				+ "," + rn24h + "," + et24h + "," + le24h +  "\n";
 	}
 
 	private void createResultsFile(String fileName, StringBuilder stringBuilder) {
@@ -500,7 +537,7 @@ public class SEBAL {
 		}
 	}
 
-	public double lambdaE(ImagePixelOutput output) {
+	double lambdaE(ImagePixelOutput output) {
 		return output.Rn() - output.G() - output.getH();
 	}
 
@@ -526,17 +563,20 @@ public class SEBAL {
 		//		System.out.println("rho " + Arrays.toString(rho));
 		output.setRho(rho);
 		double alphaToa = alphaToa(rho[0], rho[1], rho[2], rho[3], rho[4], rho[6]);
+		output.setAlphaToa(alphaToa);
 		//		System.out.println("alphaToa " + alphaToa);
 
 		double tauSW = tauSW(imagePixel.z());
+		output.setTauSW(tauSW);
 		//		System.out.println("tauSW " + tauSW);
 
 		double alpha = alpha(alphaToa, tauSW);
+		output.setAlpha(alpha);
 		//		System.out.println("alpha " + alpha);
 
 		double RSDown = RSDown(imagePixel.cosTheta(), 
 				earthSunDistance.get(imagePixel.image().getDay()), tauSW);
-
+		output.setRSDown(RSDown);
 
 		double NDVI = NDVI(rho[2], rho[3]);
 		output.setNDVI(NDVI);
@@ -548,8 +588,10 @@ public class SEBAL {
 
 		double EVI = EVI(rho[0], rho[2], rho[3]);
 		//		System.out.println("EVI " + EVI);
+		output.setEVI(EVI);
 
 		double IAF = IAF(SAVI);
+		output.setIAF(IAF);
 		//		System.out.println("IAF " + IAF);
 
 		double epsilonNB = epsilonNB(IAF);
@@ -565,18 +607,20 @@ public class SEBAL {
 		//		System.out.println("TS " + TS);
 
 		double RLUp = RLUp(epsilonZero, TS);
+		output.setRLUp(RLUp);
 		//		System.out.println("RLUp " + RLUp);
 
 		double epsilonA = epsilonA(tauSW);
+		output.setEpsilonA(epsilonA);
 		//		System.out.println("epsilonA " + epsilonA);
 
 		double RLDown = RLDown(epsilonA, imagePixel.Ta());
+		output.setRLDown(RLDown);
 		//		System.out.println("RLDown " + RLDown);
 
 		double Rn = Rn(alpha, RSDown, RLDown, RLUp, epsilonZero);
 		//		System.out.println("Rn " + Rn);
 		output.setRn(Rn);
-		output.setAlpha(alpha);
 
 		double G = G(TS, alpha, NDVI, Rn);
 		//		System.out.println("G " + G);
@@ -584,4 +628,45 @@ public class SEBAL {
 
 		return output;
 	}
+
+	private double Gsc() {
+		return 0.082;
+	}
+
+	//	private double dr() {
+	//		return 1+0.33*math.cos((2*Math.PI/365)*DDA());
+	//	}
+
+	private double omegaR() {
+		return Math.acos((-1 * Math.tan(phi1()))*Math.tan(delta()));
+	}
+
+	private double phi1() {
+		return Math.PI/180*phi2();
+	}
+
+	private double delta() {
+		return 0.409*Math.sin(((2*Math.PI/365)*DDA())-1.39);
+	}
+
+	private double DDA() {
+		return 135;
+	}
+
+	private double phi2() {
+		return -7.379;
+	}
+
+	private double Ra1() {
+		return ((24*60/Math.PI)*Gsc()*DDA())*(omegaR()*Math.sin(phi1())*math.sin(delta())+Math.cos(phi1())*math.cos(delta())*math.sin(omegaR()));
+	}
+
+	private double Ra2() {
+		return Ra1()/11.57;
+	}
+
+	private double frEvapo(double lambdaE, double Rn, double G) {
+		return lambdaE/(Rn-G);
+	}
+
 }

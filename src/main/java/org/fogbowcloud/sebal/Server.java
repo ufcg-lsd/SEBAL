@@ -27,6 +27,7 @@ public class Server extends Thread {
 			new Thread(new Server(sock)).start();
 		}
 	}
+	
 	public void run() {
 		try {
 		    BufferedReader streamReader = new BufferedReader(

@@ -14,6 +14,14 @@ public class ImagePixelOutput {
 	private double epsilonZero;
 	private double z0mxy;
 	private double[] rho;
+	private double RLDown;
+	private double epsilonA;
+	private double RLUp;
+	private double IAF;
+	private double EVI;
+	private double RSDown;
+	private double tauSW;
+	private double alphaToa;
 
 	public double getNDVI() {
 		return NDVI;
@@ -109,5 +117,69 @@ public class ImagePixelOutput {
 
 	public void setRho(double[] rho) {
 		this.rho = rho;
+	}
+
+	public double getRLDown() {
+		return RLDown;
+	}
+
+	public void setRLDown(double rLDown) {
+		RLDown = rLDown;
+	}
+
+	public double getEpsilonA() {
+		return epsilonA;
+	}
+
+	public void setEpsilonA(double epsilonA) {
+		this.epsilonA = epsilonA;
+	}
+
+	public double getRLUp() {
+		return RLUp;
+	}
+
+	public void setRLUp(double rLUp) {
+		RLUp = rLUp;
+	}
+
+	public double getIAF() {
+		return IAF;
+	}
+
+	public void setIAF(double iAF) {
+		IAF = iAF;
+	}
+
+	public double getEVI() {
+		return EVI;
+	}
+
+	public void setEVI(double eVI) {
+		EVI = eVI;
+	}
+
+	public double getRSDown() {
+		return RSDown;
+	}
+
+	public void setRSDown(double rSDown) {
+		RSDown = rSDown;
+	}
+
+	public double getTauSW() {
+		return tauSW;
+	}
+
+	public void setTauSW(double tauSW) {
+		this.tauSW = tauSW;
+	}
+
+	public double getAlphaToa() {
+		return alphaToa;
+	}
+
+	public void setAlphaToa(double alphaToa) {
+		this.alphaToa = alphaToa;
 	}
 }

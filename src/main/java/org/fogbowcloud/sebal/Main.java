@@ -19,6 +19,8 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
+import org.fogbowcloud.sebal.slave.Slave;
+import org.fogbowcloud.sebal.slave.TaskType;
 
 public class Main {
 
@@ -39,8 +41,10 @@ public class Main {
 		long begin = System.currentTimeMillis();
 		try {
 			Image image = readPixels(product,  iBegin, iFinal, jBegin, jFinal);
-			SEBAL sebal = new SEBAL();
-			sebal.run(new JSONSatellite("landsat5"), image, fileName);
+			Slave slave = new Slave(new JSONSatellite("landsat5"), image, fileName);
+			slave.doTask(TaskType.F1F2);
+//			SEBAL sebal = new SEBAL();
+//			sebal.run(new JSONSatellite("landsat5"), image, fileName, TaskType.F1F2);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -69,7 +73,7 @@ public class Main {
 		for (int i = 0; i < bandAt.getSceneRasterWidth(); i++) {
 			for (int j = 0; j < bandAt.getSceneRasterHeight(); j++) {
 				
-				if ((i < 3000 || i > 3005) || (j < 3000 || j > 3005)) {
+				if ((i < iBegin || i > iFinal) || (j < jBegin || j > jFinal)) {
 					continue;
 				}
 				DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -88,10 +92,10 @@ public class Main {
 //				System.out.println(i + " " + j);
 				
 				GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-				double latitude = Double.valueOf(String.format("%.6g%n", geoPos.getLat()));
-				double longitude = Double.valueOf(String.format("%.6g%n",geoPos.getLon()));
+				double latitude = Double.valueOf(String.format("%.10g%n", geoPos.getLat()));
+				double longitude = Double.valueOf(String.format("%.10g%n",geoPos.getLon()));
 				Double z = elevation.z(latitude, longitude);
-				imagePixel.z(442);
+				imagePixel.z(z == null ? 400 : z);
 				
 				GeoLoc geoLoc = new GeoLoc();
 				geoLoc.setI(i);

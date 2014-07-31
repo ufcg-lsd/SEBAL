@@ -216,7 +216,9 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
-		return Double.parseDouble(record.optString("TempBulboSeco"));
+//		return Double.parseDouble(record.optString("TempBulboSeco"));
+		return 32.23;
+	
 	}
 	
 	public double ux(double lat, double lon, Date date) {

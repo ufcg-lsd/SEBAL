@@ -51,15 +51,15 @@ public class DefaultImage implements Image {
 		pixelQuenteLocal.d(4.0* (2./3.));
 		
 		ImagePixelOutput outputQuente = new ImagePixelOutput();
-		outputQuente.setG(92.179811);
-		outputQuente.setRn(470.456451);
-		outputQuente.setSAVI(0.162594);
-		outputQuente.setTs(35.23 + 273.15);
+		outputQuente.setG(89.352632);
+		outputQuente.setRn(449.55188);
+		outputQuente.setSAVI(0.148563);
+		outputQuente.setTs(35.8928340 + 273.15);
 		pixelQuenteLocal.setOutput(outputQuente);
 		
 		DefaultImagePixel pixelFrioLocal = new DefaultImagePixel();
 		ImagePixelOutput outputFrio = new ImagePixelOutput();
-		outputFrio.setTs(26.65 + 273.15);
+		outputFrio.setTs(26.4577440 + 273.15);
 		pixelFrioLocal.setOutput(outputFrio);
 		
 		this.pixelQuente = pixelQuenteLocal;
