@@ -293,41 +293,6 @@ public class SEBAL {
 		return psim;
 	}
 
-	public void run(Satellite satellite, Image image, String fileName, String taskType) {
-		// Start Process Pixel Thread
-
-		if(taskType.equals(TaskType.F1) || taskType.equals(TaskType.F1F2)) {
-			image = processPixelQuentePixelFrio(image, satellite);
-		}
-
-		ImagePixel pixelQuente = image.pixelQuente();
-		ImagePixelOutput pixelQuenteOutput = pixelQuente.output();
-		ImagePixel pixelFrio = image.pixelFrio();
-		ImagePixelOutput pixelFrioOutput = pixelFrio.output();
-
-		//		try {
-		//			Socket socket = new Socket("localhost",3000);
-		//			JSONObject pixelQuenteJSon = JSonParser.parseDefaultImagePixelToJson(pixelQuente); 	
-		//			OutputStreamWriter out = new OutputStreamWriter(
-		//					socket.getOutputStream(), StandardCharsets.UTF_8);
-		//			out.write(pixelQuenteJSon.toString());
-		//			out.flush();
-		//			out.close();
-		//			socket.close();
-		//		} catch (UnknownHostException e) {
-		//			e.printStackTrace();
-		//		} catch (IOException e) {
-		//			e.printStackTrace();
-		//		}
-
-		// TODO Escolhendo a weather station mais proxima ao pixelQuente
-		// TODO A altura da vegetacao deve ser parametrizada
-		// Task Type - F2
-		if (taskType.equals(TaskType.F2) || taskType.equals(TaskType.F1F2)) {
-			pixelHProcess(image, fileName, pixelQuente, pixelQuenteOutput, pixelFrioOutput);
-		}
-	}
-
 	public Image processPixelQuentePixelFrio(Image image, Satellite satellite) {
 		for (ImagePixel imagePixel : image.pixels()) {
 			ImagePixelOutput output = processPixel(satellite, imagePixel);
@@ -337,8 +302,8 @@ public class SEBAL {
 		return image;
 	}
 
-	public void pixelHProcess(Image image, String fileName, ImagePixel pixelQuente,
-			ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput) {
+	public Image pixelHProcess(List<ImagePixel> pixels, ImagePixel pixelQuente,
+			ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput, Image image) {
 
 		double z0m = z0m(pixelQuente.hc());
 		double uAsterisk = uAsterisk(pixelQuente.ux(), 
@@ -357,44 +322,39 @@ public class SEBAL {
 		//		double H = Hcal;
 
 		List<HOutput> hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, Hcal, u200, pixelQuenteOutput,
-				pixelFrioOutput, d0, z0mxy, null , null, true, true);
+				pixelFrioOutput, d0, z0mxy);
 		//		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
 		//Run HThread
-		StringBuilder stringBuilder = createFileLines(image, hOutput);
-		createResultsFile(fileName, stringBuilder);
+		Image updatedImage = hPixelProces(pixels, hOutput, image);
+		return updatedImage;
 	}
 
-	private StringBuilder createFileLines(Image image, List<HOutput> listHOutput) {
-		StringBuilder stringBuilder = new StringBuilder();
-		String string = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal,bInicial,"
-				+ "bFinal,rahInicial,rahFinal,uInicial,uFinal,lInicial,lFinal,g,"
-				+ "rn,lambdaE,Ts,NDVI,SAVI,Alpha,L1,L2,L3,L4,L5,L6,L7,Z0mxy,"
-				+ "EpsilonZero,getEpsilonNB,RLDown,EpsilonA,RLUp,IAF,EVI,"
-				+ "RSDown,TauSW,AlphaToa,Ta,d,ux,zx,hc,fracao Evapo,tau24h,"
-				+ "rn24h,et24h,le24h\n";
-		stringBuilder.append(string);
-		StringBuilder stringBuilderElevation = new StringBuilder();
-		stringBuilderElevation.append("i,j,lat,lon,elevation\n");
-		for (ImagePixel imagePixel : image.pixels()) {
+	private Image hPixelProces(List<ImagePixel> pixels, List<HOutput> listHOutput, Image image) {
+		for (int i = 0; i < pixels.size(); i ++) {
+			ImagePixel imagePixel = pixels.get(i);
 			ImagePixelOutput output = imagePixel.output();
-			List<HOutput> hPixel = iterH(imagePixel, listHOutput);
-			output.setH(hPixel.get(hPixel.size() - 1).getH());
+			List<HOutput> hOutPixel = iterH(imagePixel, listHOutput);
+			output.sethOuts(hOutPixel);
+			output.setH(hOutPixel.get(hOutPixel.size() - 1).getH());
 			double lambdaE = lambdaE(output);
 			output.setLambdaE(lambdaE);
+			output.sethOuts(hOutPixel);
 			imagePixel.setOutput(output);
-			String elevationOutput = imagePixel.geoLoc().getI() + "," + imagePixel.geoLoc().getJ()
-					+ "," + imagePixel.geoLoc().getLat() + "," + imagePixel.geoLoc().getLon()
-					+ "," + imagePixel.z() + "\n";
-			stringBuilderElevation.append(elevationOutput);
-			stringBuilder.append(generateResultLine(imagePixel, hPixel));
+			output.setRn24h(Rn24h(output.getAlpha(), tau24h()));
+			output.setFrEvapo(frEvapo(lambdaE, output.Rn(), output.G()));
+			output.setLambda24h(LE24h(output.getFrEvapo(), output.getRn24h()));
+			output.setEvapo24h(ET24h(output.getLambda24h()));
+			output.setTau24h(tau24h());
+			pixels.remove(i);
+			pixels.add(i,imagePixel);
 		}
-		createResultsFile("result-elevation.csv", stringBuilderElevation);
-		return stringBuilder;
+		image.pixels(pixels);
+		return image;
 	}
 
 	public List<HOutput> hOutput(double rahxyCorr, double rahxy, double uAsteriskCorrxy, double Hcal,
 			double u200, ImagePixelOutput pixelQuenteOutput, ImagePixelOutput pixelFrioOutput,
-			double d0, double z0mxy, Double aQuente, Double bQuente, boolean makeCalculation, boolean isPixelQuente) {
+			double d0, double z0mxy) {
 
 		double H = Hcal;
 		List<HOutput> listH = new ArrayList<HOutput>();
@@ -408,8 +368,8 @@ public class SEBAL {
 			double psiH1 = psiH1(L);
 			double psiH2 = psiH2(L);
 			double dTQuente = dTQuente(rahxy, pixelQuenteOutput.Rn(), pixelQuenteOutput.G());
-			bQuente = b(pixelQuenteOutput, pixelFrioOutput, dTQuente); 
-			aQuente =  a(bQuente, pixelFrioOutput.getTs() - 273.15);
+			double bQuente = b(pixelQuenteOutput, pixelFrioOutput, dTQuente); 
+			double aQuente =  a(bQuente, pixelFrioOutput.getTs() - 273.15);
 			H = H(aQuente, bQuente, (pixelQuenteOutput.getTs()- 273.15), rahxy); 
 			rahxyCorr = rahxy;
 			rahxy = rahCorrxy(psiH1, psiH2, uAsteriskCorrxy);
@@ -481,60 +441,6 @@ public class SEBAL {
 		List<HOutput> hOutput = hOutputPixel(uAsterisk, rahxy, u200, imagePixelOutput,
 				imagePixelOutput, d0, z0mxy, listHOutput);
 		return hOutput;
-	}
-
-	public String generateResultLine(ImagePixel imagePixel, List<HOutput> hOuts) {
-		int i = imagePixel.geoLoc().getI();
-		int j = imagePixel.geoLoc().getJ();
-		double lat = imagePixel.geoLoc().getLat();
-		double lon = imagePixel.geoLoc().getLon();
-		ImagePixelOutput output = imagePixel.output();
-		double g = output.G();
-		double rn = output.Rn();
-		double lambdaE = lambdaE(output);
-
-		double hFinal = hOuts.get(hOuts.size() - 1).getH();
-		double hInicial = hOuts.get(0).getH();
-		double aFinal = hOuts.get(hOuts.size() - 1).getA();
-		double aInicial = hOuts.get(0).getA();
-		double bFinal = hOuts.get(hOuts.size() - 1).getB();
-		double bInicial = hOuts.get(0).getB();
-		double uFinal = hOuts.get(hOuts.size() - 1).getuAsterisk();
-		double uInicial = hOuts.get(0).getuAsterisk();
-		double lFinal = hOuts.get(hOuts.size() - 1).getL();
-		double lInicial = hOuts.get(0).getL();
-		double rahFinal = hOuts.get(hOuts.size() - 1).getRah();
-		double rahInicial = hOuts.get(0).getRah();
-		double rn24h = Rn24h(output.getAlpha(), tau24h());
-		double frEvapo = frEvapo(lambdaE, rn, g);
-		double le24h = LE24h(frEvapo, rn24h);
-		double et24h = ET24h(le24h);
-		return i + "," + j + "," + lat + "," + lon
-				+ "," + hInicial + "," + hFinal + "," + aInicial + "," + aFinal + "," + 
-				bInicial + "," + bFinal + "," + rahInicial + "," + rahFinal + "," +
-				uInicial + "," + uFinal + "," + lInicial + "," + lFinal + "," + g + "," + 
-				rn + "," + lambdaE + "," + output.getTs() + "," + output.getNDVI() +  
-				"," + output.SAVI() + "," + output.getAlpha() + "," + 
-				Arrays.toString(imagePixel.L()) + "," + output.getZ0mxy() + "," + 
-				output.getEpsilonZero() + "," + output.getEpsilonNB() + "," + output.getRLDown() + "," + output.getEpsilonA()
-				+ "," + output.getRLUp() + "," +  + output.getIAF() + "," + output.getEVI() + "," + output.getRSDown() 
-				+ "," + output.getTauSW() + "," + output.getAlphaToa() + "," + imagePixel.Ta() 
-				+ "," + imagePixel.d() + "," + imagePixel.ux() + "," + imagePixel.zx() 
-				+ "," + imagePixel.hc() + "," + frEvapo + "," + tau24h() 
-				+ "," + rn24h + "," + et24h + "," + le24h +  "\n";
-	}
-
-	private void createResultsFile(String fileName, StringBuilder stringBuilder) {
-		File file = new File(fileName);
-		if (file.exists()) {
-			file.delete();
-		}
-		try {
-			FileUtils.writeStringToFile(file, stringBuilder.toString());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	double lambdaE(ImagePixelOutput output) {

@@ -6,6 +6,16 @@ public class GeoLoc {
 	private double lat;
 	private double lon;
 	
+	public GeoLoc(int i, int j, double lat, double lon) {
+		this.i = i;
+		this.j = j;
+		this.lat = lat;
+		this.lon = lon;
+	}
+
+	public GeoLoc() {
+	}
+
 	public double getLon() {
 		return lon;
 	}

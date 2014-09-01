@@ -8,9 +8,15 @@ public interface Image {
 	
 	List<ImagePixel> pixels();
 	
+	void pixels(List<ImagePixel> pixels);
+	
 	ImagePixel pixelFrio();
 	
+	void pixelFrio(ImagePixel pixelFrio);
+	
 	ImagePixel pixelQuente();
+	
+	void pixelQuente(ImagePixel pixelQuente);
 
 	void choosePixelsQuenteFrio();
 }

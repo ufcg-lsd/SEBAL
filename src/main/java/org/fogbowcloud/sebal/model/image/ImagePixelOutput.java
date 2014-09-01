@@ -1,5 +1,7 @@
 package org.fogbowcloud.sebal.model.image;
 
+import java.util.List;
+
 public class ImagePixelOutput {
 
 	private double NDVI;
@@ -22,6 +24,13 @@ public class ImagePixelOutput {
 	private double RSDown;
 	private double tauSW;
 	private double alphaToa;
+	private double evapo24h;
+	private double frEvapo;
+	private double lambda24h;
+	private List<HOutput> hOuts;
+	private double tau24h;
+	private double rn24h;
+	
 
 	public double getNDVI() {
 		return NDVI;
@@ -182,4 +191,53 @@ public class ImagePixelOutput {
 	public void setAlphaToa(double alphaToa) {
 		this.alphaToa = alphaToa;
 	}
+
+	public double getEvapo24h() {
+		return evapo24h;
+	}
+
+	public void setEvapo24h(double evapo24h) {
+		this.evapo24h = evapo24h;
+	}
+
+	public double getFrEvapo() {
+		return frEvapo;
+	}
+
+	public void setFrEvapo(double frEvapo) {
+		this.frEvapo = frEvapo;
+	}
+
+	public double getLambda24h() {
+		return lambda24h;
+	}
+
+	public void setLambda24h(double lambda24h) {
+		this.lambda24h = lambda24h;
+	}
+
+	public List<HOutput> gethOuts() {
+		return hOuts;
+	}
+
+	public void sethOuts(List<HOutput> hOuts) {
+		this.hOuts = hOuts;
+	}
+
+	public double getRn24h() {
+		return rn24h;
+	}
+
+	public void setRn24h(double rn24h) {
+		this.rn24h = rn24h;
+	}
+
+	public double getTau24h() {
+		return tau24h;
+	}
+
+	public void setTau24h(double tau24h) {
+		this.tau24h = tau24h;
+	}
+
 }

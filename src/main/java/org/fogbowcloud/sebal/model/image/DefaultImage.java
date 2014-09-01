@@ -80,4 +80,19 @@ public class DefaultImage implements Image {
 		this.day = day;
 	}
 
+	@Override
+	public void pixels(List<ImagePixel> pixels) {
+		this.pixels = pixels;
+	}
+
+	@Override
+	public void pixelFrio(ImagePixel pixelFrio) {
+		this.pixelFrio = pixelFrio;
+	}
+
+	@Override
+	public void pixelQuente(ImagePixel pixelQuente) {
+		this.pixelQuente = pixelQuente;
+	}
+
 }
