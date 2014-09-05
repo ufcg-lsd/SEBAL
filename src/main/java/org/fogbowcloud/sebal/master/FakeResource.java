@@ -40,7 +40,7 @@ public class FakeResource implements Resource {
 			try {
 				br = new BufferedReader(new FileReader(file));
 				String line = null;
-				String lastLine = null;
+				String lastLine = "1";
 				while ((line = br.readLine()) != null) {
 					lastLine = line;
 				}

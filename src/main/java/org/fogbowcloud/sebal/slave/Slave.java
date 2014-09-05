@@ -28,47 +28,60 @@ public class Slave {
 	private int iFinal;
 	private int jBegin;
 	private int jFinal;
+	private String mtlName;
 
-	public Slave(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal) {
+	public Slave(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName) {
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
 		this.jBegin = jBegin;
 		this.jFinal = jFinal;
+		this.mtlName = mtlName;
 	}
 
 	public void doTask(String taskType) throws Exception {
-		if (taskType.equalsIgnoreCase(TaskType.F1))  {
-			String exitFileName = mtlFile + "." + iBegin + "." + iFinal + ".exit.F1";
+		if (taskType.equalsIgnoreCase(TaskType.F1)) {
+			String exitFileName = mtlName + File.separator + iBegin + "." + iFinal
+					+ ".exit.F1";
 			try {
 				F1();
 				StringBuilder stringBuilder = new StringBuilder();
 				stringBuilder.append("0");
 				createResultsFile(exitFileName, stringBuilder);
-			} catch (IOException e) {
+			} catch (Throwable e) {
 				StringBuilder stringBuilder = new StringBuilder();
 				stringBuilder.append("1");
 				createResultsFile(exitFileName, stringBuilder);
 			}
-		}
-			else if (taskType.equalsIgnoreCase(TaskType.F2))  {
-				String exitFileName = mtlFile + "." + iBegin + "." + iFinal + ".exit.F2";
-				try {
-					F2();
-					StringBuilder stringBuilder = new StringBuilder();
-					stringBuilder.append("0");
-					createResultsFile(exitFileName, stringBuilder);
-				} catch (IOException e) {
-					StringBuilder stringBuilder = new StringBuilder();
-					stringBuilder.append("1");
-					createResultsFile(exitFileName, stringBuilder);
-				}
+		} else if (taskType.equalsIgnoreCase(TaskType.C)) {
+			String exitFileName = mtlName + "/" + "exit.cpixels";
+			try {
+				C();
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append("0");
+				createResultsFile(exitFileName, stringBuilder);
+			} catch (Throwable e) {
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append("1");
+				createResultsFile(exitFileName, stringBuilder);
 			}
-
-			else if (taskType.equalsIgnoreCase(TaskType.F1F2))  {
-				F1F2();
+		}else if (taskType.equalsIgnoreCase(TaskType.F2)) {
+			String exitFileName = mtlName + File.separator + iBegin + "." + iFinal
+					+ ".exit.F2";
+			try {
+				F2();
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append("0");
+				createResultsFile(exitFileName, stringBuilder);
+			} catch (Throwable e) {
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append("1");
+				createResultsFile(exitFileName, stringBuilder);
 			}
+		}else if (taskType.equalsIgnoreCase(TaskType.F1F2)) {
+			F1F2();
 		}
+	}
 
 	public void F1() throws Exception {
 		Product product = SEBALHelper.readProduct(mtlFile);
@@ -78,22 +91,26 @@ public class Slave {
 		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
 				satellite);
 		saveProcessOutput(updatedImage);
-		savePixelQuente(updatedImage);
-		savePixelFrio(updatedImage);
+		savePixelQuente(updatedImage, getPixelQuenteFileName());
+		savePixelFrio(updatedImage, getPixelFrioFileName());
 	}
 
-	private void savePixelFrio(Image updatedImage) {
+	private void savePixelFrio(Image updatedImage, String fileName) {
 		StringBuilder stringBuilder = new StringBuilder();
 
 		ImagePixel pixelFrio = updatedImage.pixelFrio();
 		String line = generatePixelFrioResultLine(pixelFrio);
 		stringBuilder.append(line);
 
-		createResultsFile(getPixelFrioFileName(), stringBuilder);
+		createResultsFile(fileName, stringBuilder);
 	}
 
 	private String getPixelFrioFileName() {
-		return mtlFile + "." + iBegin + "." + iFinal + ".frio.csv";
+		return mtlName + File.separator+ iBegin + "." + iFinal + ".frio.csv";
+	}
+	
+	private String getPixelFrioFinalFileName() {
+		return mtlName + File.separator+ "frio.csv";
 	}
 
 	private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
@@ -102,18 +119,50 @@ public class Slave {
 		return pixelFrioOutput;
 	}
 
-	private void savePixelQuente(Image updatedImage) {
+	private void savePixelQuente(Image updatedImage, String fileName) {
 		StringBuilder stringBuilder = new StringBuilder();
 
 		ImagePixel pixelQuente = updatedImage.pixelQuente();
 		String line = generatePixelQuenteResultLine(pixelQuente);
 		stringBuilder.append(line);
 
-		createResultsFile(getPixelQuenteFileName(), stringBuilder);
+		createResultsFile(fileName, stringBuilder);
+	}
+
+	private List<ImagePixel> getAllPixelsQuente() throws IOException {
+		File folder = new File(mtlName + File.separator);
+		File[] listOfFiles = folder.listFiles();
+		List<ImagePixel> pixelsQuente = new ArrayList<ImagePixel>();
+		
+		for (File file : listOfFiles) {
+			if (file.isFile() && file.getName().contains("quente.csv")) {
+				ImagePixel pixelQuente = processPixelQuenteFromFile(file.getAbsolutePath());
+				pixelsQuente.add(pixelQuente);
+			}
+		}
+		return pixelsQuente;
+	}
+
+	private List<ImagePixel> getAllPixelsFrio() throws IOException {
+		File folder = new File(mtlName + File.separator);
+		File[] listOfFiles = folder.listFiles();
+		List<ImagePixel> pixelsFrio = new ArrayList<ImagePixel>();
+		
+		for (File file : listOfFiles) {
+			if (file.isFile() && file.getName().contains("frio.csv")) {
+				ImagePixel pixelFrio = processPixelFrioFromFile(file.getAbsolutePath());
+				pixelsFrio.add(pixelFrio);
+			}
+		}
+		return pixelsFrio;
 	}
 
 	private String getPixelQuenteFileName() {
-		return mtlFile + "." + iBegin + "." + iFinal + ".quente.csv";
+		return mtlName + File.separator + iBegin + "." + iFinal + ".quente.csv";
+	}
+	
+	private String getFinalPixelQuenteFileName() {
+		return mtlName + File.separator + "quente.csv";
 	}
 
 	private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
@@ -136,7 +185,7 @@ public class Slave {
 	}
 
 	private String getAllPixelsFileName() {
-		return mtlFile + "." + iBegin + "." + iFinal + ".pixels.csv";
+		return mtlName + File.separator + iBegin + "." + iFinal + ".pixels.csv";
 	}
 
 	private void createResultsFile(String fileName, StringBuilder stringBuilder) {
@@ -182,13 +231,24 @@ public class Slave {
 	}
 
 	public void F2() throws Exception {
-		ImagePixel pixelQuente = processPixelQuenteFromFile();
-		ImagePixel pixelFrio = processPixelFrioFromFile();
+		ImagePixel pixelQuente = processPixelQuenteFromFile(getFinalPixelQuenteFileName());
+		ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName());
 		List<ImagePixel> pixels = processPixelsFromFile();
 		Image image = SEBALHelper.readPixels(pixels, pixelQuente, pixelFrio);
 		image = new SEBAL().pixelHProcess(pixels, pixelQuente,
 				pixelQuente.output(), pixelFrio.output(), image);
 		saveFinalProcessOutput(image);
+	}
+	
+	public void C() {
+		try {
+			Image image = SEBALHelper.readPixels(getAllPixelsQuente(), getAllPixelsFrio());
+			image.choosePixelsQuenteFrio();
+			savePixelFrio(image, mtlName + "/" + "frio.csv");
+			savePixelQuente(image, mtlName + "/" + "quente.csv");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void saveFinalProcessOutput(Image updatedImage) {
@@ -209,7 +269,7 @@ public class Slave {
 	}
 
 	public String getFinaLResultFileName() {
-		return mtlFile + "." + iBegin + "." + iFinal + ".F2.csv";
+		return mtlName + File.separator + iBegin + "." + iFinal + ".F2.csv";
 	}
 
 	public String generateFinalResultLine(ImagePixel imagePixel) {
@@ -316,7 +376,7 @@ public class Slave {
 		return geoloc;
 	}
 
-	private ImagePixel processPixelFrioFromFile() throws IOException {
+	private ImagePixel processPixelFrioFromFile(String filePath) throws IOException {
 		return processSinglePixelFile(new PixelParser() {
 			@Override
 			public ImagePixel parseLine(String[] fields) {
@@ -326,7 +386,7 @@ public class Slave {
 				pixelFrio.setOutput(outputFrio);
 				return pixelFrio;
 			}
-		}, getPixelFrioFileName());
+		}, filePath);
 	}
 
 	interface PixelParser {
@@ -353,7 +413,7 @@ public class Slave {
 		return allPixels.isEmpty() ? null : allPixels.get(0);
 	}
 
-	private ImagePixel processPixelQuenteFromFile() throws IOException {
+	private ImagePixel processPixelQuenteFromFile(String fileName) throws IOException {
 		return processSinglePixelFile(new PixelParser() {
 			@Override
 			public ImagePixel parseLine(String[] fields) {
@@ -371,7 +431,7 @@ public class Slave {
 				pixelQuente.setOutput(outputQuente);
 				return pixelQuente;
 			}
-		}, getPixelQuenteFileName());
+		}, fileName);
 	}
 
 	public void F1F2() {

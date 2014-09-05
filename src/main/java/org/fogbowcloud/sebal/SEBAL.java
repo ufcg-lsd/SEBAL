@@ -1,21 +1,16 @@
 package org.fogbowcloud.sebal;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
-import org.fogbowcloud.sebal.slave.TaskType;
 import org.python.modules.math;
 
 public class SEBAL {
@@ -317,14 +312,10 @@ public class SEBAL {
 		double uAsteriskCorrxy = uAsteriskxy;
 		double rahxyCorr = Double.MAX_VALUE;
 
-		//		int i = 1;
 		//TODO configuracao
-		//		double H = Hcal;
 
 		List<HOutput> hOutput = hOutput(rahxyCorr, rahxy, uAsteriskCorrxy, Hcal, u200, pixelQuenteOutput,
 				pixelFrioOutput, d0, z0mxy);
-		//		double H = H(pixelQuenteOutput.getTs(), pixelFrioOutput.getTs(), rahxyCorr);
-		//Run HThread
 		Image updatedImage = hPixelProces(pixels, hOutput, image);
 		return updatedImage;
 	}
@@ -436,7 +427,6 @@ public class SEBAL {
 		imagePixel.output().setZ0mxy(z0mxy);
 
 		//TODO configuracao
-		//		double H = H(aQuente, bQuente, (imagePixelOutput.getTs() - 273.15), rahxy);
 
 		List<HOutput> hOutput = hOutputPixel(uAsterisk, rahxy, u200, imagePixelOutput,
 				imagePixelOutput, d0, z0mxy, listHOutput);

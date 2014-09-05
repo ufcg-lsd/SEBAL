@@ -29,7 +29,7 @@
 						</configuration>
 					</execution>
 				</executions>
-		    </plugin>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -56,6 +56,11 @@
 	</repositories>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.fogbowcloud</groupId>
+			<artifactId>manager</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>

@@ -1,5 +1,7 @@
 package org.fogbowcloud.sebal.master;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +11,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.apache.http.HttpException;
+import org.junit.internal.runners.model.EachTestNotifier;
 
 public class Master implements MasterListener {
 
@@ -25,6 +30,7 @@ public class Master implements MasterListener {
 	private ReentrantReadWriteLock taskLock = new ReentrantReadWriteLock();
 	private final ExecutorService scheduledExecutorService = Executors
 			.newFixedThreadPool(30);
+
 	public Master(List<Statement> statements) {
 		this.statements.add(generateResourceStatement());
 		this.statements.add(allocateResourceStatement());
@@ -32,15 +38,15 @@ public class Master implements MasterListener {
 		this.statements.addAll(statements);
 		this.listener = this;
 		this.resourceManager = new FakeResourceManager(this);
-		ScheduledExecutorService scheduledExecutorService = Executors
-				.newScheduledThreadPool(1);
-
-		scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-			@Override
-			public void run() {
-				listener.stateChanged(Master.this);
-			}
-		}, INITITAL_DELAY, PERIOD, TimeUnit.SECONDS);
+//		ScheduledExecutorService scheduledExecutorService = Executors
+//				.newScheduledThreadPool(1);
+//
+//		scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+//			@Override
+//			public void run() {
+//				listener.stateChanged(Master.this);
+//			}
+//		}, INITITAL_DELAY, PERIOD, TimeUnit.SECONDS);
 	}
 
 	public List<Resource> getResources() {
@@ -58,11 +64,24 @@ public class Master implements MasterListener {
 	}
 
 	public void addTask(Task t) {
-		taskLock.writeLock().lock();
-		tasks.add(t);
-		taskState.put(t, Task.State.OPEN);
-		taskLock.writeLock().unlock();
-		listener.stateChanged(this);
+		if (t.getMetadata("Phase").equals("C") && checkAlreadyExistCPhaseTask()) {
+
+		} else {
+			taskLock.writeLock().lock();
+			tasks.add(t);
+			taskState.put(t, Task.State.OPEN);
+			taskLock.writeLock().unlock();
+			listener.stateChanged(this);
+		}
+	}
+
+	private boolean checkAlreadyExistCPhaseTask() {
+		for (Task task : getTasks()) {
+			if (task.getMetadata("Phase").equals("C")) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void addResource(Resource r) {
@@ -92,19 +111,32 @@ public class Master implements MasterListener {
 
 			@Override
 			public void doAction(Master m) {
-				for (int i = 0; i < tasks.size() - getNumberOfIdleResources(); i++) {
-					resourceManager.askForResource();
+				for (int i = 0; i < getNumberOfOpenTask() - getNumberOfIdleResources(); i++) {
+					try {
+						resourceManager.askForResource();
+					} catch (Exception e) {
+					}
 				}
 			}
 
 			@Override
 			public boolean apply(Master m) {
-				return tasks.size() > getNumberOfIdleResources();
+				return getNumberOfOpenTask() > getNumberOfIdleResources();
 			}
 		};
 		return statement;
 	}
 	
+	private int getNumberOfOpenTask() {
+		int i = 0;
+		for (Task task : getTasks()) {
+			if (getTaskState(task.getId()).equals(Task.State.OPEN)) {
+				i ++;
+			}
+		}
+		return i;
+	}
+
 	private int getNumberOfIdleResources() {
 		int i = 0;
 		for (Resource resource : getResources()) {
@@ -147,8 +179,11 @@ public class Master implements MasterListener {
 
 	private void changeTaskStateToFinished() {
 		for (Task task : getTasks()) {
-			if (task.getResource().getExitValue().equals(0)) {
-				setTaskState(task.getId(), Task.State.FINISHED);
+			if (getTaskState(task.getId()).equals(Task.State.RUNNING)) {
+				Integer exitValue = task.getResource().getExitValue();
+				if (exitValue.equals(0)) {
+					setTaskState(task.getId(), Task.State.FINISHED);
+				}
 			}
 		}
 	}

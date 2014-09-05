@@ -2,6 +2,7 @@ package org.fogbowcloud.sebal;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,15 @@ public class SEBALHelper {
 		image.pixels(pixels);
 		image.pixelQuente(pixelQuente);
 		image.pixelFrio(pixelFrio);
+		return image;
+	}
+	
+	public static Image readPixels(List<ImagePixel> pixelsQuente, List<ImagePixel> pixelsFrio) { 
+		DefaultImage image = new DefaultImage();
+		List<ImagePixel> pixels = new ArrayList<ImagePixel>();
+		pixels.addAll(pixelsFrio);
+		pixels.addAll(pixelsQuente);
+		image.pixels(pixels);
 		return image;
 	}
 	

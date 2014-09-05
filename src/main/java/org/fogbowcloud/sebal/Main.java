@@ -5,6 +5,7 @@ import org.fogbowcloud.sebal.slave.Slave;
 public class Main {
 
 	static String MTL_FILE = "13520010515/LT52150652001135CUB00_MTL.txt";
+	static String MTL_NAME = "LT52150652001135CUB00_MTL";
 
 	public static void main(String[] args) throws Exception {
 		int iBegin = Integer.parseInt(args[0]);
@@ -14,7 +15,7 @@ public class Main {
 		String taskType = args[4];
 
 		long begin = System.currentTimeMillis();
-		Slave slave = new Slave(MTL_FILE, iBegin, iFinal, jBegin, jFinal);
+		Slave slave = new Slave(MTL_FILE, iBegin, iFinal, jBegin, jFinal, MTL_NAME);
 		slave.doTask(taskType);
 		System.out.println(System.currentTimeMillis() - begin);
 	}
