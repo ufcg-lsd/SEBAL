@@ -56,11 +56,11 @@
 	</repositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.fogbowcloud</groupId>
-			<artifactId>manager</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.fogbowcloud</groupId> -->
+<!-- 			<artifactId>manager</artifactId> -->
+<!-- 			<version>0.0.1-SNAPSHOT</version> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -92,6 +92,12 @@
 			<groupId>net.lingala.zip4j</groupId>
 			<artifactId>zip4j</artifactId>
 			<version>1.2.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.51</version>
 		</dependency>
 
 	</dependencies>

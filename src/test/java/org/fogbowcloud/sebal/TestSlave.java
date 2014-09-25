@@ -15,8 +15,8 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.slave.Slave;
-import org.fogbowcloud.sebal.slave.TaskType;
+import org.fogbowcloud.sebal.wraper.wraper;
+import org.fogbowcloud.sebal.wraper.TaskType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +26,7 @@ public class TestSlave {
 	private static final int J_BEGIN = 3000;
 	private static final int I_FINAL = 3100;
 	private static final int I_BEGIN = 3000;
-	Slave slave;
+	wraper slave;
 	String MTL_FILE = "13520010515/LT52150652001135CUB00_MTL.txt";
 	String MTL_NAME = "LT52150652001135CUB00_MTL";
 	String desiredValuesFile = "result.csv";
@@ -34,7 +34,7 @@ public class TestSlave {
 
 	@Before
 	public void setUp() throws Exception {
-		slave = new Slave(MTL_FILE, I_BEGIN, I_FINAL, J_BEGIN, J_FINAL, MTL_NAME);
+		slave = new wraper(MTL_FILE, I_BEGIN, I_FINAL, J_BEGIN, J_FINAL, MTL_NAME);
 	}
 
 	@Test
@@ -47,6 +47,7 @@ public class TestSlave {
 
 	@Test
 	public void testF2() throws Exception {
+		slave.doTask(TaskType.C);
 		slave.doTask(TaskType.F2);
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".F2.csv").exists());
 	}

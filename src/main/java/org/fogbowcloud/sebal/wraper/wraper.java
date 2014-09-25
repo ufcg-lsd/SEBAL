@@ -1,4 +1,4 @@
-package org.fogbowcloud.sebal.slave;
+package org.fogbowcloud.sebal.wraper;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,7 +21,7 @@ import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 
-public class Slave {
+public class wraper {
 
 	private String mtlFile;
 	private int iBegin;
@@ -30,7 +30,7 @@ public class Slave {
 	private int jFinal;
 	private String mtlName;
 
-	public Slave(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName) {
+	public wraper(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName) {
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
@@ -50,6 +50,7 @@ public class Slave {
 				createResultsFile(exitFileName, stringBuilder);
 			} catch (Throwable e) {
 				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append(Arrays.toString(e.getStackTrace()));
 				stringBuilder.append("1");
 				createResultsFile(exitFileName, stringBuilder);
 			}
@@ -62,6 +63,7 @@ public class Slave {
 				createResultsFile(exitFileName, stringBuilder);
 			} catch (Throwable e) {
 				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append(Arrays.toString(e.getStackTrace()));
 				stringBuilder.append("1");
 				createResultsFile(exitFileName, stringBuilder);
 			}
@@ -75,6 +77,7 @@ public class Slave {
 				createResultsFile(exitFileName, stringBuilder);
 			} catch (Throwable e) {
 				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.append(Arrays.toString(e.getStackTrace()));
 				stringBuilder.append("1");
 				createResultsFile(exitFileName, stringBuilder);
 			}
