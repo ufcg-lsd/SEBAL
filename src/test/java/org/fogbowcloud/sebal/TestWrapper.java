@@ -15,18 +15,18 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.wraper.wraper;
-import org.fogbowcloud.sebal.wraper.TaskType;
+import org.fogbowcloud.sebal.wrapper.TaskType;
+import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestSlave {
+public class TestWrapper {
 
 	private static final int J_FINAL = 3100;
 	private static final int J_BEGIN = 3000;
 	private static final int I_FINAL = 3100;
 	private static final int I_BEGIN = 3000;
-	wraper slave;
+	Wrapper wrapper;
 	String MTL_FILE = "13520010515/LT52150652001135CUB00_MTL.txt";
 	String MTL_NAME = "LT52150652001135CUB00_MTL";
 	String desiredValuesFile = "result.csv";
@@ -34,12 +34,13 @@ public class TestSlave {
 
 	@Before
 	public void setUp() throws Exception {
-		slave = new wraper(MTL_FILE, I_BEGIN, I_FINAL, J_BEGIN, J_FINAL, MTL_NAME);
+		wrapper = new Wrapper(MTL_FILE, I_BEGIN, I_FINAL, J_BEGIN, J_FINAL, MTL_NAME);
+		wrapper.setPixelQuenteFrioChooser(new TestPixelQuenteFrioChooser());
 	}
 
 	@Test
 	public void testF1() throws Exception {
-		slave.doTask(TaskType.F1);
+		wrapper.doTask(TaskType.F1);
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".frio.csv").exists());
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".quente.csv").exists()); 
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".pixels.csv").exists());
@@ -47,8 +48,8 @@ public class TestSlave {
 
 	@Test
 	public void testF2() throws Exception {
-		slave.doTask(TaskType.C);
-		slave.doTask(TaskType.F2);
+		wrapper.doTask(TaskType.C);
+		wrapper.doTask(TaskType.F2);
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".F2.csv").exists());
 	}
 

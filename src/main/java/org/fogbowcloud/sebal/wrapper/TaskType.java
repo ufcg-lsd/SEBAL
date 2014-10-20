@@ -1,4 +1,4 @@
-package org.fogbowcloud.sebal.wraper;
+package org.fogbowcloud.sebal.wrapper;
 
 public interface TaskType {
 	
