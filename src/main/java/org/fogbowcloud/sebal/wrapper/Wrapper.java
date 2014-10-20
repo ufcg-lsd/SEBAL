@@ -160,12 +160,20 @@ public class Wrapper {
 
 	private void saveProcessOutput(Image updatedImage) {
 		List<ImagePixel> pixels = updatedImage.pixels();
-		StringBuilder stringBuilder = new StringBuilder();
-		for (ImagePixel imagePixel : pixels) {
-			String line = generateResultLine(imagePixel);
-			stringBuilder.append(line);
+		String allPixelsFileName = getAllPixelsFileName();
+		
+		File outputFile = new File(allPixelsFileName);
+		if (outputFile.exists()) {
+			outputFile.delete();
 		}
-		createResultsFile(getAllPixelsFileName(), stringBuilder);
+		
+		for (ImagePixel imagePixel : pixels) {
+			try {
+				FileUtils.write(outputFile, generateResultLine(imagePixel), true);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private String getAllPixelsFileName() {
@@ -237,19 +245,27 @@ public class Wrapper {
 
 	private void saveFinalProcessOutput(Image updatedImage) {
 		List<ImagePixel> pixels = updatedImage.pixels();
-		StringBuilder stringBuilder = new StringBuilder();
-		String head = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal,bInicial,"
-				+ "bFinal,rahInicial,rahFinal,uInicial,uFinal,lInicial,lFinal,g,"
-				+ "rn,lambdaE,Ts,NDVI,SAVI,Alpha,L1,L2,L3,L4,L5,L6,L7,Z0mxy,"
-				+ "EpsilonZero,getEpsilonNB,RLDown,EpsilonA,RLUp,IAF,EVI,"
-				+ "RSDown,TauSW,AlphaToa,Ta,d,ux,zx,hc,fracao Evapo,tau24h,"
-				+ "rn24h,et24h,le24h\n";
-		stringBuilder.append(head);
-		for (ImagePixel imagePixel : pixels) {
-			String line = generateFinalResultLine(imagePixel);
-			stringBuilder.append(line);
+		String head = "i,j,lat,lon,hInicial,hFinal,aInicial,aFinal,bInicial,bFinal,rahInicial,rahFinal,uInicial,uFinal,"
+				+ "lInicial,lFinal,g,rn,lambdaE,Ts,NDVI,SAVI,Alpha,L1,L2,L3,L4,L5,L6,L7,Z0mxy,EpsilonZero,getEpsilonNB,RLDown,"
+				+ "EpsilonA,RLUp,IAF,EVI,RSDown,TauSW,AlphaToa,Ta,d,ux,zx,hc,fracao Evapo,tau24h,rn24h,et24h,le24h\n";
+
+		File outputFile = new File(getFinaLResultFileName());
+		if (outputFile.exists()) {
+			outputFile.delete();
 		}
-		createResultsFile(getFinaLResultFileName(), stringBuilder);
+		
+		try {
+			FileUtils.write(outputFile, head, true);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		for (ImagePixel imagePixel : pixels) {
+			try {
+				FileUtils.write(outputFile, generateFinalResultLine(imagePixel), true);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public String getFinaLResultFileName() {
