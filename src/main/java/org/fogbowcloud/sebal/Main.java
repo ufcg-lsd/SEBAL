@@ -2,7 +2,7 @@ package org.fogbowcloud.sebal;
 
 import java.io.File;
 
-import org.fogbowcloud.sebal.wraper.wraper;
+import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class Main {
 
@@ -12,7 +12,7 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		MTL_FILE = args[0];
 		String fileName = new File(MTL_FILE).getName();
-		MTL_NAME = fileName.substring(0, fileName.indexOf("."));
+		MTL_NAME = fileName.substring(0, fileName.indexOf("_"));
 		
 		int iBegin = Integer.parseInt(args[1]);
 		int iFinal = Integer.parseInt(args[2]);
@@ -20,9 +20,7 @@ public class Main {
 		int jFinal = Integer.parseInt(args[4]);
 		String taskType = args[5];
 
-		long begin = System.currentTimeMillis();
-		wraper slave = new wraper(MTL_FILE, iBegin, iFinal, jBegin, jFinal, MTL_NAME);
-		slave.doTask(taskType);
-		System.out.println(System.currentTimeMillis() - begin);
+		Wrapper wrapper = new Wrapper(MTL_FILE, iBegin, iFinal, jBegin, jFinal, MTL_NAME);
+		wrapper.doTask(taskType);
 	}
 }

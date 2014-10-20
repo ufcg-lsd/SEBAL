@@ -24,26 +24,25 @@ import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 
 public class SEBALHelper {
-	
-	public static Product readProduct(String mtlFile) throws IOException {
-		File file = new File(mtlFile);
+	public static Product readProduct(String mtlFileName) throws IOException {
+		File mtlFile = new File(mtlFileName);
 		LandsatGeotiffReaderPlugin readerPlugin = new LandsatGeotiffReaderPlugin();
 		LandsatGeotiffReader reader = new LandsatGeotiffReader(readerPlugin);
-		Product product = reader.readProductNodes(file, null);
+		Product product = reader.readProductNodes(mtlFile, null);
 		
 		return product;
 	}
 	
-	public static Image readPixels(List<ImagePixel> pixels, ImagePixel pixelQuente, ImagePixel pixelFrio) { 
-		DefaultImage image = new DefaultImage();
+	public static Image readPixels(List<ImagePixel> pixels, ImagePixel pixelQuente, ImagePixel pixelFrio, PixelQuenteFrioChooser pixelQuenteFrioChooser) { 
+		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
 		image.pixels(pixels);
 		image.pixelQuente(pixelQuente);
 		image.pixelFrio(pixelFrio);
 		return image;
 	}
 	
-	public static Image readPixels(List<ImagePixel> pixelsQuente, List<ImagePixel> pixelsFrio) { 
-		DefaultImage image = new DefaultImage();
+	public static Image readPixels(List<ImagePixel> pixelsQuente, List<ImagePixel> pixelsFrio, PixelQuenteFrioChooser pixelQuenteFrioChooser) { 
+		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
 		List<ImagePixel> pixels = new ArrayList<ImagePixel>();
 		pixels.addAll(pixelsFrio);
 		pixels.addAll(pixelsQuente);
@@ -52,10 +51,10 @@ public class SEBALHelper {
 	}
 	
 	public static Image readPixels(Product product, int iBegin, int iFinal,
-			int jBegin, int jFinal) throws Exception {
+			int jBegin, int jFinal, PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
 		
 		Locale.setDefault(Locale.ROOT);
-		DefaultImage image = new DefaultImage();
+		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
 		Elevation elevation = new Elevation();
 		WeatherStation station = new WeatherStation();
 
