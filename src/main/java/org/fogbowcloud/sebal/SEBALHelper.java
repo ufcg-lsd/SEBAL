@@ -123,7 +123,10 @@ public class SEBALHelper {
 				imagePixel.image(image);
 
 				image.addPixel(imagePixel);
+				
+				geoPos = null;
 			}
+			System.gc();
 		}
 		
 		return image;

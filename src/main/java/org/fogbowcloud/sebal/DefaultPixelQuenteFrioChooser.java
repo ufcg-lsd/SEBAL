@@ -1,11 +1,13 @@
 package org.fogbowcloud.sebal;
 
+import java.util.List;
+
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 
 public class DefaultPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
     
     @Override
-    public void choosePixelsQuenteFrio() {
+    public void choosePixelsQuenteFrio(List<ImagePixel> pixels) {
         for (ImagePixel pixel : pixels) {
             double ndvi = pixel.output().getNDVI();
             if (ndvi >= 0.1 && ndvi <= 0.2) {

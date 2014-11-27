@@ -1,11 +1,15 @@
 package org.fogbowcloud.sebal;
 
+import java.util.List;
+
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
+import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 
 public class TestPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
+    
     @Override
-    public void choosePixelsQuenteFrio() {
+    public void choosePixelsQuenteFrio(List<ImagePixel> pixels) {
       DefaultImagePixel pixelQuenteLocal = new DefaultImagePixel();
       pixelQuenteLocal.ux(4.388);
       pixelQuenteLocal.zx(6.);

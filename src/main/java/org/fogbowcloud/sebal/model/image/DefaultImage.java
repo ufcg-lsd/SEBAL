@@ -33,7 +33,7 @@ public class DefaultImage implements Image {
 
 	@Override
 	public void choosePixelsQuenteFrio() {
-	   pixelQuenteFrioChooser.choosePixelsQuenteFrio();
+	   pixelQuenteFrioChooser.choosePixelsQuenteFrio(pixels);
 	   this.pixelFrio = pixelQuenteFrioChooser.getPixelFrio();
        this.pixelQuente = pixelQuenteFrioChooser.getPixelQuente();
 	}
