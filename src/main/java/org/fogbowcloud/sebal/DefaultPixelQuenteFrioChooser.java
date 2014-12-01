@@ -20,10 +20,10 @@ public class DefaultPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoose
                 break;
             }
         }
-        if (pixelFrio == null) {
+        if (pixelFrio == null && !pixels.isEmpty()) {
             pixelFrio = pixels.get((int) (Math.random() * pixels.size()));
         }
-        if (pixelQuente == null) {
+        if (pixelQuente == null && !pixels.isEmpty()) {
             pixelQuente = pixels.get((int) (Math.random() * pixels.size()));
         }
     }

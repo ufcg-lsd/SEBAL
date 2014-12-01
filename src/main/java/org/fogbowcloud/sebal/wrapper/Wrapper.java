@@ -85,8 +85,10 @@ public class Wrapper {
         StringBuilder stringBuilder = new StringBuilder();
 
         ImagePixel pixelFrio = updatedImage.pixelFrio();
-        String line = generatePixelFrioResultLine(pixelFrio);
-        stringBuilder.append(line);
+        if (pixelFrio != null) {
+            String line = generatePixelFrioResultLine(pixelFrio);
+            stringBuilder.append(line);
+        }
 
         createResultsFile(fileName, stringBuilder);
     }
@@ -101,7 +103,7 @@ public class Wrapper {
     }
 
     private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
-        ImagePixelOutput outputFrio = pixelFrio.output();
+        ImagePixelOutput outputFrio = getPixelOutput(pixelFrio);
         String pixelFrioOutput = String.valueOf(outputFrio.getTs());
         return pixelFrioOutput;
     }
@@ -110,8 +112,10 @@ public class Wrapper {
         StringBuilder stringBuilder = new StringBuilder();
 
         ImagePixel pixelQuente = updatedImage.pixelQuente();
-        String line = generatePixelQuenteResultLine(pixelQuente);
-        stringBuilder.append(line);
+        if (pixelQuente != null) {
+            String line = generatePixelQuenteResultLine(pixelQuente);
+            stringBuilder.append(line);
+        }
 
         createResultsFile(fileName, stringBuilder);
     }
@@ -125,7 +129,9 @@ public class Wrapper {
             if (file.isFile() && file.getName().contains("quente.csv")) {
                 ImagePixel pixelQuente = processPixelQuenteFromFile(file
                         .getAbsolutePath());
-                pixelsQuente.add(pixelQuente);
+                if (pixelQuente != null) {
+                    pixelsQuente.add(pixelQuente);
+                }
             }
         }
         return pixelsQuente;
@@ -140,7 +146,9 @@ public class Wrapper {
             if (file.isFile() && file.getName().contains("frio.csv")) {
                 ImagePixel pixelFrio = processPixelFrioFromFile(file
                         .getAbsolutePath());
-                pixelsFrio.add(pixelFrio);
+                if (pixelFrio != null) {
+                    pixelsFrio.add(pixelFrio);
+                }
             }
         }
         return pixelsFrio;
@@ -156,7 +164,7 @@ public class Wrapper {
     }
 
     private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
-        ImagePixelOutput outputQuente = pixelQuente.output();
+        ImagePixelOutput outputQuente = getPixelOutput(pixelQuente);
         String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx()
                 + "," + pixelQuente.hc() + "," + pixelQuente.d() + ","
                 + outputQuente.G() + "," + outputQuente.Rn() + ","
@@ -169,17 +177,14 @@ public class Wrapper {
         String allPixelsFileName = getAllPixelsFileName();
 
         File outputFile = new File(allPixelsFileName);
-        if (outputFile.exists()) {
-            outputFile.delete();
-        }
-
-        for (ImagePixel imagePixel : pixels) {
-            try {
-                FileUtils.write(outputFile, generateResultLine(imagePixel),
-                        true);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            FileUtils.write(outputFile, "");
+            for (ImagePixel imagePixel : pixels) {
+                String resultLine = generateResultLine(imagePixel);
+                FileUtils.write(outputFile, resultLine, true);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -205,7 +210,7 @@ public class Wrapper {
         int j = imagePixel.geoLoc().getJ();
         double lat = imagePixel.geoLoc().getLat();
         double lon = imagePixel.geoLoc().getLon();
-        ImagePixelOutput output = imagePixel.output();
+        ImagePixelOutput output = getPixelOutput(imagePixel);
         double g = output.G();
         double rn = output.Rn();
         String line = getRow(i, j, lat, lon, g, rn, output.getTs(),
@@ -238,8 +243,15 @@ public class Wrapper {
         Image image = SEBALHelper.readPixels(pixels, pixelQuente, pixelFrio,
                 pixelQuenteFrioChooser);
         image = new SEBAL().pixelHProcess(pixels, pixelQuente,
-                pixelQuente.output(), pixelFrio.output(), image);
+                getPixelOutput(pixelQuente), getPixelOutput(pixelFrio), image);
         saveFinalProcessOutput(image);
+    }
+
+    private ImagePixelOutput getPixelOutput(ImagePixel pixel) {
+        if (pixel != null) {
+            return pixel.output();
+        }
+        return null;
     }
 
     public void C(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
@@ -290,7 +302,7 @@ public class Wrapper {
         int j = imagePixel.geoLoc().getJ();
         double lat = imagePixel.geoLoc().getLat();
         double lon = imagePixel.geoLoc().getLon();
-        ImagePixelOutput output = imagePixel.output();
+        ImagePixelOutput output = getPixelOutput(imagePixel);
         List<HOutput> hOuts = output.gethOuts();
         double g = output.G();
         double rn = output.Rn();
