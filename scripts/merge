@@ -1,0 +1,4 @@
+while read p; do
+   echo "i,j,lat,lon,Ground Heat Flux,Net Radiation,Surface Temperature,NDVI,SAVI,Surface Albedo,EVI" > ${p}/${p}_result.csv
+   mkdir -p ./tmp; cat ${p}/*.pixels.csv | awk -F ',' 'BEGIN { OFS = ","; ORS = "\n" } { print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$25}' | sort -t ',' -nk1,1 -nk2 -T ./tmp/ | uniq >> ${p}/${p}_result.csv
+done <imagelist
