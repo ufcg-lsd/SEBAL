@@ -12,6 +12,8 @@ import org.apache.commons.io.IOUtils;
 
 public class Elevation {
 
+    private static final int HGT_RETRY_COUNT = 3;
+
     // http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/
     // s0-16
     // w36-42
@@ -29,9 +31,7 @@ public class Elevation {
                                                            // Meters, guess is:
                                                            // -0x8000
 
-    private RandomAccessFile file;
-
-    private int getIntervalCount() throws IOException {
+    private int getIntervalCount(RandomAccessFile file) throws IOException {
         long fileLength = file.length();
         if (fileLength == SRTM3_FILE_SIZE) {
             return SRTM3_INTERVALS;
@@ -60,38 +60,50 @@ public class Elevation {
         return (dHeight12 * dDiff) / dLength12;
     }
 
-    public Double z(Double latitude, Double longitude) throws Exception{
+    public Double z(Double latitude, Double longitude) throws Exception {
         int roundLat = Math.abs(latitude.intValue());
         int roundLon = Math.abs(longitude.intValue());
         String latChar = latitude >= 0 ? "N" : "S";
 
-        String hgtFile = String.format("%s%02dW%03d", latChar,
+        String hgtFilePrefix = String.format("%s%02dW%03d", latChar,
                 latitude < 0 ? roundLat + 1 : roundLat,
-                longitude < 0 ? roundLon + 1 : roundLon)
-                + ".hgt";
-        if (!new File(hgtFile).exists()) {
+                longitude < 0 ? roundLon + 1 : roundLon);
+
+        String hgtFile = hgtFilePrefix + ".hgt";
+        String hgtZipFile = hgtFile + ".zip";
+
+        if (!new File(hgtZipFile).exists()) {
             int waitTime = 1000;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < HGT_RETRY_COUNT; i++) {
                 try {
                     String zipURL = "http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/"
                             + hgtFile + ".zip";
                     IOUtils.copy(new URL(zipURL).openStream(),
-                            new FileOutputStream(hgtFile));
-                    ZipFile zipFile = new ZipFile(hgtFile);
+                            new FileOutputStream(hgtZipFile));
+                    ZipFile zipFile = new ZipFile(hgtZipFile);
                     zipFile.extractAll(".");
                     break;
                 } catch (Throwable t) {
                     try {
                         Thread.sleep(waitTime);
                     } catch (InterruptedException e) {
-                        //Do nothing
+                        // Do nothing
                     }
                     waitTime += 1000;
                 }
             }
         }
+        while (true) {
+            File hgt = new File(hgtFile);
+            if (hgt.exists()) {
+                if (hgt.length() == 2884802) {
+                    break;
+                }
+            }
+            Thread.sleep(1000);
+        }
 
-        file = new RandomAccessFile(hgtFile, "r");
+        RandomAccessFile file = new RandomAccessFile(hgtFile, "r");
 
         if (file == null || longitude == null || latitude == null) {
             return null;
@@ -117,7 +129,7 @@ public class Elevation {
                                               // (needed for later calculation)
         }
 
-        int intervalCount = getIntervalCount();
+        int intervalCount = getIntervalCount(file);
         int longitudeIntervalIndex = (int) ((longitude - (double) longitudeAsInt) * intervalCount);
         int latitudeIntervalIndex = (int) ((latitude - (double) latitudeAsInt) * intervalCount);
 

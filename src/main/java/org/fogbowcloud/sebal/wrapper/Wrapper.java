@@ -32,15 +32,17 @@ public class Wrapper {
     private int jFinal;
     private String mtlName;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
+    private String boundingBoxFileName;
 
     public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin,
-            int jFinal, String mtlName) {
+            int jFinal, String mtlName, String boundingBoxFileName) {
         this.mtlFile = mtlFile;
         this.iBegin = iBegin;
         this.iFinal = iFinal;
         this.jBegin = jBegin;
         this.jFinal = jFinal;
         this.mtlName = mtlName;
+        this.boundingBoxFileName = boundingBoxFileName;
         this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
     }
 
@@ -70,7 +72,7 @@ public class Wrapper {
 
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
-        Product product = SEBALHelper.readProduct(mtlFile);
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxFileName);
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser);
         Satellite satellite = new JSONSatellite("landsat5");
@@ -477,5 +479,13 @@ public class Wrapper {
     public void setPixelQuenteFrioChooser(
             PixelQuenteFrioChooser pixelQuenteFrioChooser) {
         this.pixelQuenteFrioChooser = pixelQuenteFrioChooser;
+    }
+
+    public String getBoundingBoxFileName() {
+        return boundingBoxFileName;
+    }
+
+    public void setBoundingBoxFileName(String boundingBoxFileName) {
+        this.boundingBoxFileName = boundingBoxFileName;
     }
 }
