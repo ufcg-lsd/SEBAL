@@ -12,7 +12,7 @@ import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class BulkMain {
 
-	public static void main(String[] args) throws Exception {		
+	public static void main(String[] args) throws Exception {
 		String mtlFilePath = args[0];
 		String fileName = new File(mtlFilePath).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
@@ -23,16 +23,37 @@ public class BulkMain {
 		int rightY = Integer.parseInt(args[4]);
 
 		int numberOfPartitions = Integer.parseInt(args[5]);
-		int partition = Integer.parseInt(args[6]);
+		int partitionIndex = Integer.parseInt(args[6]);
 
+		int xPartitionInterval = calcXInterval(upperX, lowerX, numberOfPartitions);
+		
+		XPartitionInterval imagePartition = getSelectedPartition(upperX, lowerX, xPartitionInterval,
+				numberOfPartitions, partitionIndex);
+
+		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), leftY, rightY, mtlName, null);
+		wrapper.doTask(TaskType.F1);
+	}
+
+	protected static int calcXInterval(int upperX, int lowerX, int numberOfPartitions) {
+		if (upperX == lowerX && numberOfPartitions == 1) {
+			return 0;
+		}
 		int xImageInterval = lowerX - upperX;
-		int xPartitionInterval = xImageInterval / numberOfPartitions;
+		if ((xImageInterval + 1) < numberOfPartitions) {
+			throw new IllegalArgumentException("The interval [" + upperX + ", " + lowerX
+					+ "] can't be splitted in " + numberOfPartitions + " partitions.");
+		}
+		int xPartitionInterval = xImageInterval / numberOfPartitions;		
+		return xPartitionInterval;
+	}
 
+	protected static XPartitionInterval getSelectedPartition(int upperX, int lowerX,
+			int xPartitionInterval, int numberOfPartitions, int partitionIndex) {
 		int iBegin = upperX;
 		int iFinal = upperX + xPartitionInterval;
 
 		for (int i = 1; i < numberOfPartitions; i++) {
-			if (partition == i) {
+			if (partitionIndex == i) {
 				break;
 			}
 			iBegin = iFinal + 1;
@@ -40,15 +61,12 @@ public class BulkMain {
 		}
 
 		// last partition
-		if (partition == numberOfPartitions) {
+		if (partitionIndex == numberOfPartitions) {
 			iFinal = lowerX;
 		}
-
-		Wrapper wrapper = new Wrapper(mtlFilePath, iBegin, iFinal, leftY,
-				rightY, mtlName, null);
-		wrapper.doTask(TaskType.F1);
+		return new XPartitionInterval(iBegin, iFinal);
 	}
-	
+
 	public void unZipIt(String zipFile, String outputFolder) {
 		byte[] buffer = new byte[1024];
 
@@ -60,8 +78,7 @@ public class BulkMain {
 			}
 
 			// get the zip file content
-			ZipInputStream zis = new ZipInputStream(
-					new FileInputStream(zipFile));
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
 			// get the zipped file list entry
 			ZipEntry ze = zis.getNextEntry();
 
