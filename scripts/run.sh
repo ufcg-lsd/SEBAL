@@ -29,5 +29,6 @@ java $CONF_LOG -cp target/SEBAL-0.0.1-SNAPSHOT-jar-with-dependencies.jar org.fog
 #rm -r $FILE_NAME
 
 MASK_WIDTH=`expr $LOWER_X - $UPEER_X + 1`
-
 MASK_HEIGHT=`expr $LEFT_Y - $RIGHT_Y + 1`
+
+python scripts/createTiff.py $FILE_NAME/$UPPER_X.$LOWER_X.$RIGHT_Y.$LEFT_Y.pixels.csv $MASK_WIDTH $MASK_HEIGHT
