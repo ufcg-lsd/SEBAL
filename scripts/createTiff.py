@@ -14,8 +14,8 @@ if __name__ == '__main__':
     surface_albedo_file = tif_file_prefix + "surface_albedo.tif"
     evi_file = tif_file_prefix + "evi.tif"
 
-    MASK_HEIGHT=2600
-    MASK_WIDTH=2924
+    MASK_HEIGHT=int(sys.argv[2])
+    MASK_WIDTH=int(sys.argv[3])
 
     # Create gtif
     driver = gdal.GetDriverByName("GTiff")
@@ -29,8 +29,37 @@ if __name__ == '__main__':
 
     # raster = numpy.zeros( (100, 100) )
     # top left x, w-e pixel resolution, rotation, top left y, rotation, n-s pixel resolution
-    x_min = -37.1785965  
-    y_max = -6.974605083
+#    x_min = -37.1785965  
+#    y_max = -6.974605083
+
+    x_min = None
+    y_max = None
+
+    initial_i = None
+    initial_j = None
+
+    first_line = True
+    with open(csv_file, 'r') as f:
+	for line in f:
+	  fields = line.split(',')
+          if (first_line):
+            first_line = False
+	    initial_i = int(fields[0])
+	    initial_j = int(fields[1])
+            x_min = float(fields[2])
+            y_max = float(fields[3])
+	    continue
+
+	if (fields[2] < x_min):
+	  x_min = float(fields[2])
+
+	if (fields[3] > y_max):
+	  y_max = float(fields[3])
+
+    print ("initial_i = " + str(initial_i))
+    print ("initial_j = " + str(initial_j))
+    print ("x_min = " + str(x_min))
+    print ("y_max = " + str(y_max))
 
     PIXEL_SIZE = 0.00027
     dst_g.SetGeoTransform( [x_min,    # 0
@@ -107,14 +136,14 @@ if __name__ == '__main__':
 
     lineIdx = -1
 
-    MAX_LAT=-7.03983
-    MIN_LON=-37.176
-    MIN_LAT=-7.7409
-    MAX_LON=-36.3782
-    first_line = True
+#    MAX_LAT=-7.03983
+#    MIN_LON=-37.176
+#    MIN_LAT=-7.7409
+#    MAX_LON=-36.3782
+#    first_line = True
  
-    initialI = -1
-    initialJ = -1
+#    initial_i = 3000
+#    initial_j = 3000
 
     raster_g = numpy.zeros((MASK_HEIGHT, MASK_WIDTH), dtype='complex64')
     raster_rn = numpy.zeros((MASK_HEIGHT, MASK_WIDTH), dtype='complex64')
@@ -129,9 +158,9 @@ if __name__ == '__main__':
 
     with open(csv_file, 'r') as f:
       for line in f:
-        if (first_line):
-          first_line = False
-          continue
+#        if (first_line):
+#          first_line = False
+#          continue
 
         fields = line.split(',')
         g = float(fields[4])
@@ -140,34 +169,37 @@ if __name__ == '__main__':
         ndvi = float(fields[7])
         savi = float(fields[8])
         a = float(fields[9])
-        evi = float(fields[10])
+        evi = float(fields[18])
         i = int(fields[0])
         j = int(fields[1])
         lat = float(fields[2])
         lon = float(fields[3])
-        if (initialI < 0 and lat > MIN_LAT and lat < MAX_LAT and lon > MIN_LON and lon < MAX_LON):
-           initialI = i
-	   initialJ = j
-           print lat
-           print lon
-        
-        if (initialI < 0 or initialJ < 0):
-           continue
+#        if (initialI < 0 and lat > MIN_LAT and lat < MAX_LAT and lon > MIN_LON and lon < MAX_LON):
+#           initialI = i
+#	   initialJ = j
+#           print lat
+#           print lon
+#       
+#        if (initialI < 0 or initialJ < 0):
+#           continue
+#
+#        if (i - initialI < 0 or i - initialI >= MASK_WIDTH or j >= initialJ or j < initialJ - MASK_HEIGHT):
+#           continue
+#        
+#        if (min_lon > lon and max_lat < lat):
+#            min_lon = lon
+#            max_lat = lat
 
-        if (i - initialI < 0 or i - initialI >= MASK_WIDTH or j >= initialJ or j < initialJ - MASK_HEIGHT):
-           continue
-        
-        if (min_lon > lon and max_lat < lat):
-            min_lon = lon
-            max_lat = lat
-
-        raster_g[j - (initialJ - MASK_HEIGHT)][i - initialI] = g
-        raster_rn[j - (initialJ - MASK_HEIGHT)][i - initialI] = rn
-        raster_ts[j - (initialJ - MASK_HEIGHT)][i - initialI] = ts
-        raster_ndvi[j - (initialJ - MASK_HEIGHT)][i - initialI] = ndvi
-        raster_savi[j - (initialJ - MASK_HEIGHT)][i - initialI] = savi
-        raster_a[j - (initialJ - MASK_HEIGHT)][i - initialI] = a
-        raster_evi[j - (initialJ - MASK_HEIGHT)][i - initialI] = evi
+	j_idx=j - initial_j
+	i_idx=i - initial_i
+	
+        raster_g[j_idx][i_idx] = g
+        raster_rn[j_idx][i_idx] = rn
+        raster_ts[j_idx][i_idx] = ts
+        raster_ndvi[j_idx][i_idx] = ndvi
+        raster_savi[j_idx][i_idx] = savi
+        raster_a[j_idx][i_idx] = a
+        raster_evi[j_idx][i_idx] = evi
 
     # write the band
     print "------"

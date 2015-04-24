@@ -27,3 +27,7 @@ echo $MTL_FILE
 
 java $CONF_LOG -cp target/SEBAL-0.0.1-SNAPSHOT-jar-with-dependencies.jar org.fogbowcloud.sebal.BulkMain $MTL_FILE $UPPER_X $LEFT_Y $LOWER_X $RIGHT_Y $NUMBER_OF_PARTITIONS $PARTITION_INDEX > /dev/null &
 #rm -r $FILE_NAME
+
+MASK_WIDTH=`expr $LOWER_X - $UPEER_X + 1`
+
+MASK_HEIGHT=`expr $LEFT_Y - $RIGHT_Y + 1`
