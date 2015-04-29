@@ -5,7 +5,8 @@ if __name__ == '__main__':
     
     # Set file vars
     csv_file = sys.argv[1]
-    tif_file_prefix = csv_file.replace(".csv","_")
+    #tif_file_prefix = csv_file.replace(".csv","_")
+    tif_file_prefix = sys.argv[2]
     ground_heat_file = tif_file_prefix + "ground_heat_flux.tif"
     net_radiation_file = tif_file_prefix + "net_radiation.tif"
     surface_temperature_file = tif_file_prefix + "surface_temperature.tif"
@@ -14,9 +15,9 @@ if __name__ == '__main__':
     surface_albedo_file = tif_file_prefix + "surface_albedo.tif"
     evi_file = tif_file_prefix + "evi.tif"
 
-    MASK_HEIGHT=int(sys.argv[2])
     MASK_WIDTH=int(sys.argv[3])
-
+    MASK_HEIGHT=int(sys.argv[4])
+    
     # Create gtif
     driver = gdal.GetDriverByName("GTiff")
     dst_g = driver.Create(ground_heat_file, MASK_WIDTH, MASK_HEIGHT, 1, gdal.GDT_Float64)

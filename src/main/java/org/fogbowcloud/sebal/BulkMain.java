@@ -17,20 +17,25 @@ public class BulkMain {
 		String fileName = new File(mtlFilePath).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 
-		int upperX = Integer.parseInt(args[1]);
-		int leftY = Integer.parseInt(args[2]);
-		int lowerX = Integer.parseInt(args[3]);
-		int rightY = Integer.parseInt(args[4]);
+		int leftX = Integer.parseInt(args[1]);
+		int upperY = Integer.parseInt(args[2]);
+		int rightX = Integer.parseInt(args[3]);
+		int lowerY = Integer.parseInt(args[4]);
 
 		int numberOfPartitions = Integer.parseInt(args[5]);
 		int partitionIndex = Integer.parseInt(args[6]);
 
-		int xPartitionInterval = calcXInterval(upperX, lowerX, numberOfPartitions);
+		int xPartitionInterval = calcXInterval(leftX, rightX, numberOfPartitions);
 		
-		XPartitionInterval imagePartition = getSelectedPartition(upperX, lowerX, xPartitionInterval,
+		XPartitionInterval imagePartition = getSelectedPartition(leftX, rightX, xPartitionInterval,
 				numberOfPartitions, partitionIndex);
+		
+		System.out.println("MASK_WIDTH=" + (imagePartition.getIFinal() - imagePartition.getIBegin() + 1));
+		System.out.println("MASK_HEIGHT=" + (upperY - lowerY + 1));
+		System.out.println("CSV_FILE="+ (imagePartition.getIBegin() + "." + imagePartition.getIFinal() + "." + lowerY
+						+ "." + upperY + ".pixels.csv"));
 
-		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), leftY, rightY, mtlName, null);
+		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), lowerY, upperY, mtlName, null);
 		wrapper.doTask(TaskType.F1);
 	}
 
