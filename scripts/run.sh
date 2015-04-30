@@ -10,6 +10,11 @@ wget -nc http://www2.lsd.ufcg.edu.br/~giovanni/SEBAL.tar.gz
 echo "Downloading image "$IMAGE_URL
 wget -nc $IMAGE_URL
 
+#Dependencies
+sudo apt-get install openjdk-7-jre-headless
+sudo apt-get install python-numpy
+sudo apt-get install python-gdal
+
 tar -xvzf SEBAL.tar.gz
 rm SEBAL.tar.gz
 
