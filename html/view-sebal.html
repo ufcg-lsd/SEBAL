@@ -1,0 +1,48 @@
+<html>
+  <style type="text/css"></style>
+  <body>
+  	<table id="result-table">
+      <tr id="result-table-row">
+      </tr>
+  	</table>
+  </body>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script type="text/javascript">
+    var qs = (function(a) {
+      if (a == '') {
+        return {};
+      }
+      var b = {};
+      for (var i = 0; i < a.length; ++i) {
+        var p=a[i].split('=', 2);
+        if (p.length == 1) {
+          b[p[0]] = '';
+        } else {
+          b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, ' '));
+        }
+      }
+      return b;
+    })(window.location.search.substr(1).split('&'));
+    
+    var jobCount = qs['jobs'];
+    var x0 = qs['x0'];
+    var x1 = qs['x1'];
+    var y0 = qs['y0'];
+    var y1 = qs['y1'];
+    var imgName = qs['img'];
+    var varName = qs['var'];
+
+    $('#result-table').css('width', (x1 - x0) + 'px');
+    $('#result-table').css('height', (y1 - y0) + 'px');
+
+    for (i = 0; i < jobCount; i++) {
+      $('#result-table-row').append(
+        '<td><img src="project/user/' + imgName + '_' + varName + '_' + i + '.tiff"></td>');
+    }
+
+    setTimeout(function () {
+      location.reload();
+    }, 10000);
+
+  </script>
+</html>
