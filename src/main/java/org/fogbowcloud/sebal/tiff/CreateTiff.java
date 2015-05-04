@@ -68,29 +68,28 @@ public class CreateTiff {
 		Band bandNdviBmp = createBand(dstNdviBmp, xMin, yMax);
 		
 		double[] rasterNdvi = new double[maskHeight * maskWidth];
-		double[] rasterNdvi100 = new double[maskHeight * maskWidth];
+		double[] rasterNdvi255 = new double[maskHeight * maskWidth];
 		
 		lineIterator = IOUtils.lineIterator(new FileInputStream(
 				csvFile), Charsets.UTF_8);
+		
 		while (lineIterator.hasNext()) {
 			String line = (String) lineIterator.next();
 			String[] lineSplit = line.split(",");
 			
 			int i = Integer.parseInt(lineSplit[0]);
 			int j = Integer.parseInt(lineSplit[1]);
-			
 			int iIdx = i - initialI;
 			int jIdx = j - initialJ;
-			
 			double ndvi = Double.parseDouble(lineSplit[7]);
-			rasterNdvi[iIdx * maskWidth + jIdx] = ndvi;
-			rasterNdvi100[iIdx * maskWidth + jIdx] = ndvi * 100;
+			rasterNdvi[jIdx * maskWidth + iIdx] = ndvi;
+			rasterNdvi255[jIdx * maskWidth + iIdx] = ndvi * 255;
 		}
 		
 		bandNdviTiff.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi);
 		bandNdviTiff.FlushCache();
 		
-		bandNdviBmp.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi100);
+		bandNdviBmp.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi255);
 		bandNdviBmp.FlushCache();
 	}
 

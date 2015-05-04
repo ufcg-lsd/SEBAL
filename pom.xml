@@ -53,6 +53,10 @@
 			<name>maven.ourgrid.org</name>
 			<url> http://maven.ourgrid.org/repos</url>
 		</repository>
+		<repository>
+          	<id>local</id>
+          	<url>file://${basedir}/.m2</url>
+        </repository>
 	</repositories>
 
 	<profiles>
@@ -117,7 +121,7 @@
 		<dependency>
 		   <groupId>org.gdal</groupId>
 		   <artifactId>gdal</artifactId>
-		   <version>1.11.2</version>
+		   <version>1.10.1</version>
 		</dependency>
 		
 	</dependencies>
