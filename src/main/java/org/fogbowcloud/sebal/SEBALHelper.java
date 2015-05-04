@@ -118,12 +118,9 @@ public class SEBALHelper {
                 .getElement("IMAGE_ATTRIBUTES").getAttribute("SUN_ELEVATION")
                 .getData().getElemDouble();
 
-        for (int i = 0; i < bandAt.getSceneRasterWidth(); i++) {
-            for (int j = 0; j < bandAt.getSceneRasterHeight(); j++) {
+        for (int i = iBegin; i < Math.min(iFinal, bandAt.getSceneRasterWidth()); i++) {
+            for (int j = jBegin; j < Math.min(jFinal, bandAt.getSceneRasterHeight()); j++) {
 
-                if ((i < iBegin || i > iFinal) || (j < jBegin || j > jFinal)) {
-                    continue;
-                }
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
 
                 double[] LArray = new double[product.getNumBands()];
@@ -177,7 +174,6 @@ public class SEBALHelper {
 
                 geoPos = null;
             }
-            System.gc();
         }
 
         return image;

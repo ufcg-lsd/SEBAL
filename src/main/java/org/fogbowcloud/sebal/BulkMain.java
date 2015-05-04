@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.fogbowcloud.sebal.tiff.CreateTiff;
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
@@ -30,13 +31,16 @@ public class BulkMain {
 		XPartitionInterval imagePartition = getSelectedPartition(leftX, rightX, xPartitionInterval,
 				numberOfPartitions, partitionIndex);
 		
-		System.out.println("MASK_WIDTH=" + (imagePartition.getIFinal() - imagePartition.getIBegin() + 1));
-		System.out.println("MASK_HEIGHT=" + (upperY - lowerY + 1));
-		System.out.println("CSV_FILE="+ (imagePartition.getIBegin() + "." + imagePartition.getIFinal() + "." + lowerY
-						+ "." + upperY + ".pixels.csv"));
-
-		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), lowerY, upperY, mtlName, null);
+		String prefix = imagePartition.getIBegin() + "." + imagePartition.getIFinal() + "." + upperY + "." + lowerY;
+		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
+		
+		String csvFilePath = mtlName + "/" + prefix + ".pixels.csv";
+		
+		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), 
+				imagePartition.getIFinal(), upperY, lowerY, mtlName, null);
 		wrapper.doTask(TaskType.F1);
+		CreateTiff.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 
+				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY);
 	}
 
 	protected static int calcXInterval(int upperX, int lowerX, int numberOfPartitions) {
@@ -61,7 +65,7 @@ public class BulkMain {
 			if (partitionIndex == i) {
 				break;
 			}
-			iBegin = iFinal + 1;
+			iBegin = iFinal;
 			iFinal = iFinal + xPartitionInterval;
 		}
 

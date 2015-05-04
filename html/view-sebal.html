@@ -1,7 +1,14 @@
 <html>
-  <style type="text/css"></style>
+  <style type="text/css">
+    #result-table, #result-table-row > td {
+      border-spacing: 0;
+      border-collapse: collapse;
+      padding: 0;
+      margin: 0;
+    }
+  </style>
   <body>
-  	<table id="result-table">
+  	<table cellspacing="0" cellpadding="0" id="result-table">
       <tr id="result-table-row">
       </tr>
   	</table>
@@ -32,12 +39,10 @@
     var imgName = qs['img'];
     var varName = qs['var'];
 
-    $('#result-table').css('width', (x1 - x0) + 'px');
-    $('#result-table').css('height', (y1 - y0) + 'px');
-
-    for (i = 0; i < jobCount; i++) {
+    for (i = 1; i <= jobCount; i++) {
       $('#result-table-row').append(
-        '<td><img src="project/user/' + imgName + '_' + varName + '_' + i + '.tiff"></td>');
+        '<td><img src="../' + imgName + '/' + x0 + '.' + x1 + '.' + y0 + '.' + y1 + 
+          '_' + jobCount + '_'  + i + '_' + varName + '.bmp"></td>');
     }
 
     setTimeout(function () {

@@ -1,5 +1,6 @@
 package org.fogbowcloud.sebal.tiff;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,13 +26,26 @@ public class CreateTiff {
 		int maskWidth = Integer.parseInt(args[3]);
 		int maskHeight = Integer.parseInt(args[4]);
 
-		Driver driver = gdal.GetDriverByName("GTiff");
-		String ndviFile = tifFilePrefix + "ndvi.tif";
-		Dataset dstNdvi = driver.Create(ndviFile, maskWidth, maskHeight, 1,
+		createTiff(csvFile, tifFilePrefix, maskWidth, maskHeight);
+	}
+
+	public static void createTiff(String csvFile, String tifFilePrefix,
+			int maskWidth, int maskHeight) throws IOException,
+			FileNotFoundException {
+		gdal.AllRegister();
+		
+		Driver tiffDriver = gdal.GetDriverByName("GTiff");
+		String ndviTiffFile = new File(new File(csvFile).getParentFile(), tifFilePrefix + "_ndvi.tiff").getAbsolutePath();
+		Dataset dstNdviTiff = tiffDriver.Create(ndviTiffFile, maskWidth, maskHeight, 1,
 				gdalconstConstants.GDT_Float64);
 		
-		Double xMin = Double.MAX_VALUE;
-		Double yMax = Double.MIN_VALUE;
+		Driver bmpDriver = gdal.GetDriverByName("BMP");
+		String ndviBmpFile = new File(new File(csvFile).getParentFile(), tifFilePrefix + "_ndvi.bmp").getAbsolutePath();
+		Dataset dstNdviBmp = bmpDriver.Create(ndviBmpFile, maskWidth, maskHeight, 1,
+				gdalconstConstants.GDT_Byte);
+		
+		Double xMin = +360.;
+		Double yMax = -360.;
 		Integer initialI = null;
 		Integer initialJ = null;
 		
@@ -44,20 +58,17 @@ public class CreateTiff {
 				initialI = Integer.parseInt(lineSplit[0]);
 				initialJ = Integer.parseInt(lineSplit[1]);
 			}
-			double x = Double.parseDouble(lineSplit[2]);
-			double y = Double.parseDouble(lineSplit[3]);
+			Double x = Double.parseDouble(lineSplit[2]);
+			Double y = Double.parseDouble(lineSplit[3]);
 			xMin = Math.min(x, xMin);
 			yMax = Math.max(y, yMax);
 		}
 		
-		dstNdvi.SetGeoTransform(new double[] { xMin, PIXEL_SIZE, 0, yMax, 0, -PIXEL_SIZE });
+		Band bandNdviTiff = createBand(dstNdviTiff, xMin, yMax);
+		Band bandNdviBmp = createBand(dstNdviBmp, xMin, yMax);
 		
-		SpatialReference srs = new SpatialReference();
-		srs.SetWellKnownGeogCS("WGS84");
-		dstNdvi.SetProjection(srs.ExportToWkt());
-		
-		Band bandNdvi = dstNdvi.GetRasterBand(1);
 		double[] rasterNdvi = new double[maskHeight * maskWidth];
+		double[] rasterNdvi100 = new double[maskHeight * maskWidth];
 		
 		lineIterator = IOUtils.lineIterator(new FileInputStream(
 				csvFile), Charsets.UTF_8);
@@ -72,10 +83,25 @@ public class CreateTiff {
 			int jIdx = j - initialJ;
 			
 			double ndvi = Double.parseDouble(lineSplit[7]);
-			rasterNdvi[jIdx * maskWidth + iIdx] = ndvi;
+			rasterNdvi[iIdx * maskWidth + jIdx] = ndvi;
+			rasterNdvi100[iIdx * maskWidth + jIdx] = ndvi * 100;
 		}
 		
-		bandNdvi.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi);
+		bandNdviTiff.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi);
+		bandNdviTiff.FlushCache();
 		
+		bandNdviBmp.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi100);
+		bandNdviBmp.FlushCache();
+	}
+
+	private static Band createBand(Dataset dstNdviTiff, Double xMin, Double yMax) {
+		dstNdviTiff.SetGeoTransform(new double[] { xMin, PIXEL_SIZE, 0, yMax, 0, -PIXEL_SIZE });
+		
+		SpatialReference srs = new SpatialReference();
+		srs.SetWellKnownGeogCS("WGS84");
+		dstNdviTiff.SetProjection(srs.ExportToWkt());
+		
+		Band bandNdvi = dstNdviTiff.GetRasterBand(1);
+		return bandNdvi;
 	}
 }
