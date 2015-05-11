@@ -18,13 +18,15 @@ public class BulkMain {
 		String fileName = new File(mtlFilePath).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 
-		int leftX = Integer.parseInt(args[1]);
-		int upperY = Integer.parseInt(args[2]);
-		int rightX = Integer.parseInt(args[3]);
-		int lowerY = Integer.parseInt(args[4]);
+		String outputDir = args[1];
+		
+		int leftX = Integer.parseInt(args[2]);
+		int upperY = Integer.parseInt(args[3]);
+		int rightX = Integer.parseInt(args[4]);
+		int lowerY = Integer.parseInt(args[5]);
 
-		int numberOfPartitions = Integer.parseInt(args[5]);
-		int partitionIndex = Integer.parseInt(args[6]);
+		int numberOfPartitions = Integer.parseInt(args[6]);
+		int partitionIndex = Integer.parseInt(args[7]);
 
 		int xPartitionInterval = calcXInterval(leftX, rightX, numberOfPartitions);
 		
@@ -34,9 +36,9 @@ public class BulkMain {
 		String prefix = imagePartition.getIBegin() + "." + imagePartition.getIFinal() + "." + upperY + "." + lowerY;
 		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
 		
-		String csvFilePath = mtlName + "/" + prefix + ".pixels.csv";
+		String csvFilePath = outputDir + "/" + mtlName + "/" + prefix + ".pixels.csv";
 		
-		Wrapper wrapper = new Wrapper(mtlFilePath, imagePartition.getIBegin(), 
+		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(), 
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, null);
 		wrapper.doTask(TaskType.F1);
 		CreateTiff.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 

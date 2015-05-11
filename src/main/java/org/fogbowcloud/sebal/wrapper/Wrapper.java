@@ -30,21 +30,34 @@ public class Wrapper {
     private int iFinal;
     private int jBegin;
     private int jFinal;
-    private String mtlName;
+    private String outputDir;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private String boundingBoxFileName;
 
-    public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin,
+	public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName,
+			String boundingBoxFileName) {
+		this(mtlFile, null, iBegin, iFinal, jBegin, jFinal, mtlName, boundingBoxFileName);
+	}
+    
+    public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
             int jFinal, String mtlName, String boundingBoxFileName) {
-        this.mtlFile = mtlFile;
-        this.iBegin = iBegin;
-        this.iFinal = iFinal;
-        this.jBegin = jBegin;
-        this.jFinal = jFinal;
-        this.mtlName = mtlName;
-        this.boundingBoxFileName = boundingBoxFileName;
-        this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
+    	this.mtlFile = mtlFile;
+    	this.iBegin = iBegin;
+    	this.iFinal = iFinal;
+    	this.jBegin = jBegin;
+    	this.jFinal = jFinal;
+    	this.boundingBoxFileName = boundingBoxFileName;
+    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
+    	if (outputDir == null) {
+    		this.outputDir = mtlName;
+    	} else {
+    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
+    			new File(outputDir).mkdirs();
+    		}
+    		this.outputDir = outputDir + "/" + mtlName;
+    	}
     }
+    
 
     public void doTask(String taskType) throws Exception {
         try {
@@ -96,12 +109,12 @@ public class Wrapper {
     }
 
     private String getPixelFrioFileName() {
-        return mtlName + File.separator + iBegin + "." + iFinal + "." + jBegin
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".frio.csv";
     }
 
     private String getPixelFrioFinalFileName() {
-        return mtlName + File.separator + "frio.csv";
+        return outputDir + "/" + "frio.csv";
     }
 
     private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
@@ -123,7 +136,7 @@ public class Wrapper {
     }
 
     private List<ImagePixel> getAllPixelsQuente() throws IOException {
-        File folder = new File(mtlName + File.separator);
+        File folder = new File(outputDir);
         File[] listOfFiles = folder.listFiles();
         List<ImagePixel> pixelsQuente = new ArrayList<ImagePixel>();
 
@@ -140,7 +153,7 @@ public class Wrapper {
     }
 
     private List<ImagePixel> getAllPixelsFrio() throws IOException {
-        File folder = new File(mtlName + File.separator);
+        File folder = new File(outputDir);
         File[] listOfFiles = folder.listFiles();
         List<ImagePixel> pixelsFrio = new ArrayList<ImagePixel>();
 
@@ -157,12 +170,12 @@ public class Wrapper {
     }
 
     private String getPixelQuenteFileName() {
-        return mtlName + File.separator + iBegin + "." + iFinal + "." + jBegin
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".quente.csv";
     }
 
     private String getFinalPixelQuenteFileName() {
-        return mtlName + File.separator + "quente.csv";
+        return outputDir + "/" + "quente.csv";
     }
 
     private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
@@ -191,7 +204,7 @@ public class Wrapper {
     }
 
     private String getAllPixelsFileName() {
-        return mtlName + File.separator + iBegin + "." + iFinal + "." + jBegin
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".pixels.csv";
     }
 
@@ -261,8 +274,8 @@ public class Wrapper {
             Image image = SEBALHelper.readPixels(getAllPixelsQuente(),
                     getAllPixelsFrio(), pixelQuenteFrioChooser);
             image.choosePixelsQuenteFrio();
-            savePixelFrio(image, mtlName + "/" + "frio.csv");
-            savePixelQuente(image, mtlName + "/" + "quente.csv");
+            savePixelFrio(image, outputDir + "/" + "frio.csv");
+            savePixelQuente(image, outputDir + "/" + "quente.csv");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -295,7 +308,7 @@ public class Wrapper {
     }
 
     public String getFinaLResultFileName() {
-        return mtlName + File.separator + iBegin + "." + iFinal + "." + jBegin
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".F2.csv";
     }
 

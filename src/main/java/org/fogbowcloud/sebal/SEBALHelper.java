@@ -27,6 +27,9 @@ import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 
 public class SEBALHelper {
+	
+	private static double PIXEL_SIZE = 0.00027;
+
     public static Product readProduct(String mtlFileName,
             String boundingBoxFileName) throws IOException {
         File mtlFile = new File(mtlFileName);
@@ -36,7 +39,7 @@ public class SEBALHelper {
         ProductSubsetDef productSubsetDef = null;
         Product boundedProduct = product;
         if (boundingBoxFileName != null) {
-            BoundingBox boundingBox = calculateBoundingBox(boundingBoxFileName,
+            BoundingBox boundingBox = calculateMetricBoundingBox(boundingBoxFileName,
                     product);
 
             productSubsetDef = new ProductSubsetDef();
@@ -47,7 +50,7 @@ public class SEBALHelper {
         return boundedProduct;
     }
 
-    private static BoundingBox calculateBoundingBox(String boudingBoxFileName,
+    private static BoundingBox calculateMetricBoundingBox(String boudingBoxFileName,
             Product product) throws IOException {
         String boundingBoxInfo = FileUtils.readFileToString(new File(
                 boudingBoxFileName));
@@ -72,6 +75,65 @@ public class SEBALHelper {
         int offsetY = (int) ((ULy - y0) / 30);
         int w = (int) ((x1 - x0) / 30);
         int h = (int) ((y0 - y1) / 30);
+        System.out.println("offSetX = " + offsetX);
+        System.out.println("offSetY = " + offsetY);
+        System.out.println("w = " + w);
+        System.out.println("h = " + h);
+        BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);
+        return boundingBox;
+    }
+    
+    private static BoundingBox calculateBoundingBox(String boudingBoxFileName,
+            Product product) throws IOException {
+        String boundingBoxInfo = FileUtils.readFileToString(new File(
+                boudingBoxFileName));
+        String[] boundingBoxValues = boundingBoxInfo.split(",");
+
+        double ULBoxX = Double.parseDouble(boundingBoxValues[0]);
+        double ULBoxY = Double.parseDouble(boundingBoxValues[1]);
+        
+        double URBoxX = Double.parseDouble(boundingBoxValues[2]);
+        double URBoxY = Double.parseDouble(boundingBoxValues[3]);
+        
+        double LLBoxX = Double.parseDouble(boundingBoxValues[4]);
+        double LLBoxY = Double.parseDouble(boundingBoxValues[5]);
+        
+        double LRBoxX = Double.parseDouble(boundingBoxValues[6]);
+        double LRBoxY = Double.parseDouble(boundingBoxValues[7]);
+        
+        double x0 = Math.min(Math.min(Math.min(ULBoxX, URBoxX), LLBoxX), LRBoxX);
+        double y0 = Math.max(Math.max(Math.max(ULBoxY, URBoxY), LLBoxY), LRBoxY);
+          
+        double x1 = Math.max(Math.max(Math.max(ULBoxX, URBoxX), LLBoxX), LRBoxX);
+        double y1 = Math.min(Math.min(Math.min(ULBoxY, URBoxY), LLBoxY), LRBoxY);
+        
+//        CORNER_UL_LAT_PRODUCT = -6.29271
+//        	    CORNER_UL_LON_PRODUCT = -37.85460
+//        	    CORNER_UR_LAT_PRODUCT = -6.28380
+//        	    CORNER_UR_LON_PRODUCT = -35.74075
+//        	    CORNER_LL_LAT_PRODUCT = -8.17839
+//        	    CORNER_LL_LON_PRODUCT = -37.84983
+//        	    CORNER_LR_LAT_PRODUCT = -8.16678
+//        	    CORNER_LR_LON_PRODUCT = -35.72721
+        
+        MetadataElement metadataRoot = product.getMetadataRoot();
+        double ULx = metadataRoot.getElement("L1_METADATA_FILE")
+                .getElement("PRODUCT_METADATA")
+                .getAttribute("CORNER_UL_LON_PRODUCT").getData()
+                .getElemDouble();
+        double ULy = metadataRoot.getElement("L1_METADATA_FILE")
+                .getElement("PRODUCT_METADATA")
+                .getAttribute("CORNER_UL_LAT_PRODUCT").getData()
+                .getElemDouble();
+
+        int offsetX = (int) ((x0 - ULx) / PIXEL_SIZE);
+        int offsetY = (int) ((ULy - y0) / PIXEL_SIZE);
+        int w = (int) ((x1 - x0) / PIXEL_SIZE);
+        int h = (int) ((y0 - y1) / PIXEL_SIZE);
+        System.out.println("offSetX = " + offsetX);
+        System.out.println("offSetY = " + offsetY);
+        System.out.println("w = " + w);
+        System.out.println("h = " + h);
         BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);
         return boundingBox;
     }
