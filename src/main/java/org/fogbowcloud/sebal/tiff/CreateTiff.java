@@ -44,8 +44,8 @@ public class CreateTiff {
 		Dataset dstNdviBmp = bmpDriver.Create(ndviBmpFile, maskWidth, maskHeight, 1,
 				gdalconstConstants.GDT_Byte);
 		
-		Double xMin = +360.;
-		Double yMax = -360.;
+		Double latMax = -360.;
+		Double lonMin = +360.;
 		Integer initialI = null;
 		Integer initialJ = null;
 		
@@ -58,14 +58,14 @@ public class CreateTiff {
 				initialI = Integer.parseInt(lineSplit[0]);
 				initialJ = Integer.parseInt(lineSplit[1]);
 			}
-			Double x = Double.parseDouble(lineSplit[2]);
-			Double y = Double.parseDouble(lineSplit[3]);
-			xMin = Math.min(x, xMin);
-			yMax = Math.max(y, yMax);
+			Double lat = Double.parseDouble(lineSplit[2]);
+			Double lon = Double.parseDouble(lineSplit[3]);
+			latMax = Math.max(lat, latMax);
+			lonMin = Math.min(lon, lonMin);
 		}
 		
-		Band bandNdviTiff = createBand(dstNdviTiff, xMin, yMax);
-		Band bandNdviBmp = createBand(dstNdviBmp, xMin, yMax);
+		Band bandNdviTiff = createBand(dstNdviTiff, lonMin, latMax);
+		Band bandNdviBmp = createBand(dstNdviBmp, lonMin, latMax);
 		
 		double[] rasterNdvi = new double[maskHeight * maskWidth];
 		double[] rasterNdvi255 = new double[maskHeight * maskWidth];
@@ -93,8 +93,8 @@ public class CreateTiff {
 		bandNdviBmp.FlushCache();
 	}
 
-	private static Band createBand(Dataset dstNdviTiff, Double xMin, Double yMax) {
-		dstNdviTiff.SetGeoTransform(new double[] { xMin, PIXEL_SIZE, 0, yMax, 0, -PIXEL_SIZE });
+	private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
+		dstNdviTiff.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
 		
 		SpatialReference srs = new SpatialReference();
 		srs.SetWellKnownGeogCS("WGS84");
