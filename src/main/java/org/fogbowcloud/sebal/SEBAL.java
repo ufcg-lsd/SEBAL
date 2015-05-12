@@ -299,7 +299,9 @@ public class SEBAL {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
 				ImagePixelOutput output = processPixel(satellite, imagePixel);
 				imagePixel.setOutput(output);
-			} else {				
+			} else {	
+				System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
+						+ imagePixel.geoLoc().getLat() + ") is out of the bounding box.");
 				imagePixel.setOutput(new ImagePixelOutput());
 			}
 		}
@@ -323,7 +325,7 @@ public class SEBAL {
     	   path.lineTo(xpoints[i], ypoints[i]);
     	}
     	path.closePath();
-    	
+   	
     	return path.contains(imagePixel.geoLoc().getLon(), imagePixel.geoLoc().getLat());
 	}
 
