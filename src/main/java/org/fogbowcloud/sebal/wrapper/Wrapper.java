@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.esa.beam.framework.datamodel.Product;
+import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.DefaultPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
@@ -32,21 +33,23 @@ public class Wrapper {
     private int jFinal;
     private String outputDir;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
-    private String boundingBoxFileName;
-
+    private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+    
 	public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName,
-			String boundingBoxFileName) {
+			String boundingBoxFileName) throws IOException {
 		this(mtlFile, null, iBegin, iFinal, jBegin, jFinal, mtlName, boundingBoxFileName);
 	}
     
     public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
-            int jFinal, String mtlName, String boundingBoxFileName) {
+            int jFinal, String mtlName, String boundingBoxFileName) throws IOException {
     	this.mtlFile = mtlFile;
     	this.iBegin = iBegin;
     	this.iFinal = iFinal;
     	this.jBegin = jBegin;
     	this.jFinal = jFinal;
-    	this.boundingBoxFileName = boundingBoxFileName;
+
+    	getBoundingBoxVertices(boundingBoxFileName);
+    	
     	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
     	if (outputDir == null) {
     		this.outputDir = mtlName;
@@ -57,8 +60,21 @@ public class Wrapper {
     		this.outputDir = outputDir + "/" + mtlName;
     	}
     }
-    
 
+	private void getBoundingBoxVertices(String boundingBoxFileName) throws IOException {
+		//TODO check number of args inside bounding box file name 
+		if (boundingBoxFileName != null && new File(boundingBoxFileName).exists()) {
+			String boundingBoxInfo = FileUtils.readFileToString(new File(boundingBoxFileName));
+			String[] boundingBoxValues = boundingBoxInfo.split(",");
+
+			for (int i = 0; i < boundingBoxValues.length; i += 2) {
+				boundingBoxVertices.add(new BoundingBoxVertice(Double
+						.parseDouble(boundingBoxValues[i]), Double
+						.parseDouble(boundingBoxValues[i + 1])));
+			}
+		}
+	}
+    
     public void doTask(String taskType) throws Exception {
         try {
             if (taskType.equalsIgnoreCase(TaskType.F1)) {
@@ -85,12 +101,12 @@ public class Wrapper {
 
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
-        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxFileName);
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser);
         Satellite satellite = new JSONSatellite("landsat5");
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite);
+                satellite, boundingBoxVertices);
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());
@@ -494,11 +510,4 @@ public class Wrapper {
         this.pixelQuenteFrioChooser = pixelQuenteFrioChooser;
     }
 
-    public String getBoundingBoxFileName() {
-        return boundingBoxFileName;
-    }
-
-    public void setBoundingBoxFileName(String boundingBoxFileName) {
-        this.boundingBoxFileName = boundingBoxFileName;
-    }
 }
