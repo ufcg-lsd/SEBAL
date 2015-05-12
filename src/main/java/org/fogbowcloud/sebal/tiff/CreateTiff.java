@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -28,21 +30,103 @@ public class CreateTiff {
 
 		createTiff(csvFile, tifFilePrefix, maskWidth, maskHeight);
 	}
+	
+	private static class BandVariableBuilder {
+		private String imgPrefix;
+		private String outputPath;
+		private int maskWidth;
+		private int maskHeight;
+		private Double ulLon;
+		private Double ulLat;
+		private Integer initialI;
+		private Integer initialJ;
+
+		public BandVariableBuilder(String imgPrefix, String outputPath, int maskWidth, 
+				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ) {
+			this.imgPrefix = imgPrefix;
+			this.outputPath = outputPath;
+			this.maskWidth = maskWidth;
+			this.maskHeight = maskHeight;
+			this.ulLon = ulLon;
+			this.ulLat = ulLat;
+			this.initialI = initialI;
+			this.initialJ = initialJ;
+		}
+		
+		public BandVariable build(String varName, int columnIdx) {
+			return new BandVariable(varName, imgPrefix, outputPath, maskWidth, 
+					maskHeight, ulLon, ulLat, initialI, initialJ, columnIdx);
+		}
+	}
+	
+	private static class BandVariable {
+		
+		private int columnIdx;
+		private Band tiffBand;
+		private Band bmpBand;
+		private double[] rasterTiff;
+		private double[] rasterBmp;
+		private Integer initialI;
+		private Integer initialJ;
+		private int maskWidth;
+		private int maskHeight;
+
+		public BandVariable(String varName, String imgPrefix, String outputPath, int maskWidth, 
+				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ, int columnIdx) {
+			
+			this.maskWidth = maskWidth;
+			this.maskHeight = maskHeight;
+			this.initialI = initialI;
+			this.initialJ = initialJ;
+			this.columnIdx = columnIdx;
+			
+			Driver tiffDriver = gdal.GetDriverByName("GTiff");
+			String tiffFile = new File(outputPath, imgPrefix + "_" + varName + ".tiff").getAbsolutePath();
+			Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
+					gdalconstConstants.GDT_Float64);
+			this.tiffBand = createBand(dstTiff, ulLon, ulLat);
+			
+			Driver bmpDriver = gdal.GetDriverByName("BMP");
+			String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp").getAbsolutePath();
+			Dataset dstBmp = bmpDriver.Create(bmpFile, maskWidth, maskHeight, 1,
+					gdalconstConstants.GDT_Byte);
+			this.bmpBand = createBand(dstBmp, ulLon, ulLat);
+			
+			this.rasterTiff = new double[maskHeight * maskWidth];
+			this.rasterBmp = new double[maskHeight * maskWidth];
+		}
+		
+		public void read(String[] splitLine) {
+			int i = Integer.parseInt(splitLine[0]);
+			int j = Integer.parseInt(splitLine[1]);
+			int iIdx = i - initialI;
+			int jIdx = j - initialJ;
+			double val = Double.parseDouble(splitLine[columnIdx]);
+			rasterTiff[jIdx * maskWidth + iIdx] = val;
+			rasterBmp[jIdx * maskWidth + iIdx] = val * 255;
+		}
+		
+		public void render() {
+			tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
+			tiffBand.FlushCache();
+			bmpBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
+			bmpBand.FlushCache();
+		}
+		
+		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
+			dstNdviTiff.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
+			SpatialReference srs = new SpatialReference();
+			srs.SetWellKnownGeogCS("WGS84");
+			dstNdviTiff.SetProjection(srs.ExportToWkt());
+			Band bandNdvi = dstNdviTiff.GetRasterBand(1);
+			return bandNdvi;
+		}
+	}
 
 	public static void createTiff(String csvFile, String tifFilePrefix,
 			int maskWidth, int maskHeight) throws IOException,
 			FileNotFoundException {
 		gdal.AllRegister();
-		
-		Driver tiffDriver = gdal.GetDriverByName("GTiff");
-		String ndviTiffFile = new File(new File(csvFile).getParentFile(), tifFilePrefix + "_ndvi.tiff").getAbsolutePath();
-		Dataset dstNdviTiff = tiffDriver.Create(ndviTiffFile, maskWidth, maskHeight, 1,
-				gdalconstConstants.GDT_Float64);
-		
-		Driver bmpDriver = gdal.GetDriverByName("BMP");
-		String ndviBmpFile = new File(new File(csvFile).getParentFile(), tifFilePrefix + "_ndvi.bmp").getAbsolutePath();
-		Dataset dstNdviBmp = bmpDriver.Create(ndviBmpFile, maskWidth, maskHeight, 1,
-				gdalconstConstants.GDT_Byte);
 		
 		Double latMax = -360.;
 		Double lonMin = +360.;
@@ -64,11 +148,16 @@ public class CreateTiff {
 			lonMin = Math.min(lon, lonMin);
 		}
 		
-		Band bandNdviTiff = createBand(dstNdviTiff, lonMin, latMax);
-		Band bandNdviBmp = createBand(dstNdviBmp, lonMin, latMax);
-		
-		double[] rasterNdvi = new double[maskHeight * maskWidth];
-		double[] rasterNdvi255 = new double[maskHeight * maskWidth];
+		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(tifFilePrefix, new File(csvFile).getParent(), 
+				maskWidth, maskHeight, lonMin, latMax, initialI, initialJ);
+		List<BandVariable> vars = new LinkedList<BandVariable>();
+		vars.add(bandVariableBuilder.build("ndvi", 7));
+		vars.add(bandVariableBuilder.build("evi", 18));
+		vars.add(bandVariableBuilder.build("iaf", 17));
+		vars.add(bandVariableBuilder.build("ts", 6));
+		vars.add(bandVariableBuilder.build("alpha", 9));
+		vars.add(bandVariableBuilder.build("rn", 5));
+		vars.add(bandVariableBuilder.build("g", 4));
 		
 		lineIterator = IOUtils.lineIterator(new FileInputStream(
 				csvFile), Charsets.UTF_8);
@@ -76,31 +165,14 @@ public class CreateTiff {
 		while (lineIterator.hasNext()) {
 			String line = (String) lineIterator.next();
 			String[] lineSplit = line.split(",");
-			
-			int i = Integer.parseInt(lineSplit[0]);
-			int j = Integer.parseInt(lineSplit[1]);
-			int iIdx = i - initialI;
-			int jIdx = j - initialJ;
-			double ndvi = Double.parseDouble(lineSplit[7]);
-			rasterNdvi[jIdx * maskWidth + iIdx] = ndvi;
-			rasterNdvi255[jIdx * maskWidth + iIdx] = ndvi * 255;
+			for (BandVariable var : vars) {
+				var.read(lineSplit);
+			}
 		}
 		
-		bandNdviTiff.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi);
-		bandNdviTiff.FlushCache();
-		
-		bandNdviBmp.WriteRaster(0, 0, maskWidth, maskHeight, rasterNdvi255);
-		bandNdviBmp.FlushCache();
+		for (BandVariable var : vars) {
+			var.render();
+		}
 	}
-
-	private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
-		dstNdviTiff.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
-		
-		SpatialReference srs = new SpatialReference();
-		srs.SetWellKnownGeogCS("WGS84");
-		dstNdviTiff.SetProjection(srs.ExportToWkt());
-		
-		Band bandNdvi = dstNdviTiff.GetRasterBand(1);
-		return bandNdvi;
-	}
+	
 }
