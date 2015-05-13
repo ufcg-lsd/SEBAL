@@ -311,6 +311,12 @@ public class SEBAL {
 
     private boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
 			List<BoundingBoxVertice> boundingBoxVertices) {
+    	if (boundingBoxVertices.size() < 3) {
+			System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
+					+ " vertices set.");
+    		return true;
+    	}
+    	
     	double[] xpoints = new double[boundingBoxVertices.size()];
     	double[] ypoints = new double[boundingBoxVertices.size()];
 
