@@ -1,5 +1,6 @@
 package org.fogbowcloud.sebal;
 
+import java.awt.geom.Path2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import org.python.modules.math;
 public class SEBAL {
 
     private EarthSunDistance earthSunDistance;
-
+   
     public SEBAL() throws Exception {
         earthSunDistance = new EarthSunDistance();
     }
@@ -292,16 +293,49 @@ public class SEBAL {
         return psim;
     }
 
-    public Image processPixelQuentePixelFrio(Image image, Satellite satellite) {
-        for (ImagePixel imagePixel : image.pixels()) {
-            ImagePixelOutput output = processPixel(satellite, imagePixel);
-            imagePixel.setOutput(output);
-        }
-        image.choosePixelsQuenteFrio();
-        return image;
-    }
+	public Image processPixelQuentePixelFrio(Image image, Satellite satellite,
+			List<BoundingBoxVertice> boundingBoxVertices) {
+		for (ImagePixel imagePixel : image.pixels()) {
+			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
+				ImagePixelOutput output = processPixel(satellite, imagePixel);
+				imagePixel.setOutput(output);
+			} else {	
+				System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
+						+ imagePixel.geoLoc().getLat() + ") is out of the bounding box.");
+				imagePixel.setOutput(new ImagePixelOutput());
+			}
+		}
+		image.choosePixelsQuenteFrio();
+		return image;
+	}
 
-    public Image pixelHProcess(List<ImagePixel> pixels, ImagePixel pixelQuente,
+    private boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
+			List<BoundingBoxVertice> boundingBoxVertices) {
+    	if (boundingBoxVertices.size() < 3) {
+			System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
+					+ " vertices set.");
+    		return true;
+    	}
+    	
+    	double[] xpoints = new double[boundingBoxVertices.size()];
+    	double[] ypoints = new double[boundingBoxVertices.size()];
+
+    	for (int i = 0; i < boundingBoxVertices.size(); i++) {
+			xpoints[i] = boundingBoxVertices.get(i).getLon();
+			ypoints[i]= boundingBoxVertices.get(i).getLat();	
+		}
+    	
+    	Path2D path = new Path2D.Double();
+    	path.moveTo(xpoints[0], ypoints[0]);
+    	for(int i = 1; i < xpoints.length; ++i) {
+    	   path.lineTo(xpoints[i], ypoints[i]);
+    	}
+    	path.closePath();
+   	
+    	return path.contains(imagePixel.geoLoc().getLon(), imagePixel.geoLoc().getLat());
+	}
+
+	public Image pixelHProcess(List<ImagePixel> pixels, ImagePixel pixelQuente,
             ImagePixelOutput pixelQuenteOutput,
             ImagePixelOutput pixelFrioOutput, Image image) {
 
@@ -586,5 +620,4 @@ public class SEBAL {
     private double frEvapo(double lambdaE, double Rn, double G) {
         return lambdaE / (Rn - G);
     }
-
 }

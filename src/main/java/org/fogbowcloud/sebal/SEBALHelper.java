@@ -1,13 +1,14 @@
 package org.fogbowcloud.sebal;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.dataio.ProductSubsetDef;
@@ -25,43 +26,71 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.ReferencingFactoryFinder;
+import org.geotools.referencing.factory.ReferencingFactoryContainer;
+import org.opengis.parameter.ParameterValueGroup;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.GeographicCRS;
+import org.opengis.referencing.crs.ProjectedCRS;
+import org.opengis.referencing.cs.CartesianCS;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.MathTransformFactory;
+import org.opengis.referencing.operation.TransformException;
 
 public class SEBALHelper {
 	
-	private static double PIXEL_SIZE = 0.00027;
-
+	private static final Map<Integer, Integer> ZONE_TO_LONG_ZONE_CENTER = new HashMap<Integer, Integer>();
+	
+	static {
+		ZONE_TO_LONG_ZONE_CENTER.put(22, -51);
+		ZONE_TO_LONG_ZONE_CENTER.put(23, -45);
+		ZONE_TO_LONG_ZONE_CENTER.put(24, -39);
+		ZONE_TO_LONG_ZONE_CENTER.put(25, -33);
+		ZONE_TO_LONG_ZONE_CENTER.put(26, -27);
+	}
+	
     public static Product readProduct(String mtlFileName,
-            String boundingBoxFileName) throws IOException {
+            List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
         File mtlFile = new File(mtlFileName);
         LandsatGeotiffReaderPlugin readerPlugin = new LandsatGeotiffReaderPlugin();
         LandsatGeotiffReader reader = new LandsatGeotiffReader(readerPlugin);
         Product product = reader.readProductNodes(mtlFile, null);
         ProductSubsetDef productSubsetDef = null;
         Product boundedProduct = product;
-        if (boundingBoxFileName != null) {
-            BoundingBox boundingBox = calculateMetricBoundingBox(boundingBoxFileName,
-                    product);
+        if (boundingBoxVertices != null && !boundingBoxVertices.isEmpty()) {
+			BoundingBox boundingBox = calculateBoundingBox(boundingBoxVertices, product);
 
-            productSubsetDef = new ProductSubsetDef();
-            productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(),
-                    boundingBox.getW(), boundingBox.getH());
-            boundedProduct = reader.readProductNodes(mtlFile, productSubsetDef);
+			productSubsetDef = new ProductSubsetDef();
+			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
+					boundingBox.getH());
+			boundedProduct = reader.readProductNodes(mtlFile, productSubsetDef);
         }
         return boundedProduct;
     }
 
-    private static BoundingBox calculateMetricBoundingBox(String boudingBoxFileName,
-            Product product) throws IOException {
-        String boundingBoxInfo = FileUtils.readFileToString(new File(
-                boudingBoxFileName));
-        String[] boundingBoxValues = boundingBoxInfo.split(",");
-
-        double x0 = Double.parseDouble(boundingBoxValues[0]);
-        double y0 = Double.parseDouble(boundingBoxValues[1]);
-        double x1 = Double.parseDouble(boundingBoxValues[2]);
-        double y1 = Double.parseDouble(boundingBoxValues[3]);
-
+    private static BoundingBox calculateBoundingBox(List<BoundingBoxVertice> boudingVertices,
+            Product product) throws Exception {
+        List<UTMCoordinate> utmCoordinates = new ArrayList<UTMCoordinate>();
+    	
         MetadataElement metadataRoot = product.getMetadataRoot();
+		int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
+				.getElemInt();
+
+		// TODO read zone from MTL file
+		for (BoundingBoxVertice boundingBoxVertice : boudingVertices) {
+			utmCoordinates.add(convertLatLonToUtm(boundingBoxVertice.getLat(),
+					boundingBoxVertice.getLon(), zoneNumber,
+					ZONE_TO_LONG_ZONE_CENTER.get(zoneNumber)));
+		}
+
+		double x0 = getMinimunX(utmCoordinates);
+		double y0 = getMaximunY(utmCoordinates);
+
+		double x1 = getMaximunX(utmCoordinates);
+		double y1 = getMinimunY(utmCoordinates);
+        
         double ULx = metadataRoot.getElement("L1_METADATA_FILE")
                 .getElement("PRODUCT_METADATA")
                 .getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData()
@@ -75,67 +104,82 @@ public class SEBALHelper {
         int offsetY = (int) ((ULy - y0) / 30);
         int w = (int) ((x1 - x0) / 30);
         int h = (int) ((y0 - y1) / 30);
-        System.out.println("offSetX = " + offsetX);
-        System.out.println("offSetY = " + offsetY);
-        System.out.println("w = " + w);
-        System.out.println("h = " + h);
+
         BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);
         return boundingBox;
     }
     
-    private static BoundingBox calculateBoundingBox(String boudingBoxFileName,
-            Product product) throws IOException {
-        String boundingBoxInfo = FileUtils.readFileToString(new File(
-                boudingBoxFileName));
-        String[] boundingBoxValues = boundingBoxInfo.split(",");
+	private static double getMinimunX(List<UTMCoordinate> vertices) {
+		double minimunX = vertices.get(0).getEasting(); //initializing with first value
+		for (UTMCoordinate utmCoordinate : vertices) {
+			if (utmCoordinate.getEasting() < minimunX) {
+				minimunX = utmCoordinate.getEasting();
+			}
+		}		
+		return minimunX;
+	}
+	
+	private static double getMaximunX(List<UTMCoordinate> vertices) {
+		double maximunX = vertices.get(0).getEasting(); //initializing with first value
+		for (UTMCoordinate utmCoordinate : vertices) {
+			if (utmCoordinate.getEasting() > maximunX) {
+				maximunX = utmCoordinate.getEasting();
+			}
+		}		
+		return maximunX;
+	}
+	
+	private static double getMaximunY(List<UTMCoordinate> vertices) {
+		double maximunY = vertices.get(0).getNorthing(); //initializing with first value
+		for (UTMCoordinate utmCoordinate : vertices) {
+			if (utmCoordinate.getNorthing()> maximunY) {
+				maximunY = utmCoordinate.getNorthing();
+			}
+		}		
+		return maximunY;
+	}
+	
+	private static double getMinimunY(List<UTMCoordinate> vertices) {
+		double minimunY = vertices.get(0).getNorthing(); //initializing with first value
+		for (UTMCoordinate utmCoordinate : vertices) {
+			if (utmCoordinate.getNorthing() < minimunY) {
+				minimunY = utmCoordinate.getNorthing();
+			}
+		}		
+		return minimunY;
+	}
 
-        double ULBoxX = Double.parseDouble(boundingBoxValues[0]);
-        double ULBoxY = Double.parseDouble(boundingBoxValues[1]);
-        
-        double URBoxX = Double.parseDouble(boundingBoxValues[2]);
-        double URBoxY = Double.parseDouble(boundingBoxValues[3]);
-        
-        double LLBoxX = Double.parseDouble(boundingBoxValues[4]);
-        double LLBoxY = Double.parseDouble(boundingBoxValues[5]);
-        
-        double LRBoxX = Double.parseDouble(boundingBoxValues[6]);
-        double LRBoxY = Double.parseDouble(boundingBoxValues[7]);
-        
-        double x0 = Math.min(Math.min(Math.min(ULBoxX, URBoxX), LLBoxX), LRBoxX);
-        double y0 = Math.max(Math.max(Math.max(ULBoxY, URBoxY), LLBoxY), LRBoxY);
-          
-        double x1 = Math.max(Math.max(Math.max(ULBoxX, URBoxX), LLBoxX), LRBoxX);
-        double y1 = Math.min(Math.min(Math.min(ULBoxY, URBoxY), LLBoxY), LRBoxY);
-        
-//        CORNER_UL_LAT_PRODUCT = -6.29271
-//        	    CORNER_UL_LON_PRODUCT = -37.85460
-//        	    CORNER_UR_LAT_PRODUCT = -6.28380
-//        	    CORNER_UR_LON_PRODUCT = -35.74075
-//        	    CORNER_LL_LAT_PRODUCT = -8.17839
-//        	    CORNER_LL_LON_PRODUCT = -37.84983
-//        	    CORNER_LR_LAT_PRODUCT = -8.16678
-//        	    CORNER_LR_LON_PRODUCT = -35.72721
-        
-        MetadataElement metadataRoot = product.getMetadataRoot();
-        double ULx = metadataRoot.getElement("L1_METADATA_FILE")
-                .getElement("PRODUCT_METADATA")
-                .getAttribute("CORNER_UL_LON_PRODUCT").getData()
-                .getElemDouble();
-        double ULy = metadataRoot.getElement("L1_METADATA_FILE")
-                .getElement("PRODUCT_METADATA")
-                .getAttribute("CORNER_UL_LAT_PRODUCT").getData()
-                .getElemDouble();
+	private static UTMCoordinate convertLatLonToUtm(double latitude, double longitude, double zoneNumber,
+			double utmZoneCenterLongitude) throws FactoryException, TransformException {
+    	
+		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
+		ReferencingFactoryContainer factories = new ReferencingFactoryContainer(null);
 
-        int offsetX = (int) ((x0 - ULx) / PIXEL_SIZE);
-        int offsetY = (int) ((ULy - y0) / PIXEL_SIZE);
-        int w = (int) ((x1 - x0) / PIXEL_SIZE);
-        int h = (int) ((y0 - y1) / PIXEL_SIZE);
-        System.out.println("offSetX = " + offsetX);
-        System.out.println("offSetY = " + offsetY);
-        System.out.println("w = " + w);
-        System.out.println("h = " + h);
-        BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);
-        return boundingBox;
+		GeographicCRS geoCRS = org.geotools.referencing.crs.DefaultGeographicCRS.WGS84;
+		CartesianCS cartCS = org.geotools.referencing.cs.DefaultCartesianCS.GENERIC_2D;
+
+		ParameterValueGroup parameters = mtFactory.getDefaultParameters("Transverse_Mercator");
+		parameters.parameter("central_meridian").setValue(utmZoneCenterLongitude);
+		parameters.parameter("latitude_of_origin").setValue(0.0);
+		parameters.parameter("scale_factor").setValue(0.9996);
+		parameters.parameter("false_easting").setValue(500000.0);
+		parameters.parameter("false_northing").setValue(0.0);
+
+		Map<String, String> properties = Collections.singletonMap("name", "WGS 84 / UTM Zone "
+				+ zoneNumber);
+		@SuppressWarnings("deprecation")
+		ProjectedCRS projCRS = factories.createProjectedCRS(properties, geoCRS, null, parameters,
+				cartCS);
+
+		MathTransform transform = CRS.findMathTransform(geoCRS, projCRS);
+
+		double[] dest = new double[2];
+		transform.transform(new double[] { longitude, latitude }, 0, dest, 0, 1);
+
+		int easting = (int) Math.round(dest[0]);
+		int northing = (int) Math.round(dest[1]);
+		
+		return new UTMCoordinate(easting, northing);
     }
 
     public static Image readPixels(List<ImagePixel> pixels,
@@ -237,8 +281,6 @@ public class SEBALHelper {
                 geoPos = null;
             }
         }
-
         return image;
     }
-
 }

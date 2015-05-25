@@ -11,7 +11,7 @@ import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 
 public class findSmallestSquare {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.US);
         String mtlListFile = args[0];
         double x0 = Double.MIN_VALUE;
