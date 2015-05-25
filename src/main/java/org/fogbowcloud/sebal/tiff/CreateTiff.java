@@ -64,12 +64,14 @@ public class CreateTiff {
 		private int columnIdx;
 		private Band tiffBand;
 		private Band bmpBand;
+		private Band netCDFBand;
 		private double[] rasterTiff;
 		private double[] rasterBmp;
 		private Integer initialI;
 		private Integer initialJ;
 		private int maskWidth;
 		private int maskHeight;
+		private double[] rasterNetCDF;
 
 		public BandVariable(String varName, String imgPrefix, String outputPath, int maskWidth, 
 				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ, int columnIdx) {
@@ -86,6 +88,13 @@ public class CreateTiff {
 					gdalconstConstants.GDT_Float64);
 			this.tiffBand = createBand(dstTiff, ulLon, ulLat);
 			
+			Driver netCDFDriver = gdal.GetDriverByName("NetCDF");
+			String netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc").getAbsolutePath();
+			Dataset dstNetCDF = netCDFDriver.Create(netCDFFile, maskWidth, maskHeight, 1,
+					gdalconstConstants.GDT_Float64);
+			this.netCDFBand = createBand(dstNetCDF, ulLon, ulLat);
+			
+			
 			Driver bmpDriver = gdal.GetDriverByName("BMP");
 			String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp").getAbsolutePath();
 			Dataset dstBmp = bmpDriver.Create(bmpFile, maskWidth, maskHeight, 1,
@@ -94,6 +103,7 @@ public class CreateTiff {
 			
 			this.rasterTiff = new double[maskHeight * maskWidth];
 			this.rasterBmp = new double[maskHeight * maskWidth];
+			this.rasterNetCDF = new double[maskHeight * maskWidth];
 		}
 		
 		public void read(String[] splitLine) {
@@ -103,6 +113,7 @@ public class CreateTiff {
 			int jIdx = j - initialJ;
 			double val = Double.parseDouble(splitLine[columnIdx]);
 			rasterTiff[jIdx * maskWidth + iIdx] = val;
+			rasterNetCDF[jIdx * maskWidth + iIdx] = val;
 			rasterBmp[jIdx * maskWidth + iIdx] = val * 255;
 		}
 		
@@ -111,6 +122,8 @@ public class CreateTiff {
 			tiffBand.FlushCache();
 			bmpBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 			bmpBand.FlushCache();
+			netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
+			netCDFBand.FlushCache();
 		}
 		
 		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
