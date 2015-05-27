@@ -17,7 +17,9 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
 
-public class CreateTiff {
+import ucar.ma2.InvalidRangeException;
+
+public class RenderHelper {
 
 	private static double PIXEL_SIZE = 0.00027;
 
@@ -72,10 +74,13 @@ public class CreateTiff {
 		private int maskWidth;
 		private int maskHeight;
 		private double[] rasterNetCDF;
+		private String netCDFFile;
+		private String varName;
 
 		public BandVariable(String varName, String imgPrefix, String outputPath, int maskWidth, 
 				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ, int columnIdx) {
 			
+			this.varName = varName;
 			this.maskWidth = maskWidth;
 			this.maskHeight = maskHeight;
 			this.initialI = initialI;
@@ -89,11 +94,10 @@ public class CreateTiff {
 			this.tiffBand = createBand(dstTiff, ulLon, ulLat);
 			
 			Driver netCDFDriver = gdal.GetDriverByName("NetCDF");
-			String netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc").getAbsolutePath();
+			this.netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc").getAbsolutePath();
 			Dataset dstNetCDF = netCDFDriver.Create(netCDFFile, maskWidth, maskHeight, 1,
 					gdalconstConstants.GDT_Float64);
 			this.netCDFBand = createBand(dstNetCDF, ulLon, ulLat);
-			
 			
 			Driver bmpDriver = gdal.GetDriverByName("BMP");
 			String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp").getAbsolutePath();
@@ -124,6 +128,13 @@ public class CreateTiff {
 			bmpBand.FlushCache();
 			netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 			netCDFBand.FlushCache();
+			
+			try {
+				//TODO Extract date from MTL file
+				NetCDFHelper.normalize(netCDFFile, varName, 100);
+			} catch (IOException | InvalidRangeException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {

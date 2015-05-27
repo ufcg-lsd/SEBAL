@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.fogbowcloud.sebal.tiff.CreateTiff;
+import org.fogbowcloud.sebal.tiff.RenderHelper;
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
@@ -41,7 +41,7 @@ public class BulkMain {
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(), 
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, null);
 		wrapper.doTask(TaskType.F1);
-		CreateTiff.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 
+		RenderHelper.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 
 				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY);
 	}
 
