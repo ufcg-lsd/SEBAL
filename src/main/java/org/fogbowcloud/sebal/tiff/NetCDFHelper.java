@@ -19,11 +19,6 @@ import ucar.nc2.Variable;
 
 public class NetCDFHelper {
 
-	public static void main(String[] args) throws IOException, InvalidRangeException {
-		normalize("/home/abmar/workspace/SEBAL/LT52150652001135CUB00/3000.3100.3000.3100_5_5_ndvi.nc", 
-				"ndvi", 100.);
-	}
-	
 	public static void normalize(String fileName, String varName, double daysSince1970) throws IOException, InvalidRangeException {
 		NetcdfFile reader = NetcdfFile.open(fileName);
 		
