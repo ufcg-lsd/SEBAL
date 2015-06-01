@@ -72,6 +72,12 @@ public class Wrapper {
 						.parseDouble(boundingBoxValues[i]), Double
 						.parseDouble(boundingBoxValues[i + 1])));
 			}
+			if (boundingBoxVertices.size() < 3){
+				System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
+						+ " vertices set.");
+			}
+		} else {
+			System.out.println("Invalid bounding box file path: " + boundingBoxFileName);
 		}
 	}
     

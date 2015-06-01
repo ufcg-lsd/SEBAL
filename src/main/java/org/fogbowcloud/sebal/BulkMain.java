@@ -28,6 +28,11 @@ public class BulkMain {
 		int numberOfPartitions = Integer.parseInt(args[6]);
 		int partitionIndex = Integer.parseInt(args[7]);
 
+		String boundingBoxPath = null;
+		if (args.length > 8) {
+			boundingBoxPath = args[8];			
+		}
+
 		int xPartitionInterval = calcXInterval(leftX, rightX, numberOfPartitions);
 		
 		XPartitionInterval imagePartition = getSelectedPartition(leftX, rightX, xPartitionInterval,
@@ -39,7 +44,7 @@ public class BulkMain {
 		String csvFilePath = outputDir + "/" + mtlName + "/" + prefix + ".pixels.csv";
 		
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(), 
-				imagePartition.getIFinal(), upperY, lowerY, mtlName, null);
+				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath);
 		wrapper.doTask(TaskType.F1);
 		CreateTiff.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 
 				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY);
