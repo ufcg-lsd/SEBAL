@@ -62,6 +62,11 @@
             <name>Open Source Geospatial Foundation Repository</name>
             <url>http://download.osgeo.org/webdav/geotools/</url>
         </repository>
+        <repository>
+	        <id>unidata-releases</id>
+	        <name>UNIDATA Releases</name>
+	        <url>https://artifacts.unidata.ucar.edu/content/repositories/unidata-releases/</url>
+	    </repository>
 	</repositories>
 
 	<profiles>
@@ -138,6 +143,11 @@
             <artifactId>gt-swing</artifactId>
             <version>12.3</version>
         </dependency>
+        <dependency>
+		  <groupId>edu.ucar</groupId>
+		  <artifactId>netcdfAll</artifactId>
+		  <version>4.6.1</version>
+		</dependency>
 		
 	</dependencies>
 </project>
