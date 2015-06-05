@@ -46,8 +46,11 @@ public class BulkMain {
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(), 
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath);
 		wrapper.doTask(TaskType.F1);
-		RenderHelper.createTiff(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, 
-				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY);
+
+		long daysSince1970 = RenderHelper.calculatingTimeDimension(mtlFilePath);
+		RenderHelper.render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_"
+				+ partitionIndex, imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY
+				- upperY, daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
 	}
 
 	protected static int calcXInterval(int upperX, int lowerX, int numberOfPartitions) {
