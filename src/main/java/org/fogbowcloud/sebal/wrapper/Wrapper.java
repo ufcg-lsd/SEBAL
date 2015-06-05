@@ -226,8 +226,7 @@ public class Wrapper {
     }
 
     private String getAllPixelsFileName() {
-        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
-                + "." + jFinal + ".pixels.csv";
+    	return SEBALHelper.getAllPixelsFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
     }
 
     private void createResultsFile(String fileName, StringBuilder stringBuilder) {

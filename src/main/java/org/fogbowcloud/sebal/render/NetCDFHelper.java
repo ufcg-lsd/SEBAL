@@ -1,4 +1,4 @@
-package org.fogbowcloud.sebal.tiff;
+package org.fogbowcloud.sebal.render;
 
 import java.io.File;
 import java.io.IOException;

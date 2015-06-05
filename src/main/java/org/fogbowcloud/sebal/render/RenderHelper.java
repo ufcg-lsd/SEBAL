@@ -1,22 +1,19 @@
-package org.fogbowcloud.sebal.tiff;
+package org.fogbowcloud.sebal.render;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
-import org.esa.beam.framework.datamodel.MetadataElement;
-import org.esa.beam.framework.datamodel.Product;
+import org.fogbowcloud.sebal.BulkHelper;
 import org.fogbowcloud.sebal.SEBALHelper;
+import org.fogbowcloud.sebal.XPartitionInterval;
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
@@ -35,31 +32,31 @@ public class RenderHelper {
 	public static final String NET_CDF = "netcdf";
 
 	public static void main(String[] args) throws ParseException, Exception {
-		String csvFile = args[1];
-		String mtlFilePath = args[2];
-		String outputFilePrefix = args[3];
-		int maskWidth = Integer.parseInt(args[4]);
-		int maskHeight = Integer.parseInt(args[5]);
+		String mtlFilePath = args[0];
+		String fileName = new File(mtlFilePath).getName();
+		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 
-		long daysSince1970 = calculatingTimeDimension(mtlFilePath);
+		String outputDir = args[1];
+		int leftX = Integer.parseInt(args[2]);
+		int upperY = Integer.parseInt(args[3]);
+		int rightX = Integer.parseInt(args[4]);
+		int lowerY = Integer.parseInt(args[5]);
 
-		render(csvFile, outputFilePrefix, maskWidth, maskHeight, daysSince1970, TIFF, NET_CDF, BMP);
-	}
+		int numberOfPartitions = Integer.parseInt(args[6]);
+		int partitionIndex = Integer.parseInt(args[7]);
 
-	public static long calculatingTimeDimension(String mtlFilePath) throws Exception,
-			ParseException {
-		Product product = SEBALHelper.readProduct(mtlFilePath, null);
-		MetadataElement metadataRoot = product.getMetadataRoot();
-		String dateAcquiredStr = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("DATE_ACQUIRED").getData()
-				.getElemString();
+		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
+				numberOfPartitions, partitionIndex);
 
-		DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-		Date date1970 = format.parse("1970-01-01");
-		Date dateAcquired = format.parse(dateAcquiredStr);
-
-		long daysSince1970 = (dateAcquired.getTime() - date1970.getTime()) / (24 * 60 * 60 * 1000);
-		return daysSince1970;
+		String csvFilePath = SEBALHelper.getAllPixelsFilePath(outputDir, mtlName,
+				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY, lowerY);
+		
+		long daysSince1970 = SEBALHelper.getDaysSince1970(mtlFilePath);		
+		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
+				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
+				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
 	}
 
 	private static class BandVariableBuilder {
@@ -74,7 +71,8 @@ public class RenderHelper {
 		private String[] drivers;
 
 		public BandVariableBuilder(String imgPrefix, String outputPath, int maskWidth,
-				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ, String[] drivers) {
+				int maskHeight, Double ulLon, Double ulLat, Integer initialI, Integer initialJ,
+				String[] drivers) {
 			this.imgPrefix = imgPrefix;
 			this.outputPath = outputPath;
 			this.maskWidth = maskWidth;
@@ -86,7 +84,7 @@ public class RenderHelper {
 			if (drivers != null) {
 				this.drivers = drivers;
 			} else {
-				this.drivers = new String[]{NET_CDF};
+				this.drivers = new String[] { NET_CDF };
 			}
 		}
 
@@ -126,24 +124,24 @@ public class RenderHelper {
 			this.drivers = drivers;
 
 			for (String driver : drivers) {
-				if (driver.equals(TIFF)){
+				if (driver.equals(TIFF)) {
 					Driver tiffDriver = gdal.GetDriverByName("GTiff");
 					String tiffFile = new File(outputPath, imgPrefix + "_" + varName + ".tiff")
-					.getAbsolutePath();
+							.getAbsolutePath();
 					Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
 					this.tiffBand = createBand(dstTiff, ulLon, ulLat);
 				} else if (driver.equals(BMP)) {
 					Driver bmpDriver = gdal.GetDriverByName("BMP");
 					String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp")
-					.getAbsolutePath();
+							.getAbsolutePath();
 					Dataset dstBmp = bmpDriver.Create(bmpFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Byte);
 					this.bmpBand = createBand(dstBmp, ulLon, ulLat);
 				} else if (driver.equals(NET_CDF)) {
 					Driver netCDFDriver = gdal.GetDriverByName("NetCDF");
 					this.netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc")
-					.getAbsolutePath();
+							.getAbsolutePath();
 					Dataset dstNetCDF = netCDFDriver.Create(netCDFFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
 					this.netCDFBand = createBand(dstNetCDF, ulLon, ulLat);
@@ -167,22 +165,22 @@ public class RenderHelper {
 
 		public void render(double daysSince1970) {
 			for (String format : drivers) {
-				if (format.equals(TIFF)){
+				if (format.equals(TIFF)) {
 					tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
 					tiffBand.FlushCache();
 				} else if (format.equals(BMP)) {
 					bmpBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 					bmpBand.FlushCache();
-				} else if (format.equals(NET_CDF)){
+				} else if (format.equals(NET_CDF)) {
 					netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 					netCDFBand.FlushCache();
-					
+
 					try {
 						NetCDFHelper.normalize(netCDFFile, varName, daysSince1970);
 					} catch (IOException | InvalidRangeException e) {
 						e.printStackTrace();
 					}
-				}				
+				}
 			}
 		}
 
@@ -198,9 +196,10 @@ public class RenderHelper {
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
-			int maskHeight, double daysSince1970, String... drivers) throws IOException, FileNotFoundException {
+			int maskHeight, double daysSince1970, String... drivers) throws IOException,
+			FileNotFoundException {
 		gdal.AllRegister();
-	
+
 		Double latMax = -360.;
 		Double lonMin = +360.;
 		Integer initialI = null;
@@ -221,8 +220,9 @@ public class RenderHelper {
 			lonMin = Math.min(lon, lonMin);
 		}
 
-		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(outputFilePrefix, new File(
-				csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI, initialJ, drivers);
+		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(outputFilePrefix,
+				new File(csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI,
+				initialJ, drivers);
 		List<BandVariable> vars = new LinkedList<BandVariable>();
 		vars.add(bandVariableBuilder.build("ndvi", 7));
 		vars.add(bandVariableBuilder.build("evi", 18));

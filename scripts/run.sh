@@ -48,3 +48,7 @@ MTL_FILE=`ls $IMAGE_NAME/*MTL*`
 OUTPUT_FILE="output_execution_partition_"$PARTITION_INDEX
 
 java -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.BulkMain $MTL_FILE $OUTPUT_DIR $LEFT_X $UPPER_Y $RIGHT_X $LOWER_Y $NUMBER_OF_PARTITIONS $PARTITION_INDEX $BOUNDING_BOX_PATH > $OUTPUT_FILE
+
+echo "Rendenring..."
+
+java -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.render.RenderHelper $MTL_FILE $OUTPUT_DIR $LEFT_X $UPPER_Y $RIGHT_X $LOWER_Y $NUMBER_OF_PARTITIONS $PARTITION_INDEX  >> $OUTPUT_FILE

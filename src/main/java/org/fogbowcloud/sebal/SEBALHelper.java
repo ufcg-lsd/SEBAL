@@ -1,9 +1,13 @@
 package org.fogbowcloud.sebal;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -283,4 +287,30 @@ public class SEBALHelper {
         }
         return image;
     }
+
+	public static long getDaysSince1970(String mtlFilePath) throws Exception,
+			ParseException {
+		Product product = readProduct(mtlFilePath, null);
+		MetadataElement metadataRoot = product.getMetadataRoot();
+		String dateAcquiredStr = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("DATE_ACQUIRED").getData()
+				.getElemString();
+	
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		Date date1970 = format.parse("1970-01-01");
+		Date dateAcquired = format.parse(dateAcquiredStr);
+	
+		long daysSince1970 = (dateAcquired.getTime() - date1970.getTime()) / (24 * 60 * 60 * 1000);
+		return daysSince1970;
+	}
+
+	public static String getAllPixelsFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
+			int jBegin, int jFinal) {
+		if (mtlName == null || mtlName.isEmpty()) {
+			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+					+ jFinal + ".pixels.csv";
+		}
+		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+				+ jFinal + ".pixels.csv";
+	}
 }
