@@ -227,6 +227,9 @@ public class SEBALHelper {
         Double sunElevation = metadataRoot.getElement("L1_METADATA_FILE")
                 .getElement("IMAGE_ATTRIBUTES").getAttribute("SUN_ELEVATION")
                 .getData().getElemDouble();
+        
+        image.width(Math.min(iFinal, bandAt.getSceneRasterWidth()) - iBegin);
+        image.height(Math.min(jFinal, bandAt.getSceneRasterHeight()) - jBegin);
 
         for (int i = iBegin; i < Math.min(iFinal, bandAt.getSceneRasterWidth()); i++) {
             for (int j = jBegin; j < Math.min(jFinal, bandAt.getSceneRasterHeight()); j++) {

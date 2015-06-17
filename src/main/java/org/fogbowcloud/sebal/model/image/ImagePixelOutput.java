@@ -239,5 +239,24 @@ public class ImagePixelOutput {
 	public void setTau24h(double tau24h) {
 		this.tau24h = tau24h;
 	}
-
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof ImagePixelOutput) {
+			ImagePixelOutput other = (ImagePixelOutput) o;
+			return getNDVI() == other.getNDVI() && getTs() == other.getTs()
+					&& SAVI() == other.SAVI() && getRn24h() == other.getRn24h() && G() == other.G()
+					&& getH() == other.getH() && getLambdaE() == other.getLambdaE()
+					&& getAlpha() == other.getAlpha() && getEpsilonNB() == other.getEpsilonNB()
+					&& getEpsilonZero() == other.getEpsilonZero() && getZ0mxy() == other.getZ0mxy()
+					&& getRLDown() == other.getRLDown() && getEpsilonA() == other.getEpsilonA()
+					&& getRLUp() == other.getRLUp() && getIAF() == other.getIAF()
+					&& getEVI() == other.getEVI() && getRSDown() == other.getRSDown()
+					&& getTauSW() == other.getTauSW() && getAlphaToa() == other.getAlphaToa()
+					&& getEvapo24h() == other.getEvapo24h() && getFrEvapo() == other.getFrEvapo()
+					&& getLambda24h() == other.getLambda24h() && getTau24h() == other.getTau24h()
+					&& getRn24h() == other.getRn24h();
+		}
+		return false;
+	}
 }

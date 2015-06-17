@@ -113,5 +113,16 @@ public class DefaultImagePixel implements ImagePixel {
 	public void geoLoc(GeoLoc geoLoc) {
 		this.geoLoc = geoLoc;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof DefaultImagePixel) {
+			DefaultImagePixel other = (DefaultImagePixel) o;
+			return z() == other.z() && Ta() == other.Ta() && ux() == other.ux()
+					&& zx() == other.zx() && d() == other.d() && hc() == other.hc()
+					&& ((output() == null && other.output() == null) || output().equals(other.output()));
+		}
+		return false;
+	}
 
 }

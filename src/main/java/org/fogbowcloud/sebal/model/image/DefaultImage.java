@@ -9,6 +9,8 @@ public class DefaultImage implements Image {
 
 	private List<ImagePixel> pixels = new LinkedList<ImagePixel>();
 	private int day;
+	private int width;
+	private int height;
 	private ImagePixel pixelQuente;
 	private ImagePixel pixelFrio;
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
@@ -33,7 +35,7 @@ public class DefaultImage implements Image {
 
 	@Override
 	public void choosePixelsQuenteFrio() {
-	   pixelQuenteFrioChooser.choosePixelsQuenteFrio(pixels);
+	   pixelQuenteFrioChooser.choosePixelsQuenteFrio(this);
 	   this.pixelFrio = pixelQuenteFrioChooser.getPixelFrio();
        this.pixelQuente = pixelQuenteFrioChooser.getPixelQuente();
 	}
@@ -67,4 +69,19 @@ public class DefaultImage implements Image {
 		this.pixelQuente = pixelQuente;
 	}
 
+	public void width(int width) {
+		this.width = width;		
+	}
+
+	public void height(int height) {
+		this.height = height;		
+	}
+	
+	public int width() {
+		return this.width;		
+	}
+
+	public int height() {
+		return height;		
+	}
 }

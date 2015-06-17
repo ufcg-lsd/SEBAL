@@ -30,7 +30,7 @@ public class TestWrapper {
 	String MTL_FILE = "13520010515/LT52150652001135CUB00_MTL.txt";
 	String MTL_NAME = "LT52150652001135CUB00_MTL";
 	String desiredValuesFile = "result.csv";
-	String obtainedValuesFile = MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".F2.csv";
+	String obtainedValuesFile = MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".F2.csv";
 
 	@Before
 	public void setUp() throws Exception {
@@ -41,16 +41,16 @@ public class TestWrapper {
 	@Test
 	public void testF1() throws Exception {
 		wrapper.doTask(TaskType.F1);
-		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".frio.csv").exists());
-		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".quente.csv").exists()); 
-		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".pixels.csv").exists());
+		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".frio.csv").exists());
+		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".quente.csv").exists()); 
+		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".pixels.csv").exists());
 	}
 
 	@Test
 	public void testF2() throws Exception {
 		wrapper.doTask(TaskType.C);
 		wrapper.doTask(TaskType.F2);
-		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + ".F2.csv").exists());
+		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".F2.csv").exists());
 	}
 
 	@Test

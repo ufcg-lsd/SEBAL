@@ -19,4 +19,12 @@ public interface Image {
 	void pixelQuente(ImagePixel pixelQuente);
 
 	void choosePixelsQuenteFrio();
+	
+	int width();
+	
+	void width(int width);
+	
+	int height();
+
+	void height(int height);
 }
