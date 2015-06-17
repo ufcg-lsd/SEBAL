@@ -2,7 +2,9 @@ package org.fogbowcloud.sebal;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
@@ -19,47 +21,14 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		int clusterHeight = 7;
 		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
 		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
+		
+		for (int x0 = 0; x0 < image.width(); x0 += clusterWidth) {
+			for (int y0 = 0; y0 < image.height(); y0 += image.height()) {
+				List<ImagePixel> cluster = createCluster(image.pixels(),
+						getIndex(x0, y0, image.width()), image.width(),
+						Math.min(clusterWidth, image.width() - x0),
+						Math.min(clusterHeight, image.height() - y0));
 
-		int currentIndex = 0;
-		int numberOfHorizontalClusters = image.width() / clusterWidth;
-		int lastWidthCluster = image.width() - numberOfHorizontalClusters * clusterWidth;
-		int numberOfVerticalClusters = image.height() / clusterHeight;
-		int lastHeightCluster = image.height() - numberOfVerticalClusters * clusterHeight;
-		int proccessedVerticalClusters = 0;
-		
-		while (proccessedVerticalClusters < numberOfVerticalClusters) {
-			for (int i = 0; i < numberOfHorizontalClusters; i++) {
-				List<ImagePixel> cluster = createCluster(image.pixels(), currentIndex,
-						image.width(), clusterWidth, clusterHeight);
-				proccessCluster(isPixelFrioChoosen, pixelFrioCandidates, pixelQuenteCandidates,
-						cluster);
-				currentIndex += clusterWidth;
-			}
-			
-			if (lastWidthCluster > 0) {
-				List<ImagePixel> cluster = createCluster(image.pixels(), currentIndex, image.width(),
-						lastWidthCluster, clusterHeight);
-				proccessCluster(isPixelFrioChoosen, pixelFrioCandidates, pixelQuenteCandidates,
-						cluster);
-			}
-			
-			proccessedVerticalClusters++;
-			currentIndex += proccessedVerticalClusters * (clusterWidth * image.width());
-		}
-		
-		if (lastHeightCluster > 0) {
-			for (int i = 0; i < numberOfHorizontalClusters; i++) {
-				List<ImagePixel> cluster = createCluster(image.pixels(), currentIndex, image.width(),
-						clusterWidth, lastHeightCluster);
-				proccessCluster(isPixelFrioChoosen, pixelFrioCandidates, pixelQuenteCandidates,
-						cluster);
-				
-				currentIndex += clusterWidth;
-			}
-			
-			if (lastWidthCluster > 0) {
-				List<ImagePixel> cluster = createCluster(image.pixels(), currentIndex, image.width(),
-						lastWidthCluster, lastHeightCluster);
 				proccessCluster(isPixelFrioChoosen, pixelFrioCandidates, pixelQuenteCandidates,
 						cluster);
 			}
@@ -71,14 +40,18 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		selectPixelQuente(pixelQuenteCandidates);		
 	}
 
+	private int getIndex(int x, int y, int width) {
+		return x + y * width;
+	}
+
 	private void proccessCluster(boolean isPixelFrioChoosen, List<ImagePixel> pixelFrioCandidates,
 			List<ImagePixel> pixelQuenteCandidates, List<ImagePixel> cluster) {
-		List<Double> cvsForNDVI = calcCVsForNDVI(cluster);
-		List<Double> cvsForTS = calcCVsForTS(cluster);
 		
 		List<ImagePixel> preCandidatesFrio = new ArrayList<ImagePixel>();
 		List<ImagePixel> preCandidatesQuente = new ArrayList<ImagePixel>();
 		
+		List<Double> cvsForNDVI = calcCVsForNDVI(cluster);
+		List<Double> cvsForTS = calcCVsForTS(cluster);
 		// selecting pixels with CVs smaller than 0.15 for both: NDVI and TS
 		for (int index = 0; index < cluster.size(); index++) {
 			if (cvsForNDVI.get(index) < 0.15 && cvsForTS.get(index) < 0.15) {
@@ -133,9 +106,62 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		return cvsForNDVI;
 	}
 
-	private boolean choosePixelFrioInTheWater(Image image) {
-		// TODO Auto-generated method stub
-		return false;
+	private boolean choosePixelFrioInTheWater(Image image) {		
+		Map<String, PixelSample> samples = findWater(image);
+		if (samples.isEmpty()) {
+			return false;
+		}
+		
+		
+		
+		return true;
+	}
+
+	private Map<String, PixelSample> findWater(Image image) {
+		Map<String, PixelSample> samples = new HashMap<String, PixelSample>();
+		List<ImagePixel> pixels = image.pixels();
+		boolean[] visited = new boolean[pixels.size()];
+		
+		for (int i = 0; i < image.width(); i++) {
+			for (int j = 0; j < image.height(); j++) {
+				if (visited[getIndex(i, j, image.width())] == true) {
+					continue;
+				}
+				visited[getIndex(i, j, image.width())] = true;
+				if (pixels.get(getIndex(i, j, image.width())).output().getNDVI() < 0) {
+					findWater(pixels, visited, image.width(), i, j, 0, 0, i + "_" + j, samples);
+				}
+			}
+		}
+		
+		/*
+		 *  refine map
+		 *  eliminate not valid samples
+		 */
+		
+		return samples;
+	}
+
+	private void findWater(List<ImagePixel> pixels, boolean[] visited, int i, int j, int width,
+			int numberOfHorizontalPixel, int numberOfVerticalPixel, String sampleId, Map<String, PixelSample> samples) {
+		if (visited[getIndex(i, j, width)] == true) {
+			return;
+		}
+		visited[getIndex(i, j, width)] = true;
+		if (pixels.get(getIndex(i, j, width)).output().getNDVI() < 0) {
+			if (!samples.containsKey(sampleId)) {
+				samples.put(sampleId, new PixelSample());
+			}
+			samples.get(sampleId).addPixel(pixels.get(getIndex(i, j, width)));
+			samples.get(sampleId).updateHorizontalPixels(numberOfHorizontalPixel);
+			samples.get(sampleId).updateVerticalPixels(numberOfVerticalPixel);
+		} else {
+			return;
+		}
+		findWater(pixels, visited, i + 1, j, numberOfHorizontalPixel + 1, numberOfVerticalPixel,
+				width, sampleId, samples);
+		findWater(pixels, visited, i, j + 1, numberOfHorizontalPixel, numberOfVerticalPixel + 1,
+				width, sampleId, samples);
 	}
 
 	private void selectPixelQuente(List<ImagePixel> pixelQuenteCandidates) {
