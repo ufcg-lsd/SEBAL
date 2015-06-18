@@ -2,7 +2,9 @@ package org.fogbowcloud.sebal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
@@ -291,10 +293,10 @@ public class TestClusteredPixelQuenteFrioChooser {
 	
 	@Test
 	public void testFilterPercentSmallestTS() {
-		ClusteredPixelQuenteFrioChooser cluster = new ClusteredPixelQuenteFrioChooser();
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
 
 		// asserting 80% smallest TS
-		List<ImagePixel> filteredByTS = cluster.filterSmallestTS(pixels, 80);
+		List<ImagePixel> filteredByTS = chooser.filterSmallestTS(pixels, 80);
 		Assert.assertEquals(4, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 		Assert.assertTrue(filteredByTS.contains(p2));
@@ -302,44 +304,263 @@ public class TestClusteredPixelQuenteFrioChooser {
 		Assert.assertTrue(filteredByTS.contains(p4));
 		
 		// asserting 75% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 75);
+		filteredByTS = chooser.filterSmallestTS(pixels, 75);
 		Assert.assertEquals(3, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 		Assert.assertTrue(filteredByTS.contains(p2));
 		Assert.assertTrue(filteredByTS.contains(p3));
 
 		// asserting 60% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 60);
+		filteredByTS = chooser.filterSmallestTS(pixels, 60);
 		Assert.assertEquals(3, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 		Assert.assertTrue(filteredByTS.contains(p2));
 		Assert.assertTrue(filteredByTS.contains(p3));		
 		
 		// asserting 50% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 50);
+		filteredByTS = chooser.filterSmallestTS(pixels, 50);
 		Assert.assertEquals(2, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 		Assert.assertTrue(filteredByTS.contains(p2));
 
 		// asserting 25% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 25);
+		filteredByTS = chooser.filterSmallestTS(pixels, 25);
 		Assert.assertEquals(1, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 
 		// asserting 20% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 20);
+		filteredByTS = chooser.filterSmallestTS(pixels, 20);
 		Assert.assertEquals(1, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 		
 		// asserting 10% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 10);
+		filteredByTS = chooser.filterSmallestTS(pixels, 10);
 		Assert.assertEquals(1, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
 
 		// asserting 5% smallest TS
-		filteredByTS = cluster.filterSmallestTS(pixels, 5);
+		filteredByTS = chooser.filterSmallestTS(pixels, 5);
 		Assert.assertEquals(1, filteredByTS.size());
 		Assert.assertTrue(filteredByTS.contains(p1));
+	}
+	
+	@Test
+	public void testThereIsNoWater() {
+		int width = 10;
+		int height = 10;
+		
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+		
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+		
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertTrue(waterSamples.isEmpty());
+	}
+	
+	@Test
+	public void testAllImageIsWater() {
+		int width = 10;
+		int height = 10;
+
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+
+		// putting water in the image
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertEquals(1, waterSamples.size());
+		Assert.assertEquals(width * height, waterSamples.get("0_0").pixels().size());
+		Assert.assertEquals(width, waterSamples.get("0_0").getHorizontalPixels());
+		Assert.assertEquals(height, waterSamples.get("0_0").getVerticalPixels());
+		
+		// assert select bestSample
+		Assert.assertEquals(waterSamples.get("0_0"), chooser.selectBestSample(waterSamples));
+	}
+	
+	@Test
+	public void testWaterSamplesWithOnePixel() {
+		int width = 10;
+		int height = 10;
+		
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+		
+		// putting water in the image
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				if (i == j) {
+					image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+				}
+			}
+		}
+		
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+		
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertEquals(width, waterSamples.size());
+		for (PixelSample sample : waterSamples.values()) {
+			Assert.assertEquals(1, sample.pixels().size());
+			Assert.assertEquals(1, sample.getHorizontalPixels());
+			Assert.assertEquals(1, sample.getVerticalPixels());
+		}
+	}
+
+	private DefaultImage createImageWithNoWaterPixels(int width, int height) {
+		DefaultImage image = new DefaultImage(new ClusteredPixelQuenteFrioChooser());
+		image.width(width);
+		image.height(height);
+		
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				DefaultImagePixel pixel = new DefaultImagePixel();
+				ImagePixelOutput output = new ImagePixelOutput();        
+				output.setNDVI(0.1);
+				pixel.setOutput(output);
+				image.addPixel(pixel);				
+			}
+		}
+		return image;
+	}
+	
+	@Test
+	public void testOneSampleInTheMiddle() {
+		int width = 10;
+		int height = 10;
+		
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+		
+		for (int i = 2; i < 7; i++) {
+			for (int j = 2; j < 5; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+		
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+		
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertEquals(1, waterSamples.size());
+		Assert.assertEquals(5 * 3, waterSamples.get("2_2").pixels().size());
+		Assert.assertEquals(5, waterSamples.get("2_2").getHorizontalPixels());
+		Assert.assertEquals(3, waterSamples.get("2_2").getVerticalPixels());
+		
+		// assert select bestSample
+		Assert.assertEquals(waterSamples.get("2_2"), chooser.selectBestSample(waterSamples));
+	}
+
+	@Test
+	public void testSomeAleatorySamples() {
+		int width = 10;
+		int height = 10;
+		
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+		
+		// sample1 0_2
+		for (int i = 0; i < 3; i++) {
+			for (int j = 2; j < 5; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+		
+		// sample2 5_7
+		for (int i = 5; i < width; i++) {
+			for (int j = 7; j < height; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+		
+		// sample3 0_6
+		for (int i = 0; i < 1; i++) {
+			for (int j = 6; j < height; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}		
+		
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+		
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertEquals(3, waterSamples.size());
+		
+		// sample1
+		Assert.assertEquals(3 * 3, waterSamples.get("0_2").pixels().size());
+		Assert.assertEquals(3, waterSamples.get("0_2").getHorizontalPixels());
+		Assert.assertEquals(3, waterSamples.get("0_2").getVerticalPixels());
+		
+		// sample2
+		Assert.assertEquals(5 * 3, waterSamples.get("5_7").pixels().size());
+		Assert.assertEquals(5, waterSamples.get("5_7").getHorizontalPixels());
+		Assert.assertEquals(3, waterSamples.get("5_7").getVerticalPixels());
+		
+		// sample3
+		Assert.assertEquals(1 * 4, waterSamples.get("0_6").pixels().size());
+		Assert.assertEquals(1, waterSamples.get("0_6").getHorizontalPixels());
+		Assert.assertEquals(4, waterSamples.get("0_6").getVerticalPixels());
+		
+		// assert select bestSample
+		Assert.assertEquals(waterSamples.get("5_7"), chooser.selectBestSample(waterSamples));
+
+	}
+	
+	@Test
+	public void testOneNotRegularSample() {
+		int width = 10;
+		int height = 10;
+		
+		DefaultImage image = createImageWithNoWaterPixels(width, height);
+		
+		// sample1 5_2
+		for (int i = 5; i < 8; i++) {
+			for (int j = 2; j < 8; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+		
+		// same sample
+		for (int i = 2; i < width; i++) {
+			for (int j = 5; j < 8; j++) {
+				image.pixels().get(linear(i, j, width)).output().setNDVI(-0.1);
+			}
+		}
+		
+		ClusteredPixelQuenteFrioChooser chooser = new ClusteredPixelQuenteFrioChooser();
+		
+		// asserting
+		Map<String, PixelSample> waterSamples = chooser.findWater(image);
+		Assert.assertNotNull(waterSamples);
+		Assert.assertEquals(1, waterSamples.size());
+		
+		// sample1
+		int sampleArea1 = 3 * 6;
+		int sampleArea2 = 8 * 3;
+		int intersection = 3 * 3;
+		
+		// asserting
+		Assert.assertEquals(sampleArea1 + sampleArea2 - intersection, waterSamples.get("2_5")
+				.pixels().size());
+		Assert.assertEquals(8, waterSamples.get("2_5").getHorizontalPixels());
+		Assert.assertEquals(6, waterSamples.get("2_5").getVerticalPixels());
+		
+		// assert select bestSample
+		Assert.assertEquals(waterSamples.get("2_5"), chooser.selectBestSample(waterSamples));
+	}
+	
+ 
+	private int linear(int x, int y, int width) {
+		return x + y * width;
 	}
 
 }

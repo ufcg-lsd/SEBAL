@@ -1,11 +1,13 @@
 package org.fogbowcloud.sebal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.NDVIComparator;
@@ -15,7 +17,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
-		boolean isPixelFrioChoosen = choosePixelFrioInTheWater(image);
+		boolean isPixelFrioInTheWater = checkIfPixelFrioInTheWater(image);
 		
 		int clusterWidth = 7;
 		int clusterHeight = 7;
@@ -25,22 +27,22 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		for (int x0 = 0; x0 < image.width(); x0 += clusterWidth) {
 			for (int y0 = 0; y0 < image.height(); y0 += image.height()) {
 				List<ImagePixel> cluster = createCluster(image.pixels(),
-						getIndex(x0, y0, image.width()), image.width(),
+						linear(x0, y0, image.width()), image.width(),
 						Math.min(clusterWidth, image.width() - x0),
 						Math.min(clusterHeight, image.height() - y0));
 
-				proccessCluster(isPixelFrioChoosen, pixelFrioCandidates, pixelQuenteCandidates,
+				proccessCluster(isPixelFrioInTheWater, pixelFrioCandidates, pixelQuenteCandidates,
 						cluster);
 			}
 		}
 				
-		if (!isPixelFrioChoosen) {
-			selectPixelFrio(pixelFrioCandidates);
+		if (!isPixelFrioInTheWater) {
+			selectPixelFrioOutOfWater(pixelFrioCandidates);
 		}		
 		selectPixelQuente(pixelQuenteCandidates);		
 	}
 
-	private int getIndex(int x, int y, int width) {
+	private int linear(int x, int y, int width) {
 		return x + y * width;
 	}
 
@@ -50,118 +52,154 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		List<ImagePixel> preCandidatesFrio = new ArrayList<ImagePixel>();
 		List<ImagePixel> preCandidatesQuente = new ArrayList<ImagePixel>();
 		
-		List<Double> cvsForNDVI = calcCVsForNDVI(cluster);
-		List<Double> cvsForTS = calcCVsForTS(cluster);
-		// selecting pixels with CVs smaller than 0.15 for both: NDVI and TS
-		for (int index = 0; index < cluster.size(); index++) {
-			if (cvsForNDVI.get(index) < 0.15 && cvsForTS.get(index) < 0.15) {
-				preCandidatesFrio.add(cluster.get(index));
-				preCandidatesQuente.add(cluster.get(index));
+		double CVForNDVI = calcCVForNDVI(cluster);
+		double CVForTS = calcCVForTS(cluster);
+				
+		if (CVForNDVI < 0.15 && CVForTS < 0.15) {
+			if (!isPixelFrioChoosen) {
+				/*
+				 * Choosing pixel frio out of the water 
+				 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
+				 */
+				preCandidatesFrio = filterBiggestNDVI(preCandidatesFrio, 5);
+				preCandidatesFrio = filterSmallestTS(preCandidatesFrio, 20);
+				pixelFrioCandidates.addAll(preCandidatesFrio);
 			}
-		}
-		
-		if (!isPixelFrioChoosen) {
+			
 			/*
-			 * Choosing pixel frio out of the water 
-			 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
+			 * Pixel Quente Candidates: 10% smallest NDVI and 20% biggest TS
 			 */
-			preCandidatesFrio = filterBiggestNDVI(preCandidatesFrio, 5);
-			preCandidatesFrio = filterSmallestTS(preCandidatesFrio, 20);
-			pixelFrioCandidates.addAll(preCandidatesFrio);
+			preCandidatesQuente = filterSmallestNDVI(preCandidatesQuente, 10);
+			preCandidatesQuente = filterBiggestTS(preCandidatesQuente, 20);
+			pixelQuenteCandidates.addAll(preCandidatesQuente);
 		}
-		
-		/*
-		 * Pixel Quente Candidates: 10% smallest NDVI and 20% biggest TS
-		 */
-		preCandidatesQuente = filterSmallestNDVI(preCandidatesQuente, 10);
-		preCandidatesQuente = filterBiggestTS(preCandidatesQuente, 20);
-		pixelQuenteCandidates.addAll(preCandidatesQuente);
 	}
 
-	private List<Double> calcCVsForTS(List<ImagePixel> cluster) {
+	private double calcCVForTS(List<ImagePixel> cluster) {
 		double[] tsValues = new double[cluster.size()];
 		for (int index = 0; index < cluster.size(); index++) {
 			tsValues[index] = cluster.get(index).output().getTs();
 		}
 		double mean = calcMean(tsValues);
-
-		List<Double> cvsForTS = new ArrayList<Double>();
-		for (ImagePixel pixel : cluster) {
-			cvsForTS.add(Math.sqrt(Math.pow(pixel.output().getTs() - mean, 2) / mean) / mean);
-		}
-		return cvsForTS;
+		double variance = new Variance().evaluate(tsValues);
+		double standarDeviation = Math.sqrt(variance);
+		
+		return standarDeviation / mean;
 	}
 
-	private List<Double> calcCVsForNDVI(List<ImagePixel> cluster) {
+	private double calcCVForNDVI(List<ImagePixel> cluster) {
 		double[] ndviValues = new double[cluster.size()];
 		for (int index = 0; index < cluster.size(); index++) {
 			ndviValues[index] = cluster.get(index).output().getNDVI();
 		}
 		double mean = calcMean(ndviValues);
-
-		List<Double> cvsForNDVI = new ArrayList<Double>();
-		for (ImagePixel pixel : cluster) {
-			cvsForNDVI.add(Math.sqrt(Math.pow(pixel.output().getNDVI() - mean, 2) / mean) / mean);
-		}
-		return cvsForNDVI;
+		double variance = new Variance().evaluate(ndviValues);
+		double standarDeviation = Math.sqrt(variance);
+		
+		return standarDeviation / mean;
 	}
 
-	private boolean choosePixelFrioInTheWater(Image image) {		
-		Map<String, PixelSample> samples = findWater(image);
-		if (samples.isEmpty()) {
+	private boolean checkIfPixelFrioInTheWater(Image image) {		
+		Map<String, PixelSample> waterSamples = findWater(image);
+		if (waterSamples.isEmpty()) {
+			return false;
+		}		
+		refineSamples(waterSamples);		
+		PixelSample bestSample = selectBestSample(waterSamples);
+		
+		if (bestSample == null) {
 			return false;
 		}
-		
-		
-		
-		return true;
+		return selectPixelFrioInTheWater(bestSample);
 	}
 
-	private Map<String, PixelSample> findWater(Image image) {
+	private boolean selectPixelFrioInTheWater(PixelSample waterSample) {
+		double[] tsValues = new double[waterSample.pixels().size()];
+		for (int index = 0; index < waterSample.pixels().size(); index++) {
+			tsValues[index] = waterSample.pixels().get(index).output().getTs();
+		}
+		double mean = calcMean(tsValues);
+				
+		for (ImagePixel pixel : waterSample.pixels()) {
+			if (pixel.output().getTs() >= (mean - 0.2)
+					&& pixel.output().getTs() <= (mean + 0.2)) {
+				pixelFrio = pixel;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void refineSamples(Map<String, PixelSample> waterSamples) {
+		int B = 50;
+		int D = 5;
+		
+		//TODO check these rules with John
+		Collection<String> keys = waterSamples.keySet(); 
+		for (String key : keys) {
+			PixelSample pixelSample = waterSamples.get(key);
+			if (pixelSample.pixels().size() < B || pixelSample.getHorizontalPixels() < D
+					|| pixelSample.getVerticalPixels() < D) {
+				waterSamples.remove(key);
+			}
+			
+		}
+	}
+
+	protected PixelSample selectBestSample(Map<String, PixelSample> samples) {
+		PixelSample bestSample = null;
+		for (PixelSample sample : samples.values()) {
+			if (bestSample == null || (sample.pixels().size() > bestSample.pixels().size())) {
+				bestSample = sample;
+			}
+		}		
+		return bestSample;
+	}
+
+	protected Map<String, PixelSample> findWater(Image image) {
 		Map<String, PixelSample> samples = new HashMap<String, PixelSample>();
 		List<ImagePixel> pixels = image.pixels();
 		boolean[] visited = new boolean[pixels.size()];
 		
 		for (int i = 0; i < image.width(); i++) {
 			for (int j = 0; j < image.height(); j++) {
-				if (visited[getIndex(i, j, image.width())] == true) {
+				if (visited[linear(i, j, image.width())] == true) {
 					continue;
 				}
-				visited[getIndex(i, j, image.width())] = true;
-				if (pixels.get(getIndex(i, j, image.width())).output().getNDVI() < 0) {
-					findWater(pixels, visited, image.width(), i, j, 0, 0, i + "_" + j, samples);
+
+				if (pixels.get(linear(i, j, image.width())).output().getNDVI() < 0) {
+					findWater(pixels, visited, i, j, image.width(), image.height(), i + "_" + j,
+							samples);
 				}
 			}
 		}
-		
-		/*
-		 *  refine map
-		 *  eliminate not valid samples
-		 */
-		
 		return samples;
 	}
 
 	private void findWater(List<ImagePixel> pixels, boolean[] visited, int i, int j, int width,
-			int numberOfHorizontalPixel, int numberOfVerticalPixel, String sampleId, Map<String, PixelSample> samples) {
-		if (visited[getIndex(i, j, width)] == true) {
+			int height, String sampleId, Map<String, PixelSample> samples) {
+		if (i < 0 || i > width -1 || j < 0 || j > height -1) {
 			return;
 		}
-		visited[getIndex(i, j, width)] = true;
-		if (pixels.get(getIndex(i, j, width)).output().getNDVI() < 0) {
-			if (!samples.containsKey(sampleId)) {
+		
+		if (visited[linear(i, j, width)] == true) {
+			return;
+		}
+		visited[linear(i, j, width)] = true;
+
+		if (pixels.get(linear(i, j, width)).output().getNDVI() < 0) {
+			if (!samples.containsKey(sampleId)) {				
 				samples.put(sampleId, new PixelSample());
 			}
-			samples.get(sampleId).addPixel(pixels.get(getIndex(i, j, width)));
-			samples.get(sampleId).updateHorizontalPixels(numberOfHorizontalPixel);
-			samples.get(sampleId).updateVerticalPixels(numberOfVerticalPixel);
+			samples.get(sampleId).addPixel(pixels.get(linear(i, j, width)), i, j);
 		} else {
 			return;
 		}
-		findWater(pixels, visited, i + 1, j, numberOfHorizontalPixel + 1, numberOfVerticalPixel,
-				width, sampleId, samples);
-		findWater(pixels, visited, i, j + 1, numberOfHorizontalPixel, numberOfVerticalPixel + 1,
-				width, sampleId, samples);
+		
+		findWater(pixels, visited, i + 1, j, width, height, sampleId, samples);
+		findWater(pixels, visited, i - 1, j, width, height, sampleId, samples);
+		findWater(pixels, visited, i, j + 1, width, height, sampleId, samples);
+		findWater(pixels, visited, i, j - 1, width, height, sampleId, samples);
 	}
 
 	private void selectPixelQuente(List<ImagePixel> pixelQuenteCandidates) {
@@ -180,7 +218,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		}
 	}
 
-	private void selectPixelFrio(List<ImagePixel> pixelFrioCandidates) {
+	private void selectPixelFrioOutOfWater(List<ImagePixel> pixelFrioCandidates) {
 		double[] tsValuesFrioCandidates = new double[pixelFrioCandidates.size()];
 		double[] alphaValuesFrioCandidates = new double[pixelFrioCandidates.size()];
 		for (int i = 0; i < pixelFrioCandidates.size(); i++) {
