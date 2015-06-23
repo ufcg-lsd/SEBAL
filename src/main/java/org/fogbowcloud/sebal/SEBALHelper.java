@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
+import org.esa.beam.framework.dataio.ProductSubsetBuilder;
 import org.esa.beam.framework.dataio.ProductSubsetDef;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.GeoPos;
@@ -69,6 +70,7 @@ public class SEBALHelper {
 			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
 					boundingBox.getH());
 			boundedProduct = reader.readProductNodes(mtlFile, productSubsetDef);
+			boundedProduct = ProductSubsetBuilder.createProductSubset(boundedProduct, productSubsetDef, mtlFileName, "");
         }
         return boundedProduct;
     }
@@ -248,7 +250,7 @@ public class SEBALHelper {
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
                 // System.out.println(i + " " + j);
-
+                
                 GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
                 double latitude = Double.valueOf(String.format("%.10g%n",
                         geoPos.getLat()));

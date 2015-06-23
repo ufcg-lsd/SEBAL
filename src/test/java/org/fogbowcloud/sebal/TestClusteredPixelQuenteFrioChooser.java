@@ -380,8 +380,8 @@ public class TestClusteredPixelQuenteFrioChooser {
 		Assert.assertNotNull(waterSamples);
 		Assert.assertEquals(1, waterSamples.size());
 		Assert.assertEquals(width * height, waterSamples.get("0_0").pixels().size());
-		Assert.assertEquals(width, waterSamples.get("0_0").getHorizontalPixels());
-		Assert.assertEquals(height, waterSamples.get("0_0").getVerticalPixels());
+		Assert.assertEquals(width, waterSamples.get("0_0").getNumberOfLonPixels());
+		Assert.assertEquals(height, waterSamples.get("0_0").getNumberOfLatPixels());
 		
 		// assert select bestSample
 		Assert.assertEquals(waterSamples.get("0_0"), chooser.selectBestSample(waterSamples));
@@ -411,8 +411,8 @@ public class TestClusteredPixelQuenteFrioChooser {
 		Assert.assertEquals(width, waterSamples.size());
 		for (PixelSample sample : waterSamples.values()) {
 			Assert.assertEquals(1, sample.pixels().size());
-			Assert.assertEquals(1, sample.getHorizontalPixels());
-			Assert.assertEquals(1, sample.getVerticalPixels());
+			Assert.assertEquals(1, sample.getNumberOfLonPixels());
+			Assert.assertEquals(1, sample.getNumberOfLatPixels());
 		}
 	}
 
@@ -453,8 +453,8 @@ public class TestClusteredPixelQuenteFrioChooser {
 		Assert.assertNotNull(waterSamples);
 		Assert.assertEquals(1, waterSamples.size());
 		Assert.assertEquals(5 * 3, waterSamples.get("2_2").pixels().size());
-		Assert.assertEquals(5, waterSamples.get("2_2").getHorizontalPixels());
-		Assert.assertEquals(3, waterSamples.get("2_2").getVerticalPixels());
+		Assert.assertEquals(5, waterSamples.get("2_2").getNumberOfLonPixels());
+		Assert.assertEquals(3, waterSamples.get("2_2").getNumberOfLatPixels());
 		
 		// assert select bestSample
 		Assert.assertEquals(waterSamples.get("2_2"), chooser.selectBestSample(waterSamples));
@@ -497,18 +497,18 @@ public class TestClusteredPixelQuenteFrioChooser {
 		
 		// sample1
 		Assert.assertEquals(3 * 3, waterSamples.get("0_2").pixels().size());
-		Assert.assertEquals(3, waterSamples.get("0_2").getHorizontalPixels());
-		Assert.assertEquals(3, waterSamples.get("0_2").getVerticalPixels());
+		Assert.assertEquals(3, waterSamples.get("0_2").getNumberOfLonPixels());
+		Assert.assertEquals(3, waterSamples.get("0_2").getNumberOfLatPixels());
 		
 		// sample2
 		Assert.assertEquals(5 * 3, waterSamples.get("5_7").pixels().size());
-		Assert.assertEquals(5, waterSamples.get("5_7").getHorizontalPixels());
-		Assert.assertEquals(3, waterSamples.get("5_7").getVerticalPixels());
+		Assert.assertEquals(5, waterSamples.get("5_7").getNumberOfLonPixels());
+		Assert.assertEquals(3, waterSamples.get("5_7").getNumberOfLatPixels());
 		
 		// sample3
 		Assert.assertEquals(1 * 4, waterSamples.get("0_6").pixels().size());
-		Assert.assertEquals(1, waterSamples.get("0_6").getHorizontalPixels());
-		Assert.assertEquals(4, waterSamples.get("0_6").getVerticalPixels());
+		Assert.assertEquals(1, waterSamples.get("0_6").getNumberOfLonPixels());
+		Assert.assertEquals(4, waterSamples.get("0_6").getNumberOfLatPixels());
 		
 		// assert select bestSample
 		Assert.assertEquals(waterSamples.get("5_7"), chooser.selectBestSample(waterSamples));
@@ -551,8 +551,8 @@ public class TestClusteredPixelQuenteFrioChooser {
 		// asserting
 		Assert.assertEquals(sampleArea1 + sampleArea2 - intersection, waterSamples.get("2_5")
 				.pixels().size());
-		Assert.assertEquals(8, waterSamples.get("2_5").getHorizontalPixels());
-		Assert.assertEquals(6, waterSamples.get("2_5").getVerticalPixels());
+		Assert.assertEquals(8, waterSamples.get("2_5").getNumberOfLonPixels());
+		Assert.assertEquals(6, waterSamples.get("2_5").getNumberOfLatPixels());
 		
 		// assert select bestSample
 		Assert.assertEquals(waterSamples.get("2_5"), chooser.selectBestSample(waterSamples));

@@ -58,11 +58,11 @@ public class PixelSample {
 		return pixels;
 	}
 	
-	public int getHorizontalPixels() {
+	public int getNumberOfLonPixels() {
 		return maxX - minX + 1;
 	}
 	
-	public int getVerticalPixels() {
+	public int getNumberOfLatPixels() {
 		return maxY - minY + 1;
 	}
 }

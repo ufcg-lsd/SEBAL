@@ -54,7 +54,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		
 		double CVForNDVI = calcCVForNDVI(cluster);
 		double CVForTS = calcCVForTS(cluster);
-				
+		
 		if (CVForNDVI < 0.15 && CVForTS < 0.15) {
 			if (!isPixelFrioChoosen) {
 				/*
@@ -135,11 +135,11 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		int D = 5;
 		
 		//TODO check these rules with John
-		Collection<String> keys = waterSamples.keySet(); 
+		Collection<String> keys = new ArrayList<String>(waterSamples.keySet()); 
 		for (String key : keys) {
 			PixelSample pixelSample = waterSamples.get(key);
-			if (pixelSample.pixels().size() < B || pixelSample.getHorizontalPixels() < D
-					|| pixelSample.getVerticalPixels() < D) {
+			if (pixelSample.pixels().size() < B || pixelSample.getNumberOfLonPixels() < D
+					|| pixelSample.getNumberOfLatPixels() < D) {
 				waterSamples.remove(key);
 			}
 			
