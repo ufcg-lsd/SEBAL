@@ -295,6 +295,7 @@ public class SEBAL {
 
 	public Image processPixelQuentePixelFrio(Image image, Satellite satellite,
 			List<BoundingBoxVertice> boundingBoxVertices) {
+		System.out.println("pixels size=" + image.pixels().size());
 		for (ImagePixel imagePixel : image.pixels()) {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
 				ImagePixelOutput output = processPixel(satellite, imagePixel);

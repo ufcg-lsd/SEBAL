@@ -69,7 +69,6 @@ public class SEBALHelper {
 			productSubsetDef = new ProductSubsetDef();
 			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
 					boundingBox.getH());
-			boundedProduct = reader.readProductNodes(mtlFile, productSubsetDef);
 			boundedProduct = ProductSubsetBuilder.createProductSubset(boundedProduct, productSubsetDef, mtlFileName, "");
         }
         return boundedProduct;
@@ -232,11 +231,19 @@ public class SEBALHelper {
         
         image.width(Math.min(iFinal, bandAt.getSceneRasterWidth()) - iBegin);
         image.height(Math.min(jFinal, bandAt.getSceneRasterHeight()) - jBegin);
-
+        
+//        System.out.println("width=" + image.width());
+//        System.out.println("height=" + image.height());
+//
+//        System.out.println("SceneRasterWidth=" + bandAt.getSceneRasterWidth());
+//        System.out.println("SceneRasterHeight=" + bandAt.getSceneRasterHeight());
+//        System.out.println("numBands=" + product.getNumBands());
+        
         for (int i = iBegin; i < Math.min(iFinal, bandAt.getSceneRasterWidth()); i++) {
             for (int j = jBegin; j < Math.min(jFinal, bandAt.getSceneRasterHeight()); j++) {
-
-                DefaultImagePixel imagePixel = new DefaultImagePixel();
+//            	System.out.println(i + " " + j);
+            	
+            	DefaultImagePixel imagePixel = new DefaultImagePixel();
 
                 double[] LArray = new double[product.getNumBands()];
                 for (int k = 0; k < product.getNumBands(); k++) {
@@ -244,13 +251,11 @@ public class SEBALHelper {
                     LArray[k] = L;
                 }
                 imagePixel.L(LArray);
-
+                
                 PixelPos pixelPos = new PixelPos(i, j);
 
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
-                // System.out.println(i + " " + j);
-                
                 GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
                 double latitude = Double.valueOf(String.format("%.10g%n",
                         geoPos.getLat()));

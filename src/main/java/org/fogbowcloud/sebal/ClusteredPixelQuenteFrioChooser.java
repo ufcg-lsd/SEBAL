@@ -12,15 +12,16 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.NDVIComparator;
 import org.fogbowcloud.sebal.model.image.TSComparator;
+import org.python.google.common.primitives.Doubles;
+
 
 public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
 
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
-		boolean isPixelFrioInTheWater = checkIfPixelFrioInTheWater(image);
-		
-		int clusterWidth = 7;
-		int clusterHeight = 7;
+		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
+		int clusterWidth = 5;
+		int clusterHeight = 5;
 		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
 		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
 		
@@ -31,108 +32,90 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 						Math.min(clusterWidth, image.width() - x0),
 						Math.min(clusterHeight, image.height() - y0));
 
-				proccessCluster(isPixelFrioInTheWater, pixelFrioCandidates, pixelQuenteCandidates,
-						cluster);
+				proccessCluster(pixelFrioCandidates, pixelQuenteCandidates, cluster);
 			}
 		}
-				
-		if (!isPixelFrioInTheWater) {
-			selectPixelFrioOutOfWater(pixelFrioCandidates);
-		}		
-		selectPixelQuente(pixelQuenteCandidates);		
+		
+		selectPixelFrioOutOfWater(pixelFrioInTheWater, pixelFrioCandidates);
+		selectPixelQuente(pixelQuenteCandidates);
+		
+		if (pixelFrio != null) {
+			System.out.println("PixelFrio: " + pixelFrio.output().getTs());
+		}
+		if (pixelQuente != null) {
+			System.out.println("PixelQuente: " + pixelQuente.output().getTs());
+		}
 	}
 
 	private int linear(int x, int y, int width) {
 		return x + y * width;
 	}
 
-	private void proccessCluster(boolean isPixelFrioChoosen, List<ImagePixel> pixelFrioCandidates,
+	private void proccessCluster(List<ImagePixel> pixelFrioCandidates,
 			List<ImagePixel> pixelQuenteCandidates, List<ImagePixel> cluster) {
-		
-		List<ImagePixel> preCandidatesFrio = new ArrayList<ImagePixel>();
-		List<ImagePixel> preCandidatesQuente = new ArrayList<ImagePixel>();
-		
+
 		double CVForNDVI = calcCVForNDVI(cluster);
-		double CVForTS = calcCVForTS(cluster);
-		
-		if (CVForNDVI < 0.15 && CVForTS < 0.15) {
-			if (!isPixelFrioChoosen) {
-				/*
-				 * Choosing pixel frio out of the water 
-				 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
-				 */
-				preCandidatesFrio = filterBiggestNDVI(preCandidatesFrio, 5);
-				preCandidatesFrio = filterSmallestTS(preCandidatesFrio, 20);
-				pixelFrioCandidates.addAll(preCandidatesFrio);
-			}
-			
-			/*
-			 * Pixel Quente Candidates: 10% smallest NDVI and 20% biggest TS
-			 */
-			preCandidatesQuente = filterSmallestNDVI(preCandidatesQuente, 10);
-			preCandidatesQuente = filterBiggestTS(preCandidatesQuente, 20);
-			pixelQuenteCandidates.addAll(preCandidatesQuente);
+
+		if (CVForNDVI < 0.2) {
+			pixelFrioCandidates.addAll(cluster);
+			pixelQuenteCandidates.addAll(cluster);
 		}
 	}
-
-	private double calcCVForTS(List<ImagePixel> cluster) {
-		double[] tsValues = new double[cluster.size()];
-		for (int index = 0; index < cluster.size(); index++) {
-			tsValues[index] = cluster.get(index).output().getTs();
-		}
-		double mean = calcMean(tsValues);
-		double variance = new Variance().evaluate(tsValues);
-		double standarDeviation = Math.sqrt(variance);
-		
-		return standarDeviation / mean;
-	}
-
+	
 	private double calcCVForNDVI(List<ImagePixel> cluster) {
-		double[] ndviValues = new double[cluster.size()];
+		List<Double> validNDVIValues = new ArrayList<Double>();
+		int invalidNDVIValues = 0;
 		for (int index = 0; index < cluster.size(); index++) {
-			ndviValues[index] = cluster.get(index).output().getNDVI();
+			if (cluster.get(index).output().getNDVI() <= 0) {
+				invalidNDVIValues++;
+				if (invalidNDVIValues == 10) {
+					return 1;
+				}
+				continue;
+			}
+			validNDVIValues.add(cluster.get(index).output().getNDVI());
 		}
-		double mean = calcMean(ndviValues);
-		double variance = new Variance().evaluate(ndviValues);
+		
+		double mean = calcMean(Doubles.toArray(validNDVIValues));
+		double variance = new Variance().evaluate(Doubles.toArray(validNDVIValues));
 		double standarDeviation = Math.sqrt(variance);
 		
 		return standarDeviation / mean;
 	}
 
-	private boolean checkIfPixelFrioInTheWater(Image image) {		
+	private ImagePixel findPixelFrioInTheWater(Image image) {		
 		Map<String, PixelSample> waterSamples = findWater(image);
 		if (waterSamples.isEmpty()) {
-			return false;
+			return null;
 		}		
 		refineSamples(waterSamples);		
 		PixelSample bestSample = selectBestSample(waterSamples);
 		
 		if (bestSample == null) {
-			return false;
+			return null;
 		}
 		return selectPixelFrioInTheWater(bestSample);
 	}
 
-	private boolean selectPixelFrioInTheWater(PixelSample waterSample) {
+	private ImagePixel selectPixelFrioInTheWater(PixelSample waterSample) {	
 		double[] tsValues = new double[waterSample.pixels().size()];
 		for (int index = 0; index < waterSample.pixels().size(); index++) {
 			tsValues[index] = waterSample.pixels().get(index).output().getTs();
 		}
 		double mean = calcMean(tsValues);
-				
+	
 		for (ImagePixel pixel : waterSample.pixels()) {
 			if (pixel.output().getTs() >= (mean - 0.2)
 					&& pixel.output().getTs() <= (mean + 0.2)) {
-				pixelFrio = pixel;
-				return true;
+				return pixel;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private void refineSamples(Map<String, PixelSample> waterSamples) {
-		int B = 50;
-		int D = 5;
+		int B = 1;
+		int D = 1;
 		
 		//TODO check these rules with John
 		Collection<String> keys = new ArrayList<String>(waterSamples.keySet()); 
@@ -203,12 +186,18 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	}
 
 	private void selectPixelQuente(List<ImagePixel> pixelQuenteCandidates) {
+		/*
+		 * Choosing pixel quente 
+		 * Pixel Quente candidates: 10% smallest NDVI and 20% biggest TS
+		 */
+		pixelQuenteCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
+		pixelQuenteCandidates = filterBiggestTS(pixelQuenteCandidates, 20);
+				
 		double[] tsValuesQuenteCandidates = new double[pixelQuenteCandidates.size()];
 		for (int i = 0; i < pixelQuenteCandidates.size(); i++) {
 			tsValuesQuenteCandidates[i] = pixelQuenteCandidates.get(i).output().getTs();
 		}
 		double tsQuenteMean = calcMean(tsValuesQuenteCandidates);
-		
 		for (ImagePixel pixel : pixelQuenteCandidates) {
 			if (pixel.output().getTs() >= (tsQuenteMean - 0.2)
 					&& pixel.output().getTs() <= (tsQuenteMean + 0.2)){
@@ -218,7 +207,15 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		}
 	}
 
-	private void selectPixelFrioOutOfWater(List<ImagePixel> pixelFrioCandidates) {
+	private void selectPixelFrioOutOfWater(ImagePixel pixelFrioInTheWater,
+			List<ImagePixel> pixelFrioCandidates) {
+		/*
+		 * Choosing pixel frio out of the water 
+		 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
+		 */
+		pixelFrioCandidates = filterBiggestNDVI(pixelFrioCandidates, 5);
+		pixelFrioCandidates = filterSmallestTS(pixelFrioCandidates, 20);
+		
 		double[] tsValuesFrioCandidates = new double[pixelFrioCandidates.size()];
 		double[] alphaValuesFrioCandidates = new double[pixelFrioCandidates.size()];
 		for (int i = 0; i < pixelFrioCandidates.size(); i++) {
@@ -227,15 +224,21 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		}
 		double tsFrioMean = calcMean(tsValuesFrioCandidates);
 		double alphaFrioMean = calcMean(alphaValuesFrioCandidates);
-		
+		ImagePixel pixelFrioOutOfWater = null;
 		for (ImagePixel pixel : pixelFrioCandidates) {
 			if (pixel.output().getTs() >= (tsFrioMean - 0.2)
 					&& pixel.output().getTs() <= (tsFrioMean + 0.2)
-					&& pixel.output().getAlpha() >= (alphaFrioMean - 0.2)
-					&& pixel.output().getAlpha() <= (alphaFrioMean + 0.2)) {
-				pixelFrio = pixel;
+					&& pixel.output().getAlpha() >= (alphaFrioMean - 0.02)
+					&& pixel.output().getAlpha() <= (alphaFrioMean + 0.02)) {
+				pixelFrioOutOfWater = pixel;
 				break;
 			}
+		}
+		if (pixelFrioInTheWater != null) {
+			pixelFrio = (pixelFrioInTheWater.output().getTs() < pixelFrioOutOfWater.output()
+					.getTs() ? pixelFrioInTheWater : pixelFrioOutOfWater);
+		} else {
+			pixelFrio = pixelFrioOutOfWater;
 		}
 	}
 	
@@ -251,6 +254,14 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	protected List<ImagePixel> filterSmallestNDVI(List<ImagePixel> pixels, double percent) {
 		Collections.sort(pixels, new NDVIComparator());
+		
+		//excluding pixels where ndvi is 0
+		for (ImagePixel imagePixel : new ArrayList<ImagePixel>(pixels)) {
+			if (imagePixel.output().getNDVI() <= 0) {
+				pixels.remove(imagePixel);
+			}
+		}
+		
 		List<ImagePixel> percentSmallestNDVI = new ArrayList<ImagePixel>();
 		for (int index = 0; index < Math.round(pixels.size() * (percent / 100) + 0.4); index++) {
 			percentSmallestNDVI.add(pixels.get(index));
