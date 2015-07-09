@@ -64,6 +64,7 @@ public class Elevation {
         int roundLat = Math.abs(latitude.intValue());
         int roundLon = Math.abs(longitude.intValue());
         String latChar = latitude >= 0 ? "N" : "S";
+//        String lonChar = longitude >= 0 ? "N" : "S";
 
         String hgtFilePrefix = String.format("%s%02dW%03d", latChar,
                 latitude < 0 ? roundLat + 1 : roundLat,
@@ -72,6 +73,7 @@ public class Elevation {
         String hgtFile = hgtFilePrefix + ".hgt";
         String hgtZipFile = hgtFile + ".zip";
 
+//        System.out.println("name: " + hgtFile);
         if (!new File(hgtZipFile).exists()) {
             int waitTime = 1000;
             for (int i = 0; i < HGT_RETRY_COUNT; i++) {

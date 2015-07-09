@@ -135,7 +135,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 			if (bestSample == null || (sample.pixels().size() > bestSample.pixels().size())) {
 				bestSample = sample;
 			}
-		}		
+		}
 		return bestSample;
 	}
 

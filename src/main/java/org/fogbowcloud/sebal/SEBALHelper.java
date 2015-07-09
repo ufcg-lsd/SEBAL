@@ -53,6 +53,9 @@ public class SEBALHelper {
 		ZONE_TO_LONG_ZONE_CENTER.put(24, -39);
 		ZONE_TO_LONG_ZONE_CENTER.put(25, -33);
 		ZONE_TO_LONG_ZONE_CENTER.put(26, -27);
+		ZONE_TO_LONG_ZONE_CENTER.put(27, -21);
+		ZONE_TO_LONG_ZONE_CENTER.put(28, -15);
+		ZONE_TO_LONG_ZONE_CENTER.put(29, -9);
 	}
 	
     public static Product readProduct(String mtlFileName,
@@ -63,18 +66,18 @@ public class SEBALHelper {
         Product product = reader.readProductNodes(mtlFile, null);
         ProductSubsetDef productSubsetDef = null;
         Product boundedProduct = product;
-        if (boundingBoxVertices != null && !boundingBoxVertices.isEmpty()) {
-			BoundingBox boundingBox = calculateBoundingBox(boundingBoxVertices, product);
-
-			productSubsetDef = new ProductSubsetDef();
-			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
-					boundingBox.getH());
-			boundedProduct = ProductSubsetBuilder.createProductSubset(boundedProduct, productSubsetDef, mtlFileName, "");
-        }
+//        if (boundingBoxVertices != null && !boundingBoxVertices.isEmpty()) {
+//			BoundingBox boundingBox = calculateBoundingBox(boundingBoxVertices, product);
+//
+//			productSubsetDef = new ProductSubsetDef();
+//			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
+//					boundingBox.getH());
+//			boundedProduct = ProductSubsetBuilder.createProductSubset(boundedProduct, productSubsetDef, mtlFileName, "");
+//        }
         return boundedProduct;
     }
 
-    private static BoundingBox calculateBoundingBox(List<BoundingBoxVertice> boudingVertices,
+    public static BoundingBox calculateBoundingBox(List<BoundingBoxVertice> boudingVertices,
             Product product) throws Exception {
         List<UTMCoordinate> utmCoordinates = new ArrayList<UTMCoordinate>();
     	
@@ -186,6 +189,38 @@ public class SEBALHelper {
 		
 		return new UTMCoordinate(easting, northing);
     }
+	
+	private static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
+			double utmZoneCenterLongitude) throws FactoryException, TransformException {
+	
+		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
+		ReferencingFactoryContainer factories = new ReferencingFactoryContainer(null);
+
+		GeographicCRS geoCRS = org.geotools.referencing.crs.DefaultGeographicCRS.WGS84;
+		CartesianCS cartCS = org.geotools.referencing.cs.DefaultCartesianCS.GENERIC_2D;
+
+		ParameterValueGroup parameters = mtFactory.getDefaultParameters("Transverse_Mercator");
+		parameters.parameter("central_meridian").setValue(utmZoneCenterLongitude);
+		parameters.parameter("latitude_of_origin").setValue(0.0);
+		parameters.parameter("scale_factor").setValue(0.9996);
+		parameters.parameter("false_easting").setValue(500000.0);
+		parameters.parameter("false_northing").setValue(0.0);
+
+		Map<String, String> properties = Collections.singletonMap("name", "WGS 84 / UTM Zone "
+				+ zoneNumber);
+		ProjectedCRS projCRS = factories.createProjectedCRS(properties, geoCRS, null, parameters,
+				cartCS);
+
+		MathTransform transform = CRS.findMathTransform(projCRS, geoCRS);
+
+		double[] dest = new double[2];
+		transform.transform(new double[] { easting, northing }, 0, dest, 0, 1);
+
+		double longitude = dest[0];
+		double latitude = dest[1];
+
+		return new LatLonCoordinate(latitude, longitude);
+    }
 
     public static Image readPixels(List<ImagePixel> pixels,
             ImagePixel pixelQuente, ImagePixel pixelFrio,
@@ -210,7 +245,7 @@ public class SEBALHelper {
 
     public static Image readPixels(Product product, int iBegin, int iFinal,
             int jBegin, int jFinal,
-            PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+            PixelQuenteFrioChooser pixelQuenteFrioChooser, BoundingBox boundingBox) throws Exception {
 
         Locale.setDefault(Locale.ROOT);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
@@ -239,9 +274,31 @@ public class SEBALHelper {
 //        System.out.println("SceneRasterHeight=" + bandAt.getSceneRasterHeight());
 //        System.out.println("numBands=" + product.getNumBands());
         
-        for (int i = iBegin; i < Math.min(iFinal, bandAt.getSceneRasterWidth()); i++) {
-            for (int j = jBegin; j < Math.min(jFinal, bandAt.getSceneRasterHeight()); j++) {
-//            	System.out.println(i + " " + j);
+//        for (int i = iBegin + offSEtX; i < Math.min(iFinal + offSetX, offSetX + width_bounding); i++) {
+        int offSetX = boundingBox.getX();
+        int offSetY = boundingBox.getY();
+        double ULx = metadataRoot.getElement("L1_METADATA_FILE")
+        		.getElement("PRODUCT_METADATA")
+        		.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData()
+        		.getElemDouble();
+        double ULy = metadataRoot.getElement("L1_METADATA_FILE")
+        		.getElement("PRODUCT_METADATA")
+        		.getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData()
+        		.getElemDouble();
+
+        int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
+        		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
+        		.getElemInt();
+        
+        System.out.println("ULx=" + ULx);
+        System.out.println("ULy=" + ULy);
+        
+        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, offSetX + boundingBox.getW()); i++) {
+            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, offSetY + boundingBox.getH()); j++) {
+        
+//        for (int i = iBegin; i < Math.min(iFinal, bandAt.getSceneRasterWidth()); i++) {
+//            for (int j = jBegin; j < Math.min(jFinal, bandAt.getSceneRasterHeight()); j++) {
+            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
 
@@ -252,18 +309,45 @@ public class SEBALHelper {
                 }
                 imagePixel.L(LArray);
                 
-                PixelPos pixelPos = new PixelPos(i, j);
+//                PixelPos pixelPos = new PixelPos(i, j);
 
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
-
-                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+//                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+//                double latitude = Double.valueOf(String.format("%.10g%n",
+//                        geoPos.getLat()));
+//                double longitude = Double.valueOf(String.format("%.10g%n",
+//                        geoPos.getLon()));
+//                
+//                System.out.println("lat1=" + latitude);
+//                System.out.println("lon1=" + longitude);
+//                
+//                UTMCoordinate utmCoord = convertLatLonToUtm(latitude, longitude, zoneNumber, ZONE_TO_LONG_ZONE_CENTER.get(zoneNumber));
+//                System.out.println("easting1=" + utmCoord.getEasting());
+//                System.out.println("northing1=" + utmCoord.getNorthing());
+//                
+//                double latitude = i * pixelSize_m + latInicial_MTL_m
+//                double longitude = j * pixelSize_m + lonInicial_MTL_m
+                
+                double latitudeUTM = (ULx < 0 ? (-1 * i * 30 + ULx) : (i * 30 + ULx));
+                
+//                System.out.println("easting2=" + latitudeUTM);
+                                
+                double longitudeUTM = (ULy < 0 ? (-1 * j * 30 + ULy) : (j * 30 + ULy));                
+//                System.out.println("northing2=" + longitudeUTM);
+                
+				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(latitudeUTM, longitudeUTM,
+						zoneNumber, ZONE_TO_LONG_ZONE_CENTER.get(zoneNumber));
                 double latitude = Double.valueOf(String.format("%.10g%n",
-                        geoPos.getLat()));
+                      latLonCoordinate.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
-                        geoPos.getLon()));
+                      latLonCoordinate.getLon()));
+                
+//                System.out.println("lat2=" + latitude);
+//                System.out.println("lon2=" + longitude);
+                
                 Double z = elevation.z(latitude, longitude);
+                
                 imagePixel.z(z == null ? 400 : z);
-
                 GeoLoc geoLoc = new GeoLoc();
                 geoLoc.setI(i);
                 geoLoc.setJ(j);
@@ -271,28 +355,45 @@ public class SEBALHelper {
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
 
-                double Ta = station.Ta(geoPos.getLat(), geoPos.getLon(),
+//                double Ta = station.Ta(geoPos.getLat(), geoPos.getLon(),
+//                        startTime.getAsDate());
+//                imagePixel.Ta(Ta);
+//
+//                double ux = station.ux(geoPos.getLat(), geoPos.getLon(),
+//                        startTime.getAsDate());
+//                imagePixel.ux(ux);
+//
+//                double zx = station.zx(geoPos.getLat(), geoPos.getLon());
+//                imagePixel.zx(zx);
+//
+//                double d = station.d(geoPos.getLat(), geoPos.getLon());
+//                imagePixel.d(d);
+//
+//                double hc = station.hc(geoPos.getLat(), geoPos.getLon());
+//                imagePixel.hc(hc);
+
+                double Ta = station.Ta(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
                         startTime.getAsDate());
                 imagePixel.Ta(Ta);
 
-                double ux = station.ux(geoPos.getLat(), geoPos.getLon(),
+                double ux = station.ux(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
                         startTime.getAsDate());
                 imagePixel.ux(ux);
 
-                double zx = station.zx(geoPos.getLat(), geoPos.getLon());
+                double zx = station.zx(latLonCoordinate.getLat(), latLonCoordinate.getLon());
                 imagePixel.zx(zx);
 
-                double d = station.d(geoPos.getLat(), geoPos.getLon());
+                double d = station.d(latLonCoordinate.getLat(), latLonCoordinate.getLon());
                 imagePixel.d(d);
 
-                double hc = station.hc(geoPos.getLat(), geoPos.getLon());
+                double hc = station.hc(latLonCoordinate.getLat(), latLonCoordinate.getLon());
                 imagePixel.hc(hc);
 
+                
                 imagePixel.image(image);
 
                 image.addPixel(imagePixel);
-
-                geoPos = null;
+//                geoPos = null;
             }
         }
         return image;

@@ -216,8 +216,10 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
+		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
 		return 32.23;
+//		return 18.21; //Europe
 	
 	}
 	
@@ -227,8 +229,10 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
+		//TODO review it
 //		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
 		return 4.388;
+//		return 2.73; Europe
 	}
 
 	public double zx(double lat, double lon) {
@@ -236,6 +240,7 @@ public class WeatherStation {
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
 		return 6.;
+//		return 7.3; //Europe
 	}
 
 	public double d(double lat, double lon) {
@@ -243,6 +248,7 @@ public class WeatherStation {
 	}
 	
 	public double hc(double lat, double lon) {
+//		return 7.3;
 		return 4.0;
 	}
 	

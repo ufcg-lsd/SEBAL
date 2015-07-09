@@ -15,6 +15,7 @@ import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
 import org.fogbowcloud.sebal.SEBALHelper;
+import org.fogbowcloud.sebal.model.image.BoundingBox;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
@@ -109,8 +110,17 @@ public class Wrapper {
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
         Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
+        
+        BoundingBox boundingBox = null;
+        if (boundingBoxVertices != null) {
+        	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
+//        
+//                			productSubsetDef.setRegion(boundingBox.getX(), boundingBox.getY(), boundingBox.getW(),
+//        					boundingBox.getH());
+        }
+        
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser);
+                jFinal, pixelQuenteFrioChooser, boundingBox);
         Satellite satellite = new JSONSatellite("landsat5");
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
                 satellite, boundingBoxVertices);
