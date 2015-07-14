@@ -27,4 +27,5 @@ public interface Image {
 	int height();
 
 	void height(int height);
+
 }

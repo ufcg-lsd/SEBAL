@@ -19,14 +19,18 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
+		long now = System.currentTimeMillis();
 		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
+		
+		System.out.println("PixelFrioInTheWater Time=" + (System.currentTimeMillis() - now));
+		now = System.currentTimeMillis();
 		int clusterWidth = 5;
 		int clusterHeight = 5;
 		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
 		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
 		
 		for (int x0 = 0; x0 < image.width(); x0 += clusterWidth) {
-			for (int y0 = 0; y0 < image.height(); y0 += image.height()) {
+			for (int y0 = 0; y0 < image.height(); y0 += clusterHeight) {
 				List<ImagePixel> cluster = createCluster(image.pixels(),
 						linear(x0, y0, image.width()), image.width(),
 						Math.min(clusterWidth, image.width() - x0),
@@ -36,8 +40,13 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 			}
 		}
 		
+		System.out.println("ProcessingClusters Time=" + (System.currentTimeMillis() - now));
+		now = System.currentTimeMillis();
+		
 		selectPixelFrioOutOfWater(pixelFrioInTheWater, pixelFrioCandidates);
 		selectPixelQuente(pixelQuenteCandidates);
+		
+		System.out.println("Selecting Time=" + (System.currentTimeMillis() - now));
 		
 		if (pixelFrio != null) {
 			System.out.println("PixelFrio: " + pixelFrio.output().getTs());
@@ -142,6 +151,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	protected Map<String, PixelSample> findWater(Image image) {
 		Map<String, PixelSample> samples = new HashMap<String, PixelSample>();
 		List<ImagePixel> pixels = image.pixels();
+		System.out.println("pixels size=" + pixels.size());
 		boolean[] visited = new boolean[pixels.size()];
 		
 		for (int i = 0; i < image.width(); i++) {
@@ -156,6 +166,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 				}
 			}
 		}
+		
 		return samples;
 	}
 
