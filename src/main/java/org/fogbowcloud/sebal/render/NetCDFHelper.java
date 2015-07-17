@@ -59,7 +59,11 @@ public class NetCDFHelper {
 			}
 		}
 		
+
+		
 		Variable band1 = reader.findVariable("Band1");
+		band1.addAttribute(new Attribute("_FillValue", Double.NaN));
+		
 		List<Dimension> band1Dimensions = band1.getDimensions();
 		List<Dimension> ndviDims = new LinkedList<Dimension>();
 		ndviDims.add(timeDim);
