@@ -11,8 +11,8 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
-import org.fogbowcloud.sebal.DefaultPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
+import org.fogbowcloud.sebal.RandomPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -51,7 +51,8 @@ public class Wrapper {
 
     	getBoundingBoxVertices(boundingBoxFileName);
     	
-    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
+    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
+//    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
 //    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
     	if (outputDir == null) {
     		this.outputDir = mtlName;

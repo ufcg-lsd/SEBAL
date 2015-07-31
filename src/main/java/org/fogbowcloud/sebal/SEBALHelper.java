@@ -193,6 +193,7 @@ public class SEBALHelper {
 
 		Map<String, String> properties = Collections.singletonMap("name", "WGS 84 / UTM Zone "
 				+ zoneNumber);
+		@SuppressWarnings("deprecation")
 		ProjectedCRS projCRS = factories.createProjectedCRS(properties, geoCRS, null, parameters,
 				cartCS);
 
@@ -271,8 +272,11 @@ public class SEBALHelper {
         		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
         		.getElemInt();
         
-        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, offSetX + boundingBox.getW()); i++) {
-            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, offSetY + boundingBox.getH()); j++) {
+        int maxBorderI = Math.min(offSetX + boundingBox.getW(), bandAt.getSceneRasterWidth());
+        int maxBorderJ = Math.min(offSetY + boundingBox.getH(), bandAt.getSceneRasterHeight());
+
+        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, maxBorderI); i++) {
+            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, maxBorderJ); j++) {
 //            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
