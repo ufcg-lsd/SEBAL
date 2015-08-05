@@ -1,6 +1,7 @@
 package org.fogbowcloud.sebal;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -12,7 +13,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
@@ -41,18 +50,7 @@ import org.opengis.referencing.operation.TransformException;
 
 public class SEBALHelper {
 	
-	private static final Map<Integer, Integer> ZONE_TO_LONG_ZONE_CENTER = new HashMap<Integer, Integer>();
-	
-	static {
-		ZONE_TO_LONG_ZONE_CENTER.put(22, -51);
-		ZONE_TO_LONG_ZONE_CENTER.put(23, -45);
-		ZONE_TO_LONG_ZONE_CENTER.put(24, -39);
-		ZONE_TO_LONG_ZONE_CENTER.put(25, -33);
-		ZONE_TO_LONG_ZONE_CENTER.put(26, -27);
-		ZONE_TO_LONG_ZONE_CENTER.put(27, -21);
-		ZONE_TO_LONG_ZONE_CENTER.put(28, -15);
-		ZONE_TO_LONG_ZONE_CENTER.put(29, -9);
-	}
+	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 	
     public static Product readProduct(String mtlFileName,
             List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
@@ -67,15 +65,17 @@ public class SEBALHelper {
         List<UTMCoordinate> utmCoordinates = new ArrayList<UTMCoordinate>();
     	
         MetadataElement metadataRoot = product.getMetadataRoot();
+        
 		int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
 				.getElemInt();
-
-		// TODO read zone from MTL file
+		
+		int centralMeridian = findCentralMeridian(zoneNumber);
+			
 		for (BoundingBoxVertice boundingBoxVertice : boudingVertices) {
 			utmCoordinates.add(convertLatLonToUtm(boundingBoxVertice.getLat(),
 					boundingBoxVertice.getLon(), zoneNumber,
-					ZONE_TO_LONG_ZONE_CENTER.get(zoneNumber)));
+					centralMeridian));
 		}
 
 		double x0 = getMinimunX(utmCoordinates);
@@ -102,6 +102,37 @@ public class SEBALHelper {
         return boundingBox;
     }
     
+	private static int findCentralMeridian(int zoneNumber) throws ClientProtocolException,
+			IOException {
+		if (zoneToCentralMeridian.get(zoneNumber) != null) {
+			return zoneToCentralMeridian.get(zoneNumber);
+		} else {
+
+			CloseableHttpClient httpClient = HttpClients.createMinimal();
+
+			HttpGet homeGet = new HttpGet("http://www.spatialreference.org/ref/epsg/327"
+					+ zoneNumber + "/prettywkt/");
+			HttpResponse response = httpClient.execute(homeGet);
+			String responseStr = EntityUtils.toString(response.getEntity());
+
+			StringTokenizer st1 = new StringTokenizer(responseStr, "\n");
+			while (st1.hasMoreTokens()) {
+				String line = st1.nextToken();
+				if (line.contains("central_meridian")) {
+					line = line.replaceAll(Pattern.quote("["), "");
+					line = line.replaceAll(Pattern.quote("]"), "");
+					StringTokenizer st2 = new StringTokenizer(line, ",");
+					st2.nextToken();
+					int centralMeridian = Integer.parseInt(st2.nextToken().trim());
+					zoneToCentralMeridian.put(zoneNumber, centralMeridian);
+//					System.out.println("zoneToCentralMeridian=" + zoneToCentralMeridian);
+					return centralMeridian;
+				}
+			}
+		}
+		throw new RuntimeException("The crentral_meridian was not found to zone number " + zoneNumber);
+	}
+
 	private static double getMinimunX(List<UTMCoordinate> vertices) {
 		double minimunX = vertices.get(0).getEasting(); //initializing with first value
 		for (UTMCoordinate utmCoordinate : vertices) {
@@ -274,6 +305,7 @@ public class SEBALHelper {
         
         int maxBorderI = Math.min(offSetX + boundingBox.getW(), bandAt.getSceneRasterWidth());
         int maxBorderJ = Math.min(offSetY + boundingBox.getH(), bandAt.getSceneRasterHeight());
+        int centralMeridian = findCentralMeridian(zoneNumber);
 
         for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, maxBorderI); i++) {
             for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, maxBorderJ); j++) {
@@ -292,9 +324,9 @@ public class SEBALHelper {
                 
                 double easting = i * 30 + ULx;
                 double northing = (-1 * j * 30 + ULy);           
-                
+                                
 				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
-						zoneNumber, ZONE_TO_LONG_ZONE_CENTER.get(zoneNumber));
+						zoneNumber, centralMeridian);
                 double latitude = Double.valueOf(String.format("%.10g%n",
                       latLonCoordinate.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
