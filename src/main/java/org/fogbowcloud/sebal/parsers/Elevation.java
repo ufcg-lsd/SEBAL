@@ -64,10 +64,10 @@ public class Elevation {
         int roundLat = Math.abs(latitude.intValue());
         int roundLon = Math.abs(longitude.intValue());
         String latChar = latitude >= 0 ? "N" : "S";
-//        String lonChar = longitude >= 0 ? "N" : "S";
+        String lonChar = longitude >= 0 ? "E" : "W";
 
-        String hgtFilePrefix = String.format("%s%02dW%03d", latChar,
-                latitude < 0 ? roundLat + 1 : roundLat,
+        String hgtFilePrefix = String.format("%s%02d%s%03d", latChar,
+                latitude < 0 ? roundLat + 1 : roundLat, lonChar,
                 longitude < 0 ? roundLon + 1 : roundLon);
 
         String hgtFile = hgtFilePrefix + ".hgt";
