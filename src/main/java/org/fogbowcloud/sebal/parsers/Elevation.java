@@ -14,9 +14,19 @@ public class Elevation {
 
     private static final int HGT_RETRY_COUNT = 3;
 
-    // http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/
-    // s0-16
-    // w36-42
+    /*
+     * South America
+     * http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/
+     * s0-16
+     * w36-42
+     * 
+     * Eurasia
+     * http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Eurasia/
+     * n0-60
+     * s1-13
+     * e0-173
+     * w1-14 
+     */
 
     /** 1200 Intervals means 1201 positions per line and column */
     private static final int SRTM3_INTERVALS = 1200;
@@ -66,19 +76,20 @@ public class Elevation {
         String latChar = latitude >= 0 ? "N" : "S";
         String lonChar = longitude >= 0 ? "E" : "W";
 
-        String hgtFilePrefix = String.format("%s%02d%s%03d", latChar,
-                latitude < 0 ? roundLat + 1 : roundLat, lonChar,
-                longitude < 0 ? roundLon + 1 : roundLon);
+        int lat = latitude < 0 ? roundLat + 1 : roundLat;
+		int lon = longitude < 0 ? roundLon + 1 : roundLon;
+		String hgtFilePrefix = String.format("%s%02d%s%03d", latChar, lat, lonChar, lon);
 
         String hgtFile = hgtFilePrefix + ".hgt";
         String hgtZipFile = hgtFile + ".zip";
 
+        String location = getLocation(latChar, lat, lonChar, lon); 
 //        System.out.println("name: " + hgtFile);
         if (!new File(hgtZipFile).exists()) {
             int waitTime = 1000;
             for (int i = 0; i < HGT_RETRY_COUNT; i++) {
                 try {
-                    String zipURL = "http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/"
+                    String zipURL = "http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/" + location + "/"
                             + hgtFile + ".zip";
                     IOUtils.copy(new URL(zipURL).openStream(),
                             new FileOutputStream(hgtZipFile));
@@ -225,4 +236,25 @@ public class Elevation {
         file.close();
         return dElevation + 0.5;
     }
+
+    /*
+     * TODO Implement for other locations
+     * South America
+     * http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/South_America/
+     * s0-16
+     * w36-42
+     * 
+     * Eurasia
+     * http://dds.cr.usgs.gov/srtm/version2_1/SRTM3/Eurasia/
+     * n0-60
+     * s1-13
+     * e0-173
+     * w1-14 
+     */
+	private String getLocation(String latChar, int lat, String lonChar, int lon) {
+		if ("N".equals(latChar) || "E".equals(lonChar) || lon <= 14) {
+			return "Eurasia";
+		} 		
+		return "South_America";
+	}
 }

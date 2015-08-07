@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
@@ -44,12 +45,16 @@ public class WeatherStation {
 	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
 	private HttpClient httpClient;
+	private Properties properties;
 	
 	public WeatherStation() throws URISyntaxException, HttpException,
 			IOException {
 		this.httpClient = initClient();
 		this.stations = new JSONArray(IOUtils.toString(
 				new FileInputStream("stations.json")));
+		this.properties = new Properties();
+		FileInputStream input = new FileInputStream("sebal.conf");
+		properties.load(input);
 	}
 
 	private List<JSONObject> findNearestStation(double lat, double lon) {
@@ -218,8 +223,10 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
-		return 32.23;
+//		return 32.23;
 //		return 18.21; //Europe
+		return Double.parseDouble(properties.getProperty("temperatura_ar"));
+
 	
 	}
 	
@@ -231,16 +238,18 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
-		return 4.388;
-//		return 2.73; Europe
+//		return 4.388;
+//		return 2.73; //Europe
+		return Double.parseDouble(properties.getProperty("velocidade_vento"));
 	}
 
 	public double zx(double lat, double lon) {
 //		List<JSONObject> station = findNearestStation(lat, lon);
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
-		return 6.;
+//		return 6.;
 //		return 7.3; //Europe
+		return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
 	}
 
 	public double d(double lat, double lon) {
@@ -248,8 +257,9 @@ public class WeatherStation {
 	}
 	
 	public double hc(double lat, double lon) {
-//		return 7.3;
-		return 4.0;
+//		return 7.3; //Europe
+//		return 4.0;
+		return Double.parseDouble(properties.getProperty("hc"));
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {

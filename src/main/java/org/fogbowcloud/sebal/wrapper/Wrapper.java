@@ -11,8 +11,8 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
+import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
-import org.fogbowcloud.sebal.RandomPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -51,9 +51,9 @@ public class Wrapper {
 
     	getBoundingBoxVertices(boundingBoxFileName);
     	
-    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
+//    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
 //    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
-//    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
+    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
     	if (outputDir == null) {
     		this.outputDir = mtlName;
     	} else {
@@ -113,7 +113,7 @@ public class Wrapper {
         Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
         
         BoundingBox boundingBox = null;
-        if (boundingBoxVertices != null) {
+        if (boundingBoxVertices.size() > 3) {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
         }
         
