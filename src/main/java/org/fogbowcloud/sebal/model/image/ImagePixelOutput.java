@@ -30,6 +30,11 @@ public class ImagePixelOutput {
 	private List<HOutput> hOuts;
 	private double tau24h;
 	private double rn24h;
+	private boolean waterTest;
+	private double NDSI;
+	private boolean PCP;
+	private double wCloudProb;
+	private double lCloudProb;
 	
 
 	public double getNDVI() {
@@ -240,6 +245,22 @@ public class ImagePixelOutput {
 		this.tau24h = tau24h;
 	}
 	
+	public boolean getWaterTest() {
+		return waterTest;
+	}
+	
+	public void setWaterTest(boolean waterTest) {
+		this.waterTest= waterTest;
+	}
+	
+	public void setNDSI(double NDSI) {
+		this.NDSI = NDSI;
+	}
+	
+	public double getNDSI() {
+		return NDSI;
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof ImagePixelOutput) {
@@ -255,8 +276,42 @@ public class ImagePixelOutput {
 					&& getTauSW() == other.getTauSW() && getAlphaToa() == other.getAlphaToa()
 					&& getEvapo24h() == other.getEvapo24h() && getFrEvapo() == other.getFrEvapo()
 					&& getLambda24h() == other.getLambda24h() && getTau24h() == other.getTau24h()
-					&& getRn24h() == other.getRn24h();
+					&& getRn24h() == other.getRn24h() && getWaterTest() == other.getWaterTest()
+					&& getNDSI() == other.getNDSI();
 		}
 		return false;
 	}
+	
+	public boolean getClearSkyWater() {
+		return getWaterTest() && rho[6] < 0.03;		
+	}
+	
+	public boolean getClearSkyLand() {
+		return !PCP && !getWaterTest();	
+	}
+
+	public void setPCP(boolean PCP) {
+		this.PCP = PCP;		
+	}
+	
+	public boolean getPCP() {
+		return PCP;		
+	}
+
+	public void setWCloudProb(double wCloudProb) {
+		this.wCloudProb = wCloudProb;
+	}
+	
+	public double getWCloudProb() {
+		return wCloudProb;
+	}
+	
+	public void setLCloudProb(double lCloudProb) {
+		this.lCloudProb = lCloudProb;
+	}
+	
+	public double getLCloudProb() {
+		return lCloudProb;
+	}
+
 }

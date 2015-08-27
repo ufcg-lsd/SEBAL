@@ -4,6 +4,8 @@ import java.awt.geom.Path2D;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.fogbowcloud.sebal.model.image.HOutput;
@@ -13,6 +15,8 @@ import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
 import org.python.modules.math;
+
+import com.google.protobuf.ByteString.Output;
 
 public class SEBAL {
 
@@ -296,21 +300,182 @@ public class SEBAL {
 	public Image processPixelQuentePixelFrio(Image image, Satellite satellite,
 			List<BoundingBoxVertice> boundingBoxVertices) {
 		System.out.println("pixels size=" + image.pixels().size());
+		
+		LinkedList<Double> waterPixelsTS = new LinkedList<Double>();
+		LinkedList<Double> landPixelsTS = new LinkedList<Double>();
+		
+		System.out.println("Processing pixels...");
+	    long now = System.currentTimeMillis();
 		for (ImagePixel imagePixel : image.pixels()) {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
 				ImagePixelOutput output = processPixel(satellite, imagePixel);
 				imagePixel.setOutput(output);
-			} else {	
+				
+				if (output.getClearSkyWater()) {
+					waterPixelsTS.add(output.getTs());
+				} 
+				
+				if (output.getClearSkyLand()) {
+					landPixelsTS.add(output.getTs());
+				}
+			} else {
 				System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
 						+ imagePixel.geoLoc().getLat() + ") is out of the bounding box.");
 				imagePixel.setOutput(new ImagePixelOutput());
 			}
 		}
+		
+		System.out.println("Proccessing pixels time = " + (System.currentTimeMillis() - now));
+		now = System.currentTimeMillis();
+		
+		if (waterPixelsTS.isEmpty() && landPixelsTS.isEmpty()) {
+			image.choosePixelsQuenteFrio();
+			return image;
+		}
+		
+		//calculating TS percentils
+		double highWaterPercentil = Double.NaN;
+		if (!waterPixelsTS.isEmpty()) {
+			Collections.sort(waterPixelsTS);
+			int k = getPercentilPos(82.5, waterPixelsTS.size());
+			highWaterPercentil = waterPixelsTS.get(k);
+		}
+		
+		double lowLandPercentil = Double.NaN;
+		double highLandPercentil = Double.NaN;
+		if (!landPixelsTS.isEmpty()){
+			Collections.sort(landPixelsTS);
+			int k = getPercentilPos(17.5, landPixelsTS.size());
+			lowLandPercentil = landPixelsTS.get(k);
+			k = getPercentilPos(82.5, landPixelsTS.size());
+			highLandPercentil = landPixelsTS.get(k);
+		}
+		
+		//calculating lCloudProb and wCloudProb
+		System.out.println("Calculating probabilities...");
+		LinkedList<Double> lClearSkyCloudProbs = new LinkedList<Double>();
+
+		for (ImagePixel imagePixel : image.pixels()) {
+			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
+				calcProbalities(satellite, imagePixel, highWaterPercentil, lowLandPercentil, highLandPercentil);		
+				
+				if (imagePixel.output().getClearSkyLand()) {
+					lClearSkyCloudProbs.add(imagePixel.output().getLCloudProb());
+				}				
+			}
+		}
+		
+		double lCloudProbPercentil = Double.NaN;
+		if (!lClearSkyCloudProbs.isEmpty()) {
+			Collections.sort(lClearSkyCloudProbs);
+			int k = getPercentilPos(82.5, lClearSkyCloudProbs.size());
+			lCloudProbPercentil = lClearSkyCloudProbs.get(k);
+		}
+		
+		// cloud detection
+		System.out.println("Detecting cloud...");
+		for (ImagePixel imagePixel : image.pixels()) {
+			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
+				if (isCloudPixel(imagePixel, lCloudProbPercentil, lowLandPercentil)
+						|| isCloudShadowPixel(satellite, imagePixel)
+						|| isSnowPixel(satellite, imagePixel)) {
+					System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
+							+ imagePixel.geoLoc().getLat() + ") is a cloud pixel.");
+					imagePixel.setOutput(new ImagePixelOutput());
+				}
+			}
+		}
+		
+		System.out.println("Cloud detection time = " + (System.currentTimeMillis() - now));
+		
 		image.choosePixelsQuenteFrio();
 		return image;
 	}
 
-    private boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
+	private void calcProbalities(Satellite satellite, ImagePixel imagePixel,
+			double TWater, double lTLow, double lTHigh) {
+		
+		ImagePixelOutput output = imagePixel.output();
+		double wCloudProb = Double.NaN;
+		try {
+
+			// Potential cloud layer - pass two
+
+			// Test 1 - Temperature probability for water:
+			//
+			// Clear_sky Water = Water Test (true) and Band 7 < 0.03
+
+			// Twater = 82.5 percentile of Clear_sky Water pixels BT
+			//
+			// wTemperature_Prob = (Twater–BT)/4
+
+			double wTemperatureProb = (TWater - output.getTs()) / 4;
+
+			// - Test 2 – Brightness probability:
+			//
+			// Brightness_Prob = min (Band5, 0.11)/0.11
+
+			double brightnessProb = Math.min(output.getRho()[4], 0.11) / 0.11;
+			//
+			// - Test 3 - Cloud probability for water:
+			//
+			// wCloudPProb = wTemperature_ProbxBrightness_Prob
+			//
+			wCloudProb = wTemperatureProb * brightnessProb;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+        imagePixel.output().setWCloudProb(wCloudProb);
+        
+        
+//        	- Test 4 - Temperature probability for land:
+//
+        
+//        	(Tlow, Thigh)= (17.5, 82.5) percentile of Clear_sky Land pixels BT
+//
+        double lCloudProb = Double.NaN;
+		try {
+			double lTemperatureProb = (lTHigh + 4 - output.getTs()) / (lTHigh + 4 - (lTLow - 4));
+
+			// lTemperature_Prob = (Thigh + 4–BT)/(Thigh + 4–(Tlow–4)
+			//
+			// - Test 5 - Variability probability:
+			//
+			// Variability_Prob = 1–max(abs(modified NDVI), abs(modified NDSI),
+			// and Whiteness)
+			double modifiedNDSI = output.getNDSI();
+			if (modifiedNDSI < 0) {
+				modifiedNDSI = 0;
+			}
+
+			double modifiedNDVI = output.getNDVI();
+			if (modifiedNDVI < 0) {
+				modifiedNDVI = 0;
+			}
+
+			double whiteness = calcWhiteness(output.getRho()[0], output.getRho()[1],
+					output.getRho()[2]);
+			double variabilityProb = 1 - Math.max(Math.abs(modifiedNDVI),
+					Math.max(Math.abs(modifiedNDSI), whiteness));
+			//
+			// - Test 6 – Cloud Probability for Land:
+			//
+			// Lcloud_Prob=ltemperature_ProbxVariability_Prob
+
+			lCloudProb = lTemperatureProb * variabilityProb;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        imagePixel.output().setLCloudProb(lCloudProb);
+		
+	}
+
+	private int getPercentilPos(double percentil, int n) {
+		return (int) Math.round((percentil * n / 100));
+	}
+
+	private boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
 			List<BoundingBoxVertice> boundingBoxVertices) {
     	if (boundingBoxVertices.size() < 3) {
     		return true;
@@ -359,6 +524,7 @@ public class SEBAL {
             Image updatedImage = hPixelProces(pixels, hOutput, image);
             return updatedImage;
         }
+        System.out.println("(pixelQuente != null || pixelQuenteOutput != null || pixelFrioOutput != null) was false");
         return image;
     }
 
@@ -496,18 +662,11 @@ public class SEBAL {
     public ImagePixelOutput processPixel(Satellite satellite,
             ImagePixel imagePixel) {
         ImagePixelOutput output = new ImagePixelOutput();
+        
         double[] LLambda = imagePixel.L();
 
-        double[] rho = new double[7];
-        for (int i = 0; i < rho.length; i++) {
-            if (i == 5) {
-                continue;
-            }
-            double rhoI = rho(LLambda[i],
-                    earthSunDistance.get(imagePixel.image().getDay()),
-                    satellite.ESUN(i + 1), imagePixel.cosTheta());
-            rho[i] = rhoI;
-        }
+        double[] rho = calcRho(satellite, imagePixel);
+        
         // System.out.println("rho " + Arrays.toString(rho));
         output.setRho(rho);
         double alphaToa = alphaToa(rho[0], rho[1], rho[2], rho[3], rho[4],
@@ -545,7 +704,7 @@ public class SEBAL {
 
         double epsilonNB = epsilonNB(IAF);
         output.setEpsilonNB(epsilonNB);
-        // System.out.println("epsilonNB " + epsilonNB);
+        // System.out.)println("epsilonNB " + epsilonNB);
 
         double epsilonZero = epsilonZero(IAF);
         output.setEpsilonZero(epsilonZero);
@@ -574,11 +733,99 @@ public class SEBAL {
         double G = G(TS, alpha, NDVI, Rn);
         // System.out.println("G " + G);
         output.setG(G);
-
+        
+        double NDSI = NDSI(rho[1], rho[4]);
+        output.setNDSI(NDSI);
+        
+        boolean waterTest = cloudDetectionWaterTest(NDVI, rho[3]);
+        output.setWaterTest(waterTest); 
+        
+        // Potential cloud layer - pass one
+        boolean basicTest = cloudDetectionBasicTest(output.getNDVI(), output.getTs(), output.getNDSI(), rho[6]);
+        boolean whitenessTest = cloudDetectionWhitenessTest(rho[0], rho[1], rho[2]);
+        boolean hotTest = cloudDetectionHotTest(rho[0], rho[2]);
+        boolean b4b5Test = cloudDetectionB4B5Test(rho[3], rho[4]);
+        
+        //potential cloud pixel
+        boolean PCP = basicTest && whitenessTest && hotTest && b4b5Test;
+        output.setPCP(PCP);
         return output;
     }
+    
+	public boolean isCloudPixel(ImagePixel imagePixel, double lCloudProbPercentil, double lTLow) {
+		ImagePixelOutput output = imagePixel.output();
 
-    private double Gsc() {
+		double landThreshold = lCloudProbPercentil + 0.2;
+		boolean PCL = (output.getPCP() && output.getWaterTest() && output.getWCloudProb() > 0.5)
+				|| (output.getPCP() && !output.getWaterTest() && output.getLCloudProb() > landThreshold)
+				|| (output.getLCloudProb() > 0.99 && output.getWaterTest())
+				|| (output.getTs() < lTLow - 35);
+
+		return PCL;
+	}
+	
+	private boolean isSnowPixel(Satellite satellite, ImagePixel imagePixel) {
+		double[] rho = calcRho(satellite, imagePixel);
+		ImagePixelOutput output = imagePixel.output();
+		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;
+	}
+	
+	private boolean isCloudShadowPixel(Satellite satellite, ImagePixel imagePixel) {
+		// TODO implement it
+		return false;
+	}
+
+	private double[] calcRho(Satellite satellite, ImagePixel imagePixel) {
+		double[] rho = new double[7];
+		double[] LLambda = imagePixel.L();
+		
+		for (int i = 0; i < rho.length; i++) {
+            if (i == 5) {
+                continue;
+            }
+            double rhoI = rho(LLambda[i],
+                    earthSunDistance.get(imagePixel.image().getDay()),
+                    satellite.ESUN(i + 1), imagePixel.cosTheta());
+            rho[i] = rhoI;
+        }
+		return rho;
+	}
+
+    private boolean cloudDetectionWaterTest(double NDVI, double rho4) {
+		return (NDVI < 0.01 && rho4 < 0.11) || (NDVI < 0.1 && rho4 < 0.05);
+	}
+
+	private boolean cloudDetectionB4B5Test(double rho4, double rho5) {
+		return rho4/rho5 > 0.75;
+	}
+
+	private boolean cloudDetectionHotTest(double rho1, double rho3) {
+		return (rho1 - 0.5 * rho3 - 0.08) > 0;
+	}
+
+	private boolean cloudDetectionWhitenessTest(double rho1, double rho2, double rho3) {
+		return calcWhiteness(rho1, rho2, rho3) < 0.7;
+	}
+
+	private double calcWhiteness(double rho1, double rho2, double rho3) {
+		double meanVIS = (rho1 + rho2 + rho3) / 3;
+		return absoluteDiffVIS(rho1, meanVIS) + absoluteDiffVIS(rho2, meanVIS)
+				+ absoluteDiffVIS(rho3, meanVIS);
+	}
+
+	private double absoluteDiffVIS(double rho1, double meanVIS) {
+		return Math.abs((rho1 - meanVIS) / meanVIS);
+	}
+
+	private boolean cloudDetectionBasicTest(double NDVI, double TS, double NDSI, double rho7) {
+		return rho7 > 0.03 && TS < 27 && NDVI < 0.8 && NDSI < 0.8;
+	}
+
+	private double NDSI(double rho2, double rho5) {
+		return (rho2 - rho5) / (rho2 + rho5);
+	}
+
+	private double Gsc() {
         return 0.082;
     }
 

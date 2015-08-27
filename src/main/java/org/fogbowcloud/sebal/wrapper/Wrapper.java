@@ -13,6 +13,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
+import org.fogbowcloud.sebal.RandomPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -51,9 +52,9 @@ public class Wrapper {
 
     	getBoundingBoxVertices(boundingBoxFileName);
     	
-//    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
+    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
 //    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
-    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
+//    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
     	if (outputDir == null) {
     		this.outputDir = mtlName;
     	} else {
@@ -110,6 +111,7 @@ public class Wrapper {
 
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
+    	long now = System.currentTimeMillis();
         Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
         
         BoundingBox boundingBox = null;
@@ -117,14 +119,23 @@ public class Wrapper {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
         }
         
+        System.out.println("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+        System.out.println("bounding_box: H=" + boundingBox.getH() + " - W=" + boundingBox.getW() + " " );
+        
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox);
         Satellite satellite = new JSONSatellite("landsat5");
+        
+        System.out.println("F1 phase time read = " + (System.currentTimeMillis() - now));
+        
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
                 satellite, boundingBoxVertices);
+        
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());
+        System.out.println("F1 phase time total = " + (System.currentTimeMillis() - now));
+
     }
 
     private void savePixelFrio(Image updatedImage, String fileName) {
@@ -282,6 +293,7 @@ public class Wrapper {
 
     public void F2(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
+    	long now = System.currentTimeMillis();
         ImagePixel pixelQuente = processPixelQuenteFromFile(getFinalPixelQuenteFileName());
         ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName());
         List<ImagePixel> pixels = processPixelsFromFile();
@@ -290,6 +302,7 @@ public class Wrapper {
         image = new SEBAL().pixelHProcess(pixels, pixelQuente,
                 getPixelOutput(pixelQuente), getPixelOutput(pixelFrio), image);
         saveFinalProcessOutput(image);
+        System.out.println("F2 phase time = " + (System.currentTimeMillis() - now));
     }
 
     private ImagePixelOutput getPixelOutput(ImagePixel pixel) {
@@ -301,11 +314,13 @@ public class Wrapper {
 
     public void C(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
         try {
+        	long now = System.currentTimeMillis();
             Image image = SEBALHelper.readPixels(getAllPixelsQuente(),
                     getAllPixelsFrio(), pixelQuenteFrioChooser);
             image.choosePixelsQuenteFrio();
             savePixelFrio(image, outputDir + "/" + "frio.csv");
             savePixelQuente(image, outputDir + "/" + "quente.csv");
+            System.out.println("C phase time =" + (System.currentTimeMillis() - now));
         } catch (IOException e) {
             e.printStackTrace();
         }

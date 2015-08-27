@@ -290,6 +290,9 @@ public class SEBALHelper {
         image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
         image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
         
+//        System.out.println("iBegin=" + iBegin + " - iFinal=" + iFinal);
+//        System.out.println("jBegin=" + jBegin + " - jFinal=" + jFinal);
+        
         double ULx = metadataRoot.getElement("L1_METADATA_FILE")
         		.getElement("PRODUCT_METADATA")
         		.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData()
@@ -303,12 +306,12 @@ public class SEBALHelper {
         		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
         		.getElemInt();
         
-        int maxBorderI = Math.min(offSetX + boundingBox.getW(), bandAt.getSceneRasterWidth());
-        int maxBorderJ = Math.min(offSetY + boundingBox.getH(), bandAt.getSceneRasterHeight());
+//        int maxBorderI = Math.min(offSetX + boundingBox.getW(), bandAt.getSceneRasterWidth());
+//        int maxBorderJ = Math.min(offSetY + boundingBox.getH(), bandAt.getSceneRasterHeight());
         int centralMeridian = findCentralMeridian(zoneNumber);
 
-        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, maxBorderI); i++) {
-            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, maxBorderJ); j++) {
+        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, offSetX + boundingBox.getW()); i++) {
+            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, offSetY + boundingBox.getH()); j++) {
 //            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
