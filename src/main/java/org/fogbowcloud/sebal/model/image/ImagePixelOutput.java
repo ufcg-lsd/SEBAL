@@ -35,7 +35,15 @@ public class ImagePixelOutput {
 	private boolean PCP;
 	private double wCloudProb;
 	private double lCloudProb;
+	private boolean isCloud; 
 	
+	public boolean isCloud() {
+		return isCloud;
+	}
+
+	public void setIsCloud(boolean isCloud) {
+		this.isCloud = isCloud;
+	}
 
 	public double getNDVI() {
 		return NDVI;

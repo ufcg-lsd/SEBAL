@@ -25,7 +25,9 @@ import org.apache.http.util.EntityUtils;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.PixelPos;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -77,6 +79,11 @@ public class SEBALHelper {
 					boundingBoxVertice.getLon(), zoneNumber,
 					centralMeridian));
 		}
+		
+		//TODO remove it
+		for (UTMCoordinate utmCoordinate : utmCoordinates) {
+			System.out.println(utmCoordinate);
+		}
 
 		double x0 = getMinimunX(utmCoordinates);
 		double y0 = getMaximunY(utmCoordinates);
@@ -92,6 +99,16 @@ public class SEBALHelper {
                 .getElement("PRODUCT_METADATA")
                 .getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData()
                 .getElemDouble();
+        
+        //TODO remove it
+        System.out.println("ULx=" + ULx);
+        System.out.println("ULy=" + ULy);
+        
+        System.out.println("x0=" + x0);
+        System.out.println("y0=" + y0);
+        
+        System.out.println("x1=" + x1);
+        System.out.println("y1=" + y1);
 
         int offsetX = (int) ((x0 - ULx) / 30);
         int offsetY = (int) ((ULy - y0) / 30);
@@ -125,7 +142,6 @@ public class SEBALHelper {
 					st2.nextToken();
 					int centralMeridian = Integer.parseInt(st2.nextToken().trim());
 					zoneToCentralMeridian.put(zoneNumber, centralMeridian);
-//					System.out.println("zoneToCentralMeridian=" + zoneToCentralMeridian);
 					return centralMeridian;
 				}
 			}
@@ -290,8 +306,8 @@ public class SEBALHelper {
         image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
         image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
         
-//        System.out.println("iBegin=" + iBegin + " - iFinal=" + iFinal);
-//        System.out.println("jBegin=" + jBegin + " - jFinal=" + jFinal);
+        System.out.println("iBegin=" + iBegin + " - iFinal=" + iFinal);
+        System.out.println("jBegin=" + jBegin + " - jFinal=" + jFinal);
         
         double ULx = metadataRoot.getElement("L1_METADATA_FILE")
         		.getElement("PRODUCT_METADATA")
@@ -306,12 +322,10 @@ public class SEBALHelper {
         		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
         		.getElemInt();
         
-//        int maxBorderI = Math.min(offSetX + boundingBox.getW(), bandAt.getSceneRasterWidth());
-//        int maxBorderJ = Math.min(offSetY + boundingBox.getH(), bandAt.getSceneRasterHeight());
         int centralMeridian = findCentralMeridian(zoneNumber);
 
-        for (int i = iBegin + offSetX; i < Math.min(iFinal + offSetX, offSetX + boundingBox.getW()); i++) {
-            for (int j = jBegin + offSetY; j < Math.min(jFinal + offSetY, offSetY + boundingBox.getH()); j++) {
+        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
 //            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -326,7 +340,7 @@ public class SEBALHelper {
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
                 
                 double easting = i * 30 + ULx;
-                double northing = (-1 * j * 30 + ULy);           
+                double northing = (-1 * j * 30 + ULy);
                                 
 				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
 						zoneNumber, centralMeridian);
@@ -334,7 +348,7 @@ public class SEBALHelper {
                       latLonCoordinate.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
                       latLonCoordinate.getLon()));
-                
+
                 Double z = elevation.z(latitude, longitude);
                 
                 imagePixel.z(z == null ? 400 : z);

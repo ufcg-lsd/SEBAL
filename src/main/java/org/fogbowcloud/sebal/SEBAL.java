@@ -365,28 +365,32 @@ public class SEBAL {
 			}
 		}
 		
-		double lCloudProbPercentil = Double.NaN;
+		double clearSkyLandCloudProbPercentil = Double.NaN;
 		if (!lClearSkyCloudProbs.isEmpty()) {
 			Collections.sort(lClearSkyCloudProbs);
 			int k = getPercentilPos(82.5, lClearSkyCloudProbs.size());
-			lCloudProbPercentil = lClearSkyCloudProbs.get(k);
+			clearSkyLandCloudProbPercentil = lClearSkyCloudProbs.get(k);
 		}
 		
 		// cloud detection
+		int amountOfCloudPixels = 0;
 		System.out.println("Detecting cloud...");
 		for (ImagePixel imagePixel : image.pixels()) {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
-				if (isCloudPixel(imagePixel, lCloudProbPercentil, lowLandPercentil)
+				if (isCloudPixel(imagePixel, clearSkyLandCloudProbPercentil, lowLandPercentil)
 						|| isCloudShadowPixel(satellite, imagePixel)
 						|| isSnowPixel(satellite, imagePixel)) {
 					System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
 							+ imagePixel.geoLoc().getLat() + ") is a cloud pixel.");
-					imagePixel.setOutput(new ImagePixelOutput());
+					ImagePixelOutput output = new ImagePixelOutput();
+					output.setIsCloud(true);					
+					imagePixel.setOutput(output);
+					amountOfCloudPixels++;
 				}
 			}
 		}
-		
 		System.out.println("Cloud detection time = " + (System.currentTimeMillis() - now));
+		System.out.println("Amount of cloud pixels = " + amountOfCloudPixels);
 		
 		image.choosePixelsQuenteFrio();
 		return image;
@@ -398,29 +402,8 @@ public class SEBAL {
 		ImagePixelOutput output = imagePixel.output();
 		double wCloudProb = Double.NaN;
 		try {
-
-			// Potential cloud layer - pass two
-
-			// Test 1 - Temperature probability for water:
-			//
-			// Clear_sky Water = Water Test (true) and Band 7 < 0.03
-
-			// Twater = 82.5 percentile of Clear_sky Water pixels BT
-			//
-			// wTemperature_Prob = (Twater–BT)/4
-
 			double wTemperatureProb = (TWater - output.getTs()) / 4;
-
-			// - Test 2 – Brightness probability:
-			//
-			// Brightness_Prob = min (Band5, 0.11)/0.11
-
 			double brightnessProb = Math.min(output.getRho()[4], 0.11) / 0.11;
-			//
-			// - Test 3 - Cloud probability for water:
-			//
-			// wCloudPProb = wTemperature_ProbxBrightness_Prob
-			//
 			wCloudProb = wTemperatureProb * brightnessProb;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -428,22 +411,10 @@ public class SEBAL {
 		
         imagePixel.output().setWCloudProb(wCloudProb);
         
-        
-//        	- Test 4 - Temperature probability for land:
-//
-        
-//        	(Tlow, Thigh)= (17.5, 82.5) percentile of Clear_sky Land pixels BT
-//
         double lCloudProb = Double.NaN;
 		try {
 			double lTemperatureProb = (lTHigh + 4 - output.getTs()) / (lTHigh + 4 - (lTLow - 4));
 
-			// lTemperature_Prob = (Thigh + 4–BT)/(Thigh + 4–(Tlow–4)
-			//
-			// - Test 5 - Variability probability:
-			//
-			// Variability_Prob = 1–max(abs(modified NDVI), abs(modified NDSI),
-			// and Whiteness)
 			double modifiedNDSI = output.getNDSI();
 			if (modifiedNDSI < 0) {
 				modifiedNDSI = 0;
@@ -458,11 +429,6 @@ public class SEBAL {
 					output.getRho()[2]);
 			double variabilityProb = 1 - Math.max(Math.abs(modifiedNDVI),
 					Math.max(Math.abs(modifiedNDSI), whiteness));
-			//
-			// - Test 6 – Cloud Probability for Land:
-			//
-			// Lcloud_Prob=ltemperature_ProbxVariability_Prob
-
 			lCloudProb = lTemperatureProb * variabilityProb;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -746,16 +712,19 @@ public class SEBAL {
         boolean hotTest = cloudDetectionHotTest(rho[0], rho[2]);
         boolean b4b5Test = cloudDetectionB4B5Test(rho[3], rho[4]);
         
+        
         //potential cloud pixel
         boolean PCP = basicTest && whitenessTest && hotTest && b4b5Test;
+        
+//        System.out.println(imagePixel.geoLoc().getLon() + ", " + imagePixel.geoLoc().getLat() + ", b1=" + rho[0] + ", b2=" + rho[1] + ", b3=" + rho[2] + ", b4=" + rho[3] + ", b5=" + rho[4] + ", b7=" + rho[6] +  ", TS=" + TS + ", NDVI=" + NDVI + ", NDSI=" +NDSI + ", basic=" + basicTest + ", whiteness=" + whitenessTest + ", hot=" + hotTest + ", b4b5=" + b4b5Test + ", PCP=" + PCP);
         output.setPCP(PCP);
         return output;
     }
     
-	public boolean isCloudPixel(ImagePixel imagePixel, double lCloudProbPercentil, double lTLow) {
+	public boolean isCloudPixel(ImagePixel imagePixel, double clearSkyLandCloudProbPercentil, double lTLow) {
 		ImagePixelOutput output = imagePixel.output();
 
-		double landThreshold = lCloudProbPercentil + 0.2;
+		double landThreshold = clearSkyLandCloudProbPercentil + 0.2;
 		boolean PCL = (output.getPCP() && output.getWaterTest() && output.getWCloudProb() > 0.5)
 				|| (output.getPCP() && !output.getWaterTest() && output.getLCloudProb() > landThreshold)
 				|| (output.getLCloudProb() > 0.99 && output.getWaterTest())
@@ -818,7 +787,7 @@ public class SEBAL {
 	}
 
 	private boolean cloudDetectionBasicTest(double NDVI, double TS, double NDSI, double rho7) {
-		return rho7 > 0.03 && TS < 27 && NDVI < 0.8 && NDSI < 0.8;
+		return rho7 > 0.03 && TS < 300.15 && NDVI < 0.8 && NDSI < 0.8;
 	}
 
 	private double NDSI(double rho2, double rho5) {

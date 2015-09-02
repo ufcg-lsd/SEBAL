@@ -52,9 +52,9 @@ public class Wrapper {
 
     	getBoundingBoxVertices(boundingBoxFileName);
     	
-    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
+//    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
 //    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
-//    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
+    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
     	if (outputDir == null) {
     		this.outputDir = mtlName;
     	} else {

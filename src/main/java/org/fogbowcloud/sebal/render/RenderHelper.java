@@ -54,9 +54,12 @@ public class RenderHelper {
 		long daysSince1970 = SEBALHelper.getDaysSince1970(mtlFilePath);		
 		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
 		
+//		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
+//				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
+//				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
-				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
+				daysSince1970, RenderHelper.TIFF);
 	}
 
 	private static class BandVariableBuilder {
@@ -131,6 +134,7 @@ public class RenderHelper {
 					Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
 					this.tiffBand = createBand(dstTiff, ulLon, ulLat);
+					this.rasterTiff = new double[maskHeight * maskWidth];
 				} else if (driver.equals(BMP)) {
 					Driver bmpDriver = gdal.GetDriverByName("BMP");
 					String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp")
@@ -138,6 +142,7 @@ public class RenderHelper {
 					Dataset dstBmp = bmpDriver.Create(bmpFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Byte);
 					this.bmpBand = createBand(dstBmp, ulLon, ulLat);
+					this.rasterBmp = new double[maskHeight * maskWidth];
 				} else if (driver.equals(NET_CDF)) {
 					Driver netCDFDriver = gdal.GetDriverByName("NetCDF");
 					this.netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc")
@@ -145,11 +150,9 @@ public class RenderHelper {
 					Dataset dstNetCDF = netCDFDriver.Create(netCDFFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
 					this.netCDFBand = createBand(dstNetCDF, ulLon, ulLat);
+					this.rasterNetCDF = new double[maskHeight * maskWidth];
 				}
 			}
-			this.rasterTiff = new double[maskHeight * maskWidth];
-			this.rasterBmp = new double[maskHeight * maskWidth];
-			this.rasterNetCDF = new double[maskHeight * maskWidth];
 		}
 
 		public void read(String[] splitLine) {
@@ -158,9 +161,15 @@ public class RenderHelper {
 			int iIdx = i - initialI;
 			int jIdx = j - initialJ;
 			double val = Double.parseDouble(splitLine[columnIdx]);
-			rasterTiff[jIdx * maskWidth + iIdx] = val;
-			rasterNetCDF[jIdx * maskWidth + iIdx] = val;
-			rasterBmp[jIdx * maskWidth + iIdx] = val * 255;
+			if (rasterTiff != null) {
+				rasterTiff[jIdx * maskWidth + iIdx] = val;
+			}
+			if (rasterNetCDF != null) {
+				rasterNetCDF[jIdx * maskWidth + iIdx] = val;
+			}
+			if (rasterBmp != null) {
+				rasterBmp[jIdx * maskWidth + iIdx] = val * 255;
+			}
 		}
 
 		public void render(double daysSince1970) {
@@ -225,12 +234,12 @@ public class RenderHelper {
 				initialJ, drivers);
 		List<BandVariable> vars = new LinkedList<BandVariable>();
 		vars.add(bandVariableBuilder.build("ndvi", 7));
-		vars.add(bandVariableBuilder.build("evi", 18));
-		vars.add(bandVariableBuilder.build("iaf", 17));
-		vars.add(bandVariableBuilder.build("ts", 6));
-		vars.add(bandVariableBuilder.build("alpha", 9));
-		vars.add(bandVariableBuilder.build("rn", 5));
-		vars.add(bandVariableBuilder.build("g", 4));
+//		vars.add(bandVariableBuilder.build("evi", 18));
+//		vars.add(bandVariableBuilder.build("iaf", 17));
+//		vars.add(bandVariableBuilder.build("ts", 6));
+//		vars.add(bandVariableBuilder.build("alpha", 9));
+//		vars.add(bandVariableBuilder.build("rn", 5));
+//		vars.add(bandVariableBuilder.build("g", 4));
 
 		lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 

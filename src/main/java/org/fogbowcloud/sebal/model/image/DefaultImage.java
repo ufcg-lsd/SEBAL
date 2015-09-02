@@ -1,13 +1,13 @@
 package org.fogbowcloud.sebal.model.image;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 
 public class DefaultImage implements Image {
 
-	private List<ImagePixel> pixels = new LinkedList<ImagePixel>();
+	private List<ImagePixel> pixels = new ArrayList<ImagePixel>(1000000);
 	private int day;
 	private int width;
 	private int height;

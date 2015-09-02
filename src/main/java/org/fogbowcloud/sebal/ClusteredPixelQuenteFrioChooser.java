@@ -10,6 +10,7 @@ import java.util.Map;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
+import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.image.NDVIComparator;
 import org.fogbowcloud.sebal.model.image.TSComparator;
 import org.python.google.common.primitives.Doubles;
@@ -19,6 +20,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
+		System.out.println("image is null? " + (image == null));
 		long now = System.currentTimeMillis();
 		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
 		
@@ -75,7 +77,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		List<Double> validNDVIValues = new ArrayList<Double>();
 		int invalidNDVIValues = 0;
 		for (int index = 0; index < cluster.size(); index++) {
-			if (cluster.get(index).output().getNDVI() <= 0) {
+			ImagePixelOutput pixelOutput = cluster.get(index).output();
+			if (pixelOutput.isCloud() || pixelOutput.getNDVI() <= 0) {
 				invalidNDVIValues++;
 				if (invalidNDVIValues == 10) {
 					return 1;
@@ -160,13 +163,14 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 					continue;
 				}
 
-				if (pixels.get(linear(i, j, image.width())).output().getNDVI() < 0) {
+				ImagePixelOutput pixelOutput = pixels.get(linear(i, j, image.width())).output();
+				if (!pixelOutput.isCloud() && pixelOutput.getNDVI() < 0) {
 					findWater(pixels, visited, i, j, image.width(), image.height(), i + "_" + j,
 							samples);
 				}
 			}
 		}
-		
+		System.out.println("amount of water samples=" + samples.size());
 		return samples;
 	}
 
@@ -201,6 +205,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		 * Choosing pixel quente 
 		 * Pixel Quente candidates: 10% smallest NDVI and 20% biggest TS
 		 */
+		System.out.println("amount of pixelQuenteCandidates=" + pixelQuenteCandidates.size());
 		pixelQuenteCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
 		pixelQuenteCandidates = filterBiggestTS(pixelQuenteCandidates, 20);
 				
@@ -220,6 +225,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	private void selectPixelFrioOutOfWater(ImagePixel pixelFrioInTheWater,
 			List<ImagePixel> pixelFrioCandidates) {
+		System.out.println("amount of pixelFrioCandidates=" + pixelFrioCandidates.size());
 		/*
 		 * Choosing pixel frio out of the water 
 		 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS

@@ -223,9 +223,9 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
-//		return 32.23;
+		return 32.23;
 //		return 18.21; //Europe
-		return Double.parseDouble(properties.getProperty("temperatura_ar"));
+//		return Double.parseDouble(properties.getProperty("temperatura_ar"));
 
 	
 	}
@@ -238,18 +238,18 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
-//		return 4.388;
+		return 4.388;
 //		return 2.73; //Europe
-		return Double.parseDouble(properties.getProperty("velocidade_vento"));
+//		return Double.parseDouble(properties.getProperty("velocidade_vento"));
 	}
 
 	public double zx(double lat, double lon) {
 //		List<JSONObject> station = findNearestStation(lat, lon);
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
-//		return 6.;
+		return 6.;
 //		return 7.3; //Europe
-		return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
+//		return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
 	}
 
 	public double d(double lat, double lon) {
@@ -258,8 +258,8 @@ public class WeatherStation {
 	
 	public double hc(double lat, double lon) {
 //		return 7.3; //Europe
-//		return 4.0;
-		return Double.parseDouble(properties.getProperty("hc"));
+		return 4.0;
+//		return Double.parseDouble(properties.getProperty("hc"));
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {
