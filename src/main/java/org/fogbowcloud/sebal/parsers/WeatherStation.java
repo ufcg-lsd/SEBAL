@@ -47,14 +47,16 @@ public class WeatherStation {
 	private HttpClient httpClient;
 	private Properties properties;
 	
-	public WeatherStation() throws URISyntaxException, HttpException,
+	public WeatherStation() throws URISyntaxException, HttpException, IOException {
+		this (new Properties());
+	}
+	
+	public WeatherStation(Properties properties) throws URISyntaxException, HttpException,
 			IOException {
 		this.httpClient = initClient();
 		this.stations = new JSONArray(IOUtils.toString(
 				new FileInputStream("stations.json")));
-		this.properties = new Properties();
-		FileInputStream input = new FileInputStream("sebal.conf");
-		properties.load(input);
+		this.properties = properties;
 	}
 
 	private List<JSONObject> findNearestStation(double lat, double lon) {
@@ -223,11 +225,12 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
-		return 32.23;
+//		return 32.23;
 //		return 18.21; //Europe
-//		return Double.parseDouble(properties.getProperty("temperatura_ar"));
-
-	
+		if (properties.getProperty("temperatura_ar") != null) {
+			return Double.parseDouble(properties.getProperty("temperatura_ar"));
+		}
+		return Double.parseDouble(record.optString("TempBulboSeco"));	
 	}
 	
 	public double ux(double lat, double lon, Date date) {
@@ -238,18 +241,25 @@ public class WeatherStation {
 		}
 		//TODO review it
 //		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
-		return 4.388;
+//		return 4.388;
 //		return 2.73; //Europe
 //		return Double.parseDouble(properties.getProperty("velocidade_vento"));
+		if (properties.getProperty("velocidade_vento") != null) {
+			return Double.parseDouble(properties.getProperty("velocidade_vento"));
+		}
+		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
 	}
 
 	public double zx(double lat, double lon) {
 //		List<JSONObject> station = findNearestStation(lat, lon);
 //		return station.get(0).optDouble("altitude");
 		//TODO Procurar a altitude do sensor da velocidade do vento
-		return 6.;
+//		return 6.;
 //		return 7.3; //Europe
-//		return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
+		if (properties.getProperty("altitude_sensor_velocidade") != null){
+			return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
+		}
+		return 6.;
 	}
 
 	public double d(double lat, double lon) {
@@ -258,8 +268,11 @@ public class WeatherStation {
 	
 	public double hc(double lat, double lon) {
 //		return 7.3; //Europe
+//		return 4.0;
+		if (properties.getProperty("hc") != null) {
+			return Double.parseDouble(properties.getProperty("hc"));
+		}
 		return 4.0;
-//		return Double.parseDouble(properties.getProperty("hc"));
 	}
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {

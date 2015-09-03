@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.fogbowcloud.sebal.model.image.Image;
@@ -18,6 +19,62 @@ import org.python.google.common.primitives.Doubles;
 
 public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
 
+	private int clusterWidth = 5;  			// 5 is default value
+	private int clusterHeight = 5; 			// 5 is default value
+	private double maxCVForNDVI = 0.2; 		// 20% is default value
+	private int maxInvalidNDVIValues = 10;	// 10 is default value
+	private int minTotalWater = 1;			// 1 is default value
+	private int minLatWater = 1;			// 1 is default value
+	private int minLonWater = 1;			// 1 is default value
+	private double maxDiffFromTSMean = 0.2;	// 0.2 is default value
+	private double maxDiffFromAlbedoMean = 0.02; // 0.02 is default value
+	
+	public ClusteredPixelQuenteFrioChooser() {
+		
+	}
+	
+	public ClusteredPixelQuenteFrioChooser(Properties properties) {
+		if (properties.getProperty("cluster_width") != null) {
+			clusterWidth = Integer.parseInt(properties.getProperty("cluster_width"));
+		}
+
+		if (properties.getProperty("cluster_height") != null) {
+			clusterHeight = Integer.parseInt(properties.getProperty("cluster_height"));
+		}
+
+		if (properties.getProperty("cluster_max_cv_for_ndvi") != null) {
+			maxCVForNDVI = Double.parseDouble(properties.getProperty("cluster_max_cv_for_ndvi"));
+		}
+
+		if (properties.getProperty("cluster_max_invalid_ndvi") != null) {
+			maxInvalidNDVIValues = Integer.parseInt(properties
+					.getProperty("cluster_max_invalid_ndvi"));
+		}
+
+		if (properties.getProperty("cluster_min_total_water_pixels") != null) {
+			minTotalWater = Integer.parseInt(properties
+					.getProperty("cluster_min_total_water_pixels"));
+		}
+
+		if (properties.getProperty("cluster_min_lat_water_pixels") != null) {
+			minLatWater = Integer.parseInt(properties.getProperty("cluster_min_lat_water_pixels"));
+		}
+
+		if (properties.getProperty("cluster_min_lon_water_pixels") != null) {
+			minLonWater = Integer.parseInt(properties.getProperty("cluster_min_lon_water_pixels"));
+		}
+
+		if (properties.getProperty("cluster_max_difference_from_ts_mean") != null) {
+			maxDiffFromTSMean = Double.parseDouble(properties
+					.getProperty("cluster_max_difference_from_ts_mean"));
+		}
+		
+		if (properties.getProperty("cluster_max_difference_from_albedo_mean") != null) {
+			maxDiffFromAlbedoMean  = Double.parseDouble(properties
+					.getProperty("cluster_max_difference_from_albedo_mean"));
+		}
+	}
+
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
 		System.out.println("image is null? " + (image == null));
@@ -26,8 +83,6 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		
 		System.out.println("PixelFrioInTheWater Time=" + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
-		int clusterWidth = 5;
-		int clusterHeight = 5;
 		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
 		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
 		
@@ -67,7 +122,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 		double CVForNDVI = calcCVForNDVI(cluster);
 
-		if (CVForNDVI < 0.2) {
+		if (CVForNDVI < maxCVForNDVI) {
 			pixelFrioCandidates.addAll(cluster);
 			pixelQuenteCandidates.addAll(cluster);
 		}
@@ -80,7 +135,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 			ImagePixelOutput pixelOutput = cluster.get(index).output();
 			if (pixelOutput.isCloud() || pixelOutput.getNDVI() <= 0) {
 				invalidNDVIValues++;
-				if (invalidNDVIValues == 10) {
+				if (invalidNDVIValues == maxInvalidNDVIValues) {
 					return 1;
 				}
 				continue;
@@ -117,8 +172,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		double mean = calcMean(tsValues);
 	
 		for (ImagePixel pixel : waterSample.pixels()) {
-			if (pixel.output().getTs() >= (mean - 0.2)
-					&& pixel.output().getTs() <= (mean + 0.2)) {
+			if (pixel.output().getTs() >= (mean - maxDiffFromTSMean)
+					&& pixel.output().getTs() <= (mean + maxDiffFromTSMean)) {
 				return pixel;
 			}
 		}
@@ -126,18 +181,14 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	}
 
 	private void refineSamples(Map<String, PixelSample> waterSamples) {
-		int B = 1;
-		int D = 1;
-		
-		//TODO check these rules with John
-		Collection<String> keys = new ArrayList<String>(waterSamples.keySet()); 
+		Collection<String> keys = new ArrayList<String>(waterSamples.keySet());
 		for (String key : keys) {
 			PixelSample pixelSample = waterSamples.get(key);
-			if (pixelSample.pixels().size() < B || pixelSample.getNumberOfLonPixels() < D
-					|| pixelSample.getNumberOfLatPixels() < D) {
+			if (pixelSample.pixels().size() < minTotalWater
+					|| pixelSample.getNumberOfLonPixels() < minLonWater
+					|| pixelSample.getNumberOfLatPixels() < minLatWater) {
 				waterSamples.remove(key);
 			}
-			
 		}
 	}
 
@@ -164,7 +215,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 				}
 
 				ImagePixelOutput pixelOutput = pixels.get(linear(i, j, image.width())).output();
-				if (!pixelOutput.isCloud() && pixelOutput.getNDVI() < 0) {
+				if (!pixelOutput.isCloud() && pixelOutput.getWaterTest()) {
 					findWater(pixels, visited, i, j, image.width(), image.height(), i + "_" + j,
 							samples);
 				}
@@ -215,8 +266,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		}
 		double tsQuenteMean = calcMean(tsValuesQuenteCandidates);
 		for (ImagePixel pixel : pixelQuenteCandidates) {
-			if (pixel.output().getTs() >= (tsQuenteMean - 0.2)
-					&& pixel.output().getTs() <= (tsQuenteMean + 0.2)){
+			if (pixel.output().getTs() >= (tsQuenteMean - maxDiffFromTSMean)
+					&& pixel.output().getTs() <= (tsQuenteMean + maxDiffFromTSMean)){
 				pixelQuente = pixel;
 				break;
 			}
@@ -243,10 +294,10 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		double alphaFrioMean = calcMean(alphaValuesFrioCandidates);
 		ImagePixel pixelFrioOutOfWater = null;
 		for (ImagePixel pixel : pixelFrioCandidates) {
-			if (pixel.output().getTs() >= (tsFrioMean - 0.2)
-					&& pixel.output().getTs() <= (tsFrioMean + 0.2)
-					&& pixel.output().getAlpha() >= (alphaFrioMean - 0.02)
-					&& pixel.output().getAlpha() <= (alphaFrioMean + 0.02)) {
+			if (pixel.output().getTs() >= (tsFrioMean - maxDiffFromTSMean)
+					&& pixel.output().getTs() <= (tsFrioMean + maxDiffFromTSMean)
+					&& pixel.output().getAlpha() >= (alphaFrioMean - maxDiffFromAlbedoMean)
+					&& pixel.output().getAlpha() <= (alphaFrioMean + maxDiffFromAlbedoMean)) {
 				pixelFrioOutOfWater = pixel;
 				break;
 			}

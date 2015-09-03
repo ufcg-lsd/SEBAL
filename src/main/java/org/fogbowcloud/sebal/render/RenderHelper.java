@@ -54,12 +54,13 @@ public class RenderHelper {
 		long daysSince1970 = SEBALHelper.getDaysSince1970(mtlFilePath);		
 		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
 		
-//		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
-//				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
-//				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
-				daysSince1970, RenderHelper.TIFF);
+				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
+		
+//		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
+//				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
+//				daysSince1970, RenderHelper.TIFF);
 	}
 
 	private static class BandVariableBuilder {
@@ -126,6 +127,7 @@ public class RenderHelper {
 			this.columnIdx = columnIdx;
 			this.drivers = drivers;
 
+			
 			for (String driver : drivers) {
 				if (driver.equals(TIFF)) {
 					Driver tiffDriver = gdal.GetDriverByName("GTiff");
@@ -163,6 +165,7 @@ public class RenderHelper {
 			double val = Double.parseDouble(splitLine[columnIdx]);
 			if (rasterTiff != null) {
 				rasterTiff[jIdx * maskWidth + iIdx] = val;
+				System.out.println("index=" + jIdx * maskWidth + iIdx + ", value=" + val);
 			}
 			if (rasterNetCDF != null) {
 				rasterNetCDF[jIdx * maskWidth + iIdx] = val;
@@ -194,6 +197,8 @@ public class RenderHelper {
 		}
 
 		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
+			System.out.println("uLon="+ ulLon);
+			System.out.println("uLat="+ ulLat);
 			dstNdviTiff
 					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
 			SpatialReference srs = new SpatialReference();

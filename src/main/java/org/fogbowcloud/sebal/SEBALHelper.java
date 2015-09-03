@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -276,9 +277,9 @@ public class SEBALHelper {
         return image;
     }
 
-    public static Image readPixels(Product product, int iBegin, int iFinal,
-            int jBegin, int jFinal,
-            PixelQuenteFrioChooser pixelQuenteFrioChooser, BoundingBox boundingBox) throws Exception {
+	public static Image readPixels(Product product, int iBegin, int iFinal, int jBegin, int jFinal,
+			PixelQuenteFrioChooser pixelQuenteFrioChooser, BoundingBox boundingBox,
+			Properties properties) throws Exception {
 
         Locale.setDefault(Locale.ROOT);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
@@ -324,8 +325,8 @@ public class SEBALHelper {
         
         int centralMeridian = findCentralMeridian(zoneNumber);
 
-        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
-            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
+        for (int i = Math.min(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+            for (int j = Math.min(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
 //            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -334,6 +335,7 @@ public class SEBALHelper {
                 for (int k = 0; k < product.getNumBands(); k++) {
                     double L = product.getBandAt(k).getSampleFloat(i, j);
                     LArray[k] = L;
+//                    System.out.println("band " + k + "=" + L);
                 }
                 imagePixel.L(LArray);
   
@@ -350,6 +352,11 @@ public class SEBALHelper {
                       latLonCoordinate.getLon()));
 
                 Double z = elevation.z(latitude, longitude);
+                
+//                PixelPos pixelPos = new PixelPos(i, j);
+//                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+//				double latitude = Double.valueOf(String.format("%.10g%n", geoPos.getLat()));
+//				double longitude = Double.valueOf(String.format("%.10g%n", geoPos.getLon()));
                 
                 imagePixel.z(z == null ? 400 : z);
                 GeoLoc geoLoc = new GeoLoc();

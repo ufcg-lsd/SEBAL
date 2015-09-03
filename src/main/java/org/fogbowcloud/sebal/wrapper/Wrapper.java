@@ -7,13 +7,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
-import org.fogbowcloud.sebal.RandomPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBAL;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -36,12 +37,58 @@ public class Wrapper {
     private String outputDir;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+    private Properties properties;
+    
+	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
 	public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName,
 			String boundingBoxFileName) throws IOException {
 		this(mtlFile, null, iBegin, iFinal, jBegin, jFinal, mtlName, boundingBoxFileName);
 	}
     
+	public Wrapper(Properties properties) throws IOException {
+		String mtlFilePath = properties.getProperty("mtl_file_path");
+		if (mtlFilePath == null || mtlFilePath.isEmpty()) {
+			LOGGER.error("Property mtl_file_path must be set.");
+			throw new IllegalArgumentException("Property mtl_file_path must be set.");
+		}
+		this.mtlFile = mtlFilePath;
+		
+		String iBeginStr = properties.getProperty("i_begin_interval");
+		String iFinalStr = properties.getProperty("i_final_interval");
+		String jBeginStr = properties.getProperty("j_begin_interval");
+		String jFinalStr = properties.getProperty("j_final_interval");
+		
+		if (iBeginStr == null || iFinalStr == null || jBeginStr == null || jFinalStr == null) {
+			LOGGER.error("Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
+			throw new IllegalArgumentException(
+					"Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
+		}
+		this.iBegin = Integer.parseInt(iBeginStr);
+		this.iFinal = Integer.parseInt(iFinalStr);
+		this.jBegin = Integer.parseInt(jBeginStr);
+		this.jFinal = Integer.parseInt(jFinalStr);
+		
+		getBoundingBoxVertices(properties.getProperty("bounding_box_file_path"));
+
+		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
+
+		String fileName = new File(mtlFile).getName();
+		String mtlName = fileName.substring(0, fileName.indexOf("_"));
+		String outputDir = properties.getProperty("output_dir_path");
+
+		if (outputDir == null || outputDir.isEmpty()) {
+    		this.outputDir = mtlName;
+    	} else {
+    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
+    			new File(outputDir).mkdirs();
+    		}
+    		this.outputDir = outputDir + "/" + mtlName;
+    	}
+		
+		this.properties = properties;
+	}
+	
     public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
             int jFinal, String mtlName, String boundingBoxFileName) throws IOException {
     	this.mtlFile = mtlFile;
@@ -64,6 +111,7 @@ public class Wrapper {
     		this.outputDir = outputDir + "/" + mtlName;
     	}
     }
+
 
 	private void getBoundingBoxVertices(String boundingBoxFileName) throws IOException {
 		//TODO check number of args inside bounding box file name 
@@ -123,7 +171,7 @@ public class Wrapper {
         System.out.println("bounding_box: H=" + boundingBox.getH() + " - W=" + boundingBox.getW() + " " );
         
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox);
+                jFinal, pixelQuenteFrioChooser, boundingBox, properties);
         Satellite satellite = new JSONSatellite("landsat5");
         
         System.out.println("F1 phase time read = " + (System.currentTimeMillis() - now));

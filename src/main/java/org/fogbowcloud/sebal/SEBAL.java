@@ -14,6 +14,8 @@ import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
+import org.gdal.gdal.Band;
+import org.gdal.gdal.gdal;
 import org.python.modules.math;
 
 import com.google.protobuf.ByteString.Output;
@@ -741,6 +743,20 @@ public class SEBAL {
 	
 	private boolean isCloudShadowPixel(Satellite satellite, ImagePixel imagePixel) {
 		// TODO implement it
+		
+		gdal.AllRegister();
+//		double[] rho = calcRho(satellite, imagePixel);
+//		
+//		double [] target = new double[20];
+//		
+//		
+//		Band targetBand = new Band();
+//		Band maskBand;
+//		gdal.FillNodata(targetBand, maskBand, 3, 0);
+//		
+//		gdal.SieveFilter(srcBand, maskBand, dstBand, threshold);
+		
+		
 		return false;
 	}
 
