@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -26,9 +27,7 @@ import org.apache.http.util.EntityUtils;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
-import org.esa.beam.framework.datamodel.PixelPos;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -322,11 +321,11 @@ public class SEBALHelper {
         int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
         		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
         		.getElemInt();
-        
+		
         int centralMeridian = findCentralMeridian(zoneNumber);
 
-        for (int i = Math.min(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
-            for (int j = Math.min(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
+        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
 //            	System.out.println(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -335,7 +334,6 @@ public class SEBALHelper {
                 for (int k = 0; k < product.getNumBands(); k++) {
                     double L = product.getBandAt(k).getSampleFloat(i, j);
                     LArray[k] = L;
-//                    System.out.println("band " + k + "=" + L);
                 }
                 imagePixel.L(LArray);
   
@@ -352,12 +350,7 @@ public class SEBALHelper {
                       latLonCoordinate.getLon()));
 
                 Double z = elevation.z(latitude, longitude);
-                
-//                PixelPos pixelPos = new PixelPos(i, j);
-//                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-//				double latitude = Double.valueOf(String.format("%.10g%n", geoPos.getLat()));
-//				double longitude = Double.valueOf(String.format("%.10g%n", geoPos.getLon()));
-                
+               
                 imagePixel.z(z == null ? 400 : z);
                 GeoLoc geoLoc = new GeoLoc();
                 geoLoc.setI(i);
@@ -365,7 +358,7 @@ public class SEBALHelper {
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
-
+                
 				double Ta = station.Ta(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
 						startTime.getAsDate());
 				imagePixel.Ta(Ta);
@@ -414,5 +407,28 @@ public class SEBALHelper {
 		}
 		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
 				+ jFinal + ".pixels.csv";
+	}
+
+	public static List<BoundingBoxVertice> getVerticesFromFile(String boundingBoxFileName) throws IOException {
+		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+		
+		// TODO check number of args inside bounding box file name
+		if (boundingBoxFileName != null && new File(boundingBoxFileName).exists()) {
+			String boundingBoxInfo = FileUtils.readFileToString(new File(boundingBoxFileName));
+			String[] boundingBoxValues = boundingBoxInfo.split(",");
+
+			for (int i = 0; i < boundingBoxValues.length; i += 2) {
+				boundingBoxVertices.add(new BoundingBoxVertice(Double
+						.parseDouble(boundingBoxValues[i]), Double
+						.parseDouble(boundingBoxValues[i + 1])));
+			}
+			if (boundingBoxVertices.size() < 3) {				
+				System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
+						+ " vertices set.");
+			}
+		} else {
+			System.out.println("Invalid bounding box file path: " + boundingBoxFileName);
+		}
+		return boundingBoxVertices;
 	}
 }

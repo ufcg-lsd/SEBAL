@@ -69,7 +69,7 @@ public class Wrapper {
 		this.jBegin = Integer.parseInt(jBeginStr);
 		this.jFinal = Integer.parseInt(jFinalStr);
 		
-		getBoundingBoxVertices(properties.getProperty("bounding_box_file_path"));
+		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
 
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
 
@@ -97,7 +97,7 @@ public class Wrapper {
     	this.jBegin = jBegin;
     	this.jFinal = jFinal;
 
-    	getBoundingBoxVertices(boundingBoxFileName);
+    	boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
     	
 //    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
 //    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
@@ -111,27 +111,6 @@ public class Wrapper {
     		this.outputDir = outputDir + "/" + mtlName;
     	}
     }
-
-
-	private void getBoundingBoxVertices(String boundingBoxFileName) throws IOException {
-		//TODO check number of args inside bounding box file name 
-		if (boundingBoxFileName != null && new File(boundingBoxFileName).exists()) {
-			String boundingBoxInfo = FileUtils.readFileToString(new File(boundingBoxFileName));
-			String[] boundingBoxValues = boundingBoxInfo.split(",");
-
-			for (int i = 0; i < boundingBoxValues.length; i += 2) {
-				boundingBoxVertices.add(new BoundingBoxVertice(Double
-						.parseDouble(boundingBoxValues[i]), Double
-						.parseDouble(boundingBoxValues[i + 1])));
-			}
-			if (boundingBoxVertices.size() < 3){
-				System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
-						+ " vertices set.");
-			}
-		} else {
-			System.out.println("Invalid bounding box file path: " + boundingBoxFileName);
-		}
-	}
     
     public void doTask(String taskType) throws Exception {
         try {
@@ -176,8 +155,11 @@ public class Wrapper {
         
         System.out.println("F1 phase time read = " + (System.currentTimeMillis() - now));
         
+		int maskWidth = Math.min(iFinal, boundingBox.getX() + boundingBox.getW()) - Math.max(iBegin, boundingBox.getX());
+		int maskHeight = Math.min(jFinal, boundingBox.getY() + boundingBox.getH()) - Math.max(jBegin, boundingBox.getY());
+        
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices);
+                satellite, boundingBoxVertices, maskWidth, maskHeight);
         
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());

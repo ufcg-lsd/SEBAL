@@ -106,6 +106,9 @@ public class Elevation {
                 }
             }
         }
+        
+		// For more than one process in the same machine trying to use the same
+		// file
         while (true) {
             File hgt = new File(hgtFile);
             if (hgt.exists()) {

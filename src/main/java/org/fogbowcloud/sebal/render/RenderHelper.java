@@ -5,15 +5,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
+import org.esa.beam.framework.datamodel.Product;
+import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.BulkHelper;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.XPartitionInterval;
+import org.fogbowcloud.sebal.model.image.BoundingBox;
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
@@ -30,7 +34,7 @@ public class RenderHelper {
 	public static final String TIFF = "tiff";
 	public static final String BMP = "bmp";
 	public static final String NET_CDF = "netcdf";
-
+	
 	public static void main(String[] args) throws ParseException, Exception {
 		String mtlFilePath = args[0];
 		String fileName = new File(mtlFilePath).getName();
@@ -38,25 +42,43 @@ public class RenderHelper {
 
 		String outputDir = args[1];
 		int leftX = Integer.parseInt(args[2]);
-		int upperY = Integer.parseInt(args[3]);
+		int lowerY = Integer.parseInt(args[3]);
 		int rightX = Integer.parseInt(args[4]);
-		int lowerY = Integer.parseInt(args[5]);
+		int upperY = Integer.parseInt(args[5]);
 
 		int numberOfPartitions = Integer.parseInt(args[6]);
 		int partitionIndex = Integer.parseInt(args[7]);
-
+		
+		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+		if (args[8] != null) {
+			String boundingboxFilePath = args[8];
+			boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingboxFilePath );			
+		}
+		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
 				numberOfPartitions, partitionIndex);
 
 		String csvFilePath = SEBALHelper.getAllPixelsFilePath(outputDir, mtlName,
-				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY, lowerY);
+				imagePartition.getIBegin(), imagePartition.getIFinal(), lowerY, upperY);
 		
 		long daysSince1970 = SEBALHelper.getDaysSince1970(mtlFilePath);		
-		String prefixRaw = leftX + "." + rightX + "." + upperY + "." + lowerY;
+		String prefixRaw = leftX + "." + rightX + "." + lowerY + "." + upperY;
+			
+		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
-				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
-				daysSince1970, RenderHelper.TIFF, RenderHelper.BMP, RenderHelper.NET_CDF);
+		BoundingBox boundingBox = null;
+		if (boundingBoxVertices.size() > 3) {
+			boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
+		}
+		int offSetX = boundingBox.getX();
+		int offSetY = boundingBox.getY();
+		
+		int maskWidth = Math.min(rightX, offSetX + boundingBox.getW()) - Math.max(leftX, offSetX);
+		int maskHeight = Math.min(upperY, offSetY + boundingBox.getH()) - Math.max(lowerY, offSetY);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, RenderHelper.TIFF, RenderHelper.BMP,
+				RenderHelper.NET_CDF);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -165,7 +187,6 @@ public class RenderHelper {
 			double val = Double.parseDouble(splitLine[columnIdx]);
 			if (rasterTiff != null) {
 				rasterTiff[jIdx * maskWidth + iIdx] = val;
-				System.out.println("index=" + jIdx * maskWidth + iIdx + ", value=" + val);
 			}
 			if (rasterNetCDF != null) {
 				rasterNetCDF[jIdx * maskWidth + iIdx] = val;
@@ -213,6 +234,10 @@ public class RenderHelper {
 			int maskHeight, double daysSince1970, String... drivers) throws IOException,
 			FileNotFoundException {
 		gdal.AllRegister();
+		
+//		gdal.fil
+		
+		
 
 		Double latMax = -360.;
 		Double lonMin = +360.;
