@@ -158,8 +158,13 @@ public class Wrapper {
 		int maskWidth = Math.min(iFinal, boundingBox.getX() + boundingBox.getW()) - Math.max(iBegin, boundingBox.getX());
 		int maskHeight = Math.min(jFinal, boundingBox.getY() + boundingBox.getH()) - Math.max(jBegin, boundingBox.getY());
         
+		boolean cloudDetection = true;
+		if (properties.getProperty("fmask_file_path") != null) {
+			cloudDetection = false;
+		}
+		
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, maskWidth, maskHeight);
+                satellite, boundingBoxVertices, maskWidth, maskHeight, cloudDetection);
         
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());

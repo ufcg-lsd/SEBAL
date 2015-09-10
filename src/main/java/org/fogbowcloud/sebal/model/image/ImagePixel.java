@@ -31,4 +31,7 @@ public interface ImagePixel {
 	
 	// Altura da vegetacao
 	double hc();
+	
+	// Pixel deve ser considerado no processamento
+	boolean isValid();
 }

@@ -38,6 +38,9 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
+import org.gdal.gdal.Dataset;
+import org.gdal.gdal.gdal;
+import org.gdal.gdalconst.gdalconstConstants;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.ReferencingFactoryContainer;
@@ -323,8 +326,21 @@ public class SEBALHelper {
         		.getElemInt();
 		
         int centralMeridian = findCentralMeridian(zoneNumber);
+        
+        String fmaskFilePath = properties.getProperty("fmask_file_path");
+        
+        double[] fmask = null;
+        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty()){
+        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
+        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
+        			Math.min(jFinal, offSetY + boundingBox.getH()));        	
+        }
+		
+		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
 
+		int fmaskI = 0;
         for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+        	int fmaskJ = 0;
             for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
 //            	System.out.println(i + " " + j);
             	
@@ -358,7 +374,7 @@ public class SEBALHelper {
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
-                
+                                
 				double Ta = station.Ta(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
 						startTime.getAsDate());
 				imagePixel.Ta(Ta);
@@ -375,13 +391,41 @@ public class SEBALHelper {
 
 				double hc = station.hc(latLonCoordinate.getLat(), latLonCoordinate.getLon());
 				imagePixel.hc(hc);
+				
+				if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
+					imagePixel.isValid(false);
+				}
 
                 imagePixel.image(image);
                 image.addPixel(imagePixel);
+                
+                fmaskJ++;
             }
+            fmaskI++;
         }
+        
+        System.out.println("FMask size=" + fmask.length);
+        System.out.println("Pixels size=" + image.pixels().size());
+        
         return image;
     }
+
+	private static double[] readFmask(String fmaskFilePath, int iInitial, int iFinal, int jInitial,
+			int jFinal) {
+
+		int maskWidth = iFinal - iInitial;
+		int maskHeight = jFinal - jInitial;
+
+		gdal.AllRegister();
+
+		Dataset dst = gdal.Open(fmaskFilePath, gdalconstConstants.GA_ReadOnly);
+		org.gdal.gdal.Band band = dst.GetRasterBand(1);
+
+		double[] fmask = new double[maskWidth * maskHeight];
+		band.ReadRaster(iInitial, jInitial, maskWidth, maskHeight, fmask);
+
+		return fmask;
+	}
 
 	public static long getDaysSince1970(String mtlFilePath) throws Exception,
 			ParseException {

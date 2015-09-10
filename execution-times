@@ -26,6 +26,7 @@ F2 phase time = 271460
 
 
 
+
 Clustered:
 pixels size=1000000
 tempo para processar PixelFrioInTheWater=13987211 (233 min)
@@ -146,3 +147,43 @@ Calculating probabilities...
 Detecting cloud...
 Cloud detection time = 577
 F1 phase time total = 129400
+
+
+
+Nuvem Fmask
+
+easting=798383, northing=-789926
+easting=816375, northing=-790035
+easting=816348, northing=-807161
+easting=798281, northing=-807050
+ULx=629700.0
+ULy=-695400.0
+x0=798281.0
+y0=-789926.0
+x1=816375.0
+y1=-807161.0
+bounding_box: X=5619 - Y=3150
+bounding_box: H=574 - W=603 
+iBegin=0 - iFinal=7000
+jBegin=0 - jFinal=7000
+count=1
+xSize=7811
+ySize=7041
+FMask size=346122
+Pixels size=346122
+F1 phase time read = 139708
+pixels size=346122
+Processing pixels...
+Proccessing pixels time = 2530
+Cloud detection time = 0
+image is null? false
+pixels size=346122
+amount of water samples=2
+PixelFrioInTheWater Time=110
+ProcessingClusters Time=734
+amount of pixelFrioCandidates=13777
+amount of pixelQuenteCandidates=13777
+Selecting Time=300
+PixelFrio: 299.53113706974744
+PixelQuente: 305.7609294951022
+F1 phase time total = 153356

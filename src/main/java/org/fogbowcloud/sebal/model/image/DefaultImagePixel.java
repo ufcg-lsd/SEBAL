@@ -14,6 +14,21 @@ public class DefaultImagePixel implements ImagePixel {
 	private double hc;
 	private GeoLoc geoLoc;
 	
+	/**
+	 * This property must be used to set is this pixel should be processed in
+	 * future. The default value is true and it must be set according a mask.
+	 */
+	private boolean isValid = true;
+	
+	public void isValid(boolean isValid){
+		this.isValid = isValid;
+	}
+	
+	@Override
+	public boolean isValid(){
+		return isValid;
+	}
+	
 	public void L(double[] L) {
 		this.L = L;
 	}
@@ -118,9 +133,11 @@ public class DefaultImagePixel implements ImagePixel {
 	public boolean equals(Object o) {
 		if (o instanceof DefaultImagePixel) {
 			DefaultImagePixel other = (DefaultImagePixel) o;
-			return z() == other.z() && Ta() == other.Ta() && ux() == other.ux()
-					&& zx() == other.zx() && d() == other.d() && hc() == other.hc()
-					&& ((output() == null && other.output() == null) || output().equals(other.output()));
+			return z() == other.z() && Ta() == other.Ta()
+					&& ux() == other.ux() && zx() == other.zx()
+					&& d() == other.d() && hc() == other.hc() && isValid() == other.isValid()
+					&& ((output() == null && other.output() == null) || output().equals(
+							other.output()));
 		}
 		return false;
 	}
