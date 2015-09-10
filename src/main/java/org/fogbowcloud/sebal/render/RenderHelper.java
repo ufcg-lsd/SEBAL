@@ -235,10 +235,6 @@ public class RenderHelper {
 			FileNotFoundException {
 		gdal.AllRegister();
 		
-//		gdal.fil
-		
-		
-
 		Double latMax = -360.;
 		Double lonMin = +360.;
 		Integer initialI = null;

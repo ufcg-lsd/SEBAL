@@ -19,6 +19,6 @@ public class UTMCoordinate {
 	}
 	
 	public String toString() {
-		return "easting=" + easting + ", northing=" + northing;
+		return "(easting=" + easting + ", northing=" + northing + ")";
 	}
 }

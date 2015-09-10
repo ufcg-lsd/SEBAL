@@ -69,6 +69,9 @@ public class Wrapper {
 		this.jBegin = Integer.parseInt(jBeginStr);
 		this.jFinal = Integer.parseInt(jFinalStr);
 		
+		LOGGER.debug("i interval: (" + iBegin + ", " + iFinal + ")");
+		LOGGER.debug("j interval: (" + jBegin + ", " + jFinal + ")");
+		
 		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
 
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
@@ -138,6 +141,8 @@ public class Wrapper {
 
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
+    	LOGGER.info("Executing F1 phase...");
+    	
     	long now = System.currentTimeMillis();
         Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
         
@@ -146,20 +151,21 @@ public class Wrapper {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
         }
         
-        System.out.println("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
-        System.out.println("bounding_box: H=" + boundingBox.getH() + " - W=" + boundingBox.getW() + " " );
+        LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+        LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, properties);
         Satellite satellite = new JSONSatellite("landsat5");
         
-        System.out.println("F1 phase time read = " + (System.currentTimeMillis() - now));
+        LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
         
 		int maskWidth = Math.min(iFinal, boundingBox.getX() + boundingBox.getW()) - Math.max(iBegin, boundingBox.getX());
 		int maskHeight = Math.min(jFinal, boundingBox.getY() + boundingBox.getH()) - Math.max(jBegin, boundingBox.getY());
         
 		boolean cloudDetection = true;
 		if (properties.getProperty("fmask_file_path") != null) {
+			LOGGER.info("Fmask property was set with " + properties.getProperty("fmask_file_path") + " value.");
 			cloudDetection = false;
 		}
 		
@@ -169,7 +175,7 @@ public class Wrapper {
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());
-        System.out.println("F1 phase time total = " + (System.currentTimeMillis() - now));
+        LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
 
     }
 
@@ -328,6 +334,7 @@ public class Wrapper {
 
     public void F2(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
+    	LOGGER.info("Executing F2 phase...");
     	long now = System.currentTimeMillis();
         ImagePixel pixelQuente = processPixelQuenteFromFile(getFinalPixelQuenteFileName());
         ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName());
@@ -337,7 +344,7 @@ public class Wrapper {
         image = new SEBAL().pixelHProcess(pixels, pixelQuente,
                 getPixelOutput(pixelQuente), getPixelOutput(pixelFrio), image);
         saveFinalProcessOutput(image);
-        System.out.println("F2 phase time = " + (System.currentTimeMillis() - now));
+        LOGGER.info("F2 phase execution time is "+ (System.currentTimeMillis() - now));
     }
 
     private ImagePixelOutput getPixelOutput(ImagePixel pixel) {
@@ -348,6 +355,8 @@ public class Wrapper {
     }
 
     public void C(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
+    	LOGGER.info("Executing C phase...");
+
         try {
         	long now = System.currentTimeMillis();
             Image image = SEBALHelper.readPixels(getAllPixelsQuente(),
@@ -355,7 +364,7 @@ public class Wrapper {
             image.choosePixelsQuenteFrio();
             savePixelFrio(image, outputDir + "/" + "frio.csv");
             savePixelQuente(image, outputDir + "/" + "quente.csv");
-            System.out.println("C phase time =" + (System.currentTimeMillis() - now));
+            LOGGER.info("C phase execution time is " + (System.currentTimeMillis() - now));
         } catch (IOException e) {
             e.printStackTrace();
         }

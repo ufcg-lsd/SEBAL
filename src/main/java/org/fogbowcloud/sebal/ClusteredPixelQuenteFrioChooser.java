@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
+import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
@@ -28,6 +29,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	private int minLonWater = 1;			// 1 is default value
 	private double maxDiffFromTSMean = 0.2;	// 0.2 is default value
 	private double maxDiffFromAlbedoMean = 0.02; // 0.02 is default value
+	
+	private static final Logger LOGGER = Logger.getLogger(ClusteredPixelQuenteFrioChooser.class);
 	
 	public ClusteredPixelQuenteFrioChooser() {
 		
@@ -77,11 +80,11 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	@Override
 	public void choosePixelsQuenteFrio(Image image) {
-		System.out.println("image is null? " + (image == null));
+		LOGGER.debug("image is null? " + (image == null));
 		long now = System.currentTimeMillis();
 		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
 		
-		System.out.println("PixelFrioInTheWater Time=" + (System.currentTimeMillis() - now));
+		LOGGER.debug("PixelFrioInTheWater execution time=" + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
 		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
 		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
@@ -97,19 +100,17 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 			}
 		}
 		
-		System.out.println("ProcessingClusters Time=" + (System.currentTimeMillis() - now));
+		LOGGER.debug("Processing clusters execution time=" + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
 		
 		selectPixelFrioOutOfWater(pixelFrioInTheWater, pixelFrioCandidates);
 		selectPixelQuente(pixelQuenteCandidates);
-		
-		System.out.println("Selecting Time=" + (System.currentTimeMillis() - now));
-		
+				
 		if (pixelFrio != null) {
-			System.out.println("PixelFrio: " + pixelFrio.output().getTs());
+			LOGGER.debug("TS of pixel frio: " + pixelFrio.output().getTs());
 		}
 		if (pixelQuente != null) {
-			System.out.println("PixelQuente: " + pixelQuente.output().getTs());
+			LOGGER.debug("TS of pixel quente: " + pixelQuente.output().getTs());
 		}
 	}
 
@@ -205,7 +206,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	protected Map<String, PixelSample> findWater(Image image) {
 		Map<String, PixelSample> samples = new HashMap<String, PixelSample>();
 		List<ImagePixel> pixels = image.pixels();
-		System.out.println("pixels size=" + pixels.size());
+		LOGGER.debug("pixels size=" + pixels.size());
 		boolean[] visited = new boolean[pixels.size()];
 		
 		for (int i = 0; i < image.width(); i++) {
@@ -221,7 +222,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 				}
 			}
 		}
-		System.out.println("amount of water samples=" + samples.size());
+		LOGGER.debug("number of water samples=" + samples.size());
 		return samples;
 	}
 
@@ -256,7 +257,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		 * Choosing pixel quente 
 		 * Pixel Quente candidates: 10% smallest NDVI and 20% biggest TS
 		 */
-		System.out.println("amount of pixelQuenteCandidates=" + pixelQuenteCandidates.size());
+		LOGGER.debug("number of pixel quente candidates=" + pixelQuenteCandidates.size());
 		pixelQuenteCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
 		pixelQuenteCandidates = filterBiggestTS(pixelQuenteCandidates, 20);
 				
@@ -276,7 +277,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 	private void selectPixelFrioOutOfWater(ImagePixel pixelFrioInTheWater,
 			List<ImagePixel> pixelFrioCandidates) {
-		System.out.println("amount of pixelFrioCandidates=" + pixelFrioCandidates.size());
+		LOGGER.debug("number of pixel frio candidates=" + pixelFrioCandidates.size());
 		/*
 		 * Choosing pixel frio out of the water 
 		 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS

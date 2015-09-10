@@ -8,24 +8,20 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
-import org.gdal.gdal.Band;
-import org.gdal.gdal.Dataset;
-import org.gdal.gdal.Driver;
-import org.gdal.gdal.gdal;
-import org.gdal.gdalconst.gdalconstConstants;
-import org.gdal.osr.SpatialReference;
 import org.python.modules.math;
 
 public class SEBAL {
 
     private EarthSunDistance earthSunDistance;
-	private static double PIXEL_SIZE = 0.00027;
+	
+	private static final Logger LOGGER = Logger.getLogger(SEBAL.class);
    
     public SEBAL() throws Exception {
         earthSunDistance = new EarthSunDistance();
@@ -304,14 +300,13 @@ public class SEBAL {
 
 	public Image processPixelQuentePixelFrio(Image image, Satellite satellite,
 			List<BoundingBoxVertice> boundingBoxVertices, int maskWidth, int maskHeight, boolean cloudDetection) {
-		System.out.println("pixels size=" + image.pixels().size());
+
+		LOGGER.info("Processing pixels...");
+		LOGGER.debug("pixels size=" + image.pixels().size());
 		
 		LinkedList<Double> waterPixelsTS = new LinkedList<Double>();
 		LinkedList<Double> landPixelsTS = new LinkedList<Double>();
 		
-		System.out.println("Processing pixels...");
-		int index = 0;
-	
 	    long now = System.currentTimeMillis();
 		for (ImagePixel imagePixel : image.pixels()) {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices) && imagePixel.isValid()) {
@@ -326,15 +321,14 @@ public class SEBAL {
 					landPixelsTS.add(output.getTs());
 				}
 			} else {
-				System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
+				LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
 						+ imagePixel.geoLoc().getLat()
 						+ ") is out of the bounding box or is a invalid pixel.");
 				imagePixel.setOutput(new ImagePixelOutput());
 			}
-			index++;
 		}
 		
-		System.out.println("Proccessing pixels time = " + (System.currentTimeMillis() - now));
+		LOGGER.debug("Proccessing pixels execution time = " + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
 		
 		if (!cloudDetection || (waterPixelsTS.isEmpty() && landPixelsTS.isEmpty())) {
@@ -361,7 +355,7 @@ public class SEBAL {
 		}
 		
 		//calculating lCloudProb and wCloudProb
-		System.out.println("Calculating probabilities...");
+		LOGGER.debug("Calculating probabilities...");
 		LinkedList<Double> lClearSkyCloudProbs = new LinkedList<Double>();
 
 		for (ImagePixel imagePixel : image.pixels()) {
@@ -381,77 +375,26 @@ public class SEBAL {
 			clearSkyLandCloudProbPercentil = lClearSkyCloudProbs.get(k);
 		}
 		
-//		gdal.AllRegister();
-//		Driver memDriver = gdal.GetDriverByName("mem");
-//		double firstLat = image.pixels().get(0).geoLoc().getLat();
-//		double firstLon = image.pixels().get(0).geoLoc().getLon();
-//		Dataset dstMemModified = memDriver.Create("modifiedBand4", maskWidth,
-//				maskHeight, 1, gdalconstConstants.GDT_Float64);
-//		dstMemModified.SetGeoTransform(new double[] { firstLon, PIXEL_SIZE, 0, firstLat, 0, -PIXEL_SIZE });
-//		SpatialReference srs = new SpatialReference();
-//		srs.SetWellKnownGeogCS("WGS84");
-//		dstMemModified.SetProjection(srs.ExportToWkt());
-//		Band floodBand = dstMemModified.GetRasterBand(1);
-//		
-//		Dataset dstMem = memDriver.Create("originalBand4", maskWidth,
-//				maskHeight, 1, gdalconstConstants.GDT_Float64);
-//		dstMem.SetGeoTransform(new double[] { firstLon, PIXEL_SIZE, 0, firstLat, 0, -PIXEL_SIZE });
-//		dstMem.SetProjection(srs.ExportToWkt());
-//		Band originalBand = dstMem.GetRasterBand(1);
-//		
-//		originalBand.WriteRaster(0, 0, maskWidth, maskHeight, originalRho4);
-//		originalBand.FlushCache();
-//		
-//		gdal.SieveFilter(originalBand, null, floodBand, 3);
-//		
-//		double [] floodRho4 = new double[image.pixels().size()];
-//		floodBand.ReadRaster(0, 0, floodBand.getXSize(), floodBand.getYSize(), floodRho4);
-//
-//		for (int i = 0; i < floodRho4.length; i++) {
-//			System.out.println("sombra? " + (floodRho4[i] - originalRho4[i] > 0.02));
-//		}
-		
 		// cloud detection
-		int amountOfCloudPixels = 0;
-		System.out.println("Detecting cloud...");
+		int numberOfCloudPixels = 0;
+		LOGGER.debug("Detecting cloud...");
 		
-//		for (int i = 0; i < maskWidth; i++) {
-//			for (int j = 0; j < maskHeight; j++) {
-//				ImagePixel imagePixel = image.pixels().get(j * maskWidth + i);
-//				
-//				if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
-//					if (isCloudPixel(imagePixel, clearSkyLandCloudProbPercentil, lowLandPercentil)
-//							|| isCloudShadowPixel(imagePixel, floodRho4[j * maskWidth + i])
-//							|| isSnowPixel(satellite, imagePixel)) {
-//						System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
-//								+ imagePixel.geoLoc().getLat() + ") is a cloud pixel.");
-//						ImagePixelOutput output = new ImagePixelOutput();
-//						output.setIsCloud(true);					
-//						imagePixel.setOutput(output);
-//						amountOfCloudPixels++;
-//					}
-//				}	
-//			}			
-//		}
-		
-		
-		//old code
 		for (ImagePixel imagePixel : image.pixels()) {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
 				if (isCloudPixel(imagePixel, clearSkyLandCloudProbPercentil, lowLandPercentil)
 						|| isSnowPixel(satellite, imagePixel)) {
-					System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
-							+ imagePixel.geoLoc().getLat() + ") is a cloud pixel.");
+					LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
+							+ imagePixel.geoLoc().getLat() + ") is a cloud or snow pixel.");
 					ImagePixelOutput output = new ImagePixelOutput();
 					output.setIsCloud(true);					
 					imagePixel.setOutput(output);
-					amountOfCloudPixels++;
+					numberOfCloudPixels++;
 				}
 			}
 		}
 		
-		System.out.println("Cloud detection time = " + (System.currentTimeMillis() - now));
-		System.out.println("Amount of cloud pixels = " + amountOfCloudPixels);
+		LOGGER.debug("Cloud detection execution time = " + (System.currentTimeMillis() - now));
+		LOGGER.debug("Number of cloud pixels = " + numberOfCloudPixels);
 		
 		image.choosePixelsQuenteFrio();
 		return image;
@@ -551,7 +494,7 @@ public class SEBAL {
             Image updatedImage = hPixelProces(pixels, hOutput, image);
             return updatedImage;
         }
-        System.out.println("(pixelQuente != null || pixelQuenteOutput != null || pixelFrioOutput != null) was false");
+        LOGGER.debug("(pixelQuente != null || pixelQuenteOutput != null || pixelFrioOutput != null) was false");
         return image;
     }
 
@@ -777,7 +720,6 @@ public class SEBAL {
         //potential cloud pixel
         boolean PCP = basicTest && whitenessTest && hotTest && b4b5Test;
         
-//        System.out.println(imagePixel.geoLoc().getLon() + ", " + imagePixel.geoLoc().getLat() + ", b1=" + rho[0] + ", b2=" + rho[1] + ", b3=" + rho[2] + ", b4=" + rho[3] + ", b5=" + rho[4] + ", b7=" + rho[6] +  ", TS=" + TS + ", NDVI=" + NDVI + ", NDSI=" +NDSI + ", basic=" + basicTest + ", whiteness=" + whitenessTest + ", hot=" + hotTest + ", b4b5=" + b4b5Test + ", PCP=" + PCP);
         output.setPCP(PCP);
         return output;
     }
@@ -800,14 +742,6 @@ public class SEBAL {
 		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;
 	}
 	
-	private boolean isCloudShadowPixel(ImagePixel imagePixel, double floodRho4) {
-		if (floodRho4 - imagePixel.output().getRho()[3] > 0.02){
-			System.out.println("(" + imagePixel.geoLoc().getLon() + ", "
-					+ imagePixel.geoLoc().getLat() + ") is a shadow cloud pixel.");
-		}
-		return floodRho4 - imagePixel.output().getRho()[3] > 0.02;
-	}
-
 	private double[] calcRho(Satellite satellite, ImagePixel imagePixel) {
 		double[] rho = new double[7];
 		double[] LLambda = imagePixel.L();

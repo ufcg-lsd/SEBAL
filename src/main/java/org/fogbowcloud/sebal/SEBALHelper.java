@@ -24,6 +24,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
@@ -57,6 +58,8 @@ public class SEBALHelper {
 	
 	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 	
+	private static final Logger LOGGER = Logger.getLogger(SEBALHelper.class);
+	
     public static Product readProduct(String mtlFileName,
             List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
         File mtlFile = new File(mtlFileName);
@@ -83,10 +86,7 @@ public class SEBALHelper {
 					centralMeridian));
 		}
 		
-		//TODO remove it
-		for (UTMCoordinate utmCoordinate : utmCoordinates) {
-			System.out.println(utmCoordinate);
-		}
+		LOGGER.debug("Boundingbox UTM coordinates: " + utmCoordinates);
 
 		double x0 = getMinimunX(utmCoordinates);
 		double y0 = getMaximunY(utmCoordinates);
@@ -104,14 +104,14 @@ public class SEBALHelper {
                 .getElemDouble();
         
         //TODO remove it
-        System.out.println("ULx=" + ULx);
-        System.out.println("ULy=" + ULy);
+        LOGGER.debug("ULx=" + ULx);
+        LOGGER.debug("ULy=" + ULy);
         
-        System.out.println("x0=" + x0);
-        System.out.println("y0=" + y0);
+        LOGGER.debug("x0=" + x0);
+        LOGGER.debug("y0=" + y0);
         
-        System.out.println("x1=" + x1);
-        System.out.println("y1=" + y1);
+        LOGGER.debug("x1=" + x1);
+        LOGGER.debug("y1=" + y1);
 
         int offsetX = (int) ((x0 - ULx) / 30);
         int offsetY = (int) ((ULy - y0) / 30);
@@ -309,9 +309,6 @@ public class SEBALHelper {
         image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
         image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
         
-        System.out.println("iBegin=" + iBegin + " - iFinal=" + iFinal);
-        System.out.println("jBegin=" + jBegin + " - jFinal=" + jFinal);
-        
         double ULx = metadataRoot.getElement("L1_METADATA_FILE")
         		.getElement("PRODUCT_METADATA")
         		.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData()
@@ -331,6 +328,7 @@ public class SEBALHelper {
         
         double[] fmask = null;
         if (fmaskFilePath != null  && !fmaskFilePath.isEmpty()){
+        	LOGGER.debug("Fmask file is " + fmaskFilePath);
         	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
         			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
         			Math.min(jFinal, offSetY + boundingBox.getH()));        	
@@ -342,7 +340,7 @@ public class SEBALHelper {
         for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
         	int fmaskJ = 0;
             for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
-//            	System.out.println(i + " " + j);
+//            	LOGGER.debug(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
 
@@ -404,8 +402,10 @@ public class SEBALHelper {
             fmaskI++;
         }
         
-        System.out.println("FMask size=" + fmask.length);
-        System.out.println("Pixels size=" + image.pixels().size());
+        if (fmask != null) {
+        	LOGGER.debug("FMask size=" + fmask.length);
+        }
+        LOGGER.debug("Pixels size=" + image.pixels().size());
         
         return image;
     }
@@ -467,11 +467,11 @@ public class SEBALHelper {
 						.parseDouble(boundingBoxValues[i + 1])));
 			}
 			if (boundingBoxVertices.size() < 3) {				
-				System.out.println("Invalid bounding box! Only " + boundingBoxVertices.size()
+				LOGGER.debug("Invalid bounding box! Only " + boundingBoxVertices.size()
 						+ " vertices set.");
 			}
 		} else {
-			System.out.println("Invalid bounding box file path: " + boundingBoxFileName);
+			LOGGER.debug("Invalid bounding box file path: " + boundingBoxFileName);
 		}
 		return boundingBoxVertices;
 	}
