@@ -37,6 +37,10 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	}
 	
 	public ClusteredPixelQuenteFrioChooser(Properties properties) {
+		if (properties == null) {
+			LOGGER.debug("Properties were not set.");
+			return;
+		}
 		if (properties.getProperty("cluster_width") != null) {
 			clusterWidth = Integer.parseInt(properties.getProperty("cluster_width"));
 		}

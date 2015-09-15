@@ -31,7 +31,7 @@ public class BulkMain {
 				numberOfPartitions, partitionIndex);
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
-				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath);
+				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, null, null);
 		wrapper.doTask(TaskType.F1);
 	}
 }

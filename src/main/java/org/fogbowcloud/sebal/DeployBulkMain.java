@@ -1,6 +1,8 @@
 package org.fogbowcloud.sebal;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
@@ -22,16 +24,23 @@ public class DeployBulkMain {
 		int numberOfPartitions = Integer.parseInt(args[6]);
 		int partitionIndex = Integer.parseInt(args[7]);
 
-		String boundingBoxPath = null;
-		if (args.length > 8) {
-			boundingBoxPath = args[8];
-		}
+		String boundingBoxPath = args[8];
+				
+		String confFile = args[9];
+		Properties properties = new Properties();
+		FileInputStream input = new FileInputStream(confFile);
+		properties.load(input);
 
+		String fmaskFilePath = null;
+		if (args.length > 9) {
+			fmaskFilePath = args[10];
+		}
+		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
 				numberOfPartitions, partitionIndex);
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
-				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath);
+				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath);
 		wrapper.doTask(TaskType.F1);
 	}
 }

@@ -37,14 +37,9 @@ public class Wrapper {
     private String outputDir;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-    private Properties properties;
+    private String fmaskFilePath;
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
-    
-	public Wrapper(String mtlFile, int iBegin, int iFinal, int jBegin, int jFinal, String mtlName,
-			String boundingBoxFileName) throws IOException {
-		this(mtlFile, null, iBegin, iFinal, jBegin, jFinal, mtlName, boundingBoxFileName);
-	}
     
 	public Wrapper(Properties properties) throws IOException {
 		String mtlFilePath = properties.getProperty("mtl_file_path");
@@ -89,31 +84,33 @@ public class Wrapper {
     		this.outputDir = outputDir + "/" + mtlName;
     	}
 		
-		this.properties = properties;
+		fmaskFilePath = properties.getProperty("fmask_file_path");
 	}
 	
-    public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
-            int jFinal, String mtlName, String boundingBoxFileName) throws IOException {
-    	this.mtlFile = mtlFile;
-    	this.iBegin = iBegin;
-    	this.iFinal = iFinal;
-    	this.jBegin = jBegin;
-    	this.jFinal = jFinal;
+	public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
+			int jFinal, String mtlName, String boundingBoxFileName, Properties properties,
+			String fmaskFilePath) throws IOException {
+		this.mtlFile = mtlFile;
+		this.iBegin = iBegin;
+		this.iFinal = iFinal;
+		this.jBegin = jBegin;
+		this.jFinal = jFinal;
 
-    	boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
-    	
-//    	this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
-//    	this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
-    	this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser();
-    	if (outputDir == null) {
-    		this.outputDir = mtlName;
-    	} else {
-    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-    			new File(outputDir).mkdirs();
-    		}
-    		this.outputDir = outputDir + "/" + mtlName;
-    	}
-    }
+		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
+
+		// this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
+		// this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
+		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
+		if (outputDir == null) {
+			this.outputDir = mtlName;
+		} else {
+			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
+				new File(outputDir).mkdirs();
+			}
+			this.outputDir = outputDir + "/" + mtlName;
+		}
+		this.fmaskFilePath = fmaskFilePath;
+	}
     
     public void doTask(String taskType) throws Exception {
         try {
@@ -155,7 +152,7 @@ public class Wrapper {
         LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox, properties);
+                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         Satellite satellite = new JSONSatellite("landsat5");
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
@@ -164,8 +161,8 @@ public class Wrapper {
 		int maskHeight = Math.min(jFinal, boundingBox.getY() + boundingBox.getH()) - Math.max(jBegin, boundingBox.getY());
         
 		boolean cloudDetection = true;
-		if (properties.getProperty("fmask_file_path") != null) {
-			LOGGER.info("Fmask property was set with " + properties.getProperty("fmask_file_path") + " value.");
+		if (fmaskFilePath != null) {
+			LOGGER.info("Fmask property was set.");
 			cloudDetection = false;
 		}
 		
@@ -176,7 +173,6 @@ public class Wrapper {
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());
         LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
-
     }
 
     private void savePixelFrio(Image updatedImage, String fileName) {
@@ -201,8 +197,9 @@ public class Wrapper {
     }
 
     private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
-        ImagePixelOutput outputFrio = getPixelOutput(pixelFrio);
-        String pixelFrioOutput = String.valueOf(outputFrio.getTs());
+		ImagePixelOutput outputFrio = getPixelOutput(pixelFrio);
+		String pixelFrioOutput = String.valueOf(outputFrio.getTs()) + ","
+				+ pixelFrio.geoLoc().getLat() + "," + pixelFrio.geoLoc().getLon();
         return pixelFrioOutput;
     }
 
@@ -263,10 +260,10 @@ public class Wrapper {
 
     private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
         ImagePixelOutput outputQuente = getPixelOutput(pixelQuente);
-        String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx()
-                + "," + pixelQuente.hc() + "," + pixelQuente.d() + ","
-                + outputQuente.G() + "," + outputQuente.Rn() + ","
-                + outputQuente.SAVI() + "," + outputQuente.getTs();
+		String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx() + ","
+				+ pixelQuente.hc() + "," + pixelQuente.d() + "," + outputQuente.G() + ","
+				+ outputQuente.Rn() + "," + outputQuente.SAVI() + "," + outputQuente.getTs() + ","
+				+ pixelQuente.geoLoc().getLat() + "," + pixelQuente.geoLoc().getLon();
         return pixelQuenteOutput;
     }
 
@@ -310,15 +307,13 @@ public class Wrapper {
         ImagePixelOutput output = getPixelOutput(imagePixel);
         double g = output.G();
         double rn = output.Rn();
-        String line = getRow(i, j, lat, lon, g, rn, output.getTs(),
-                output.getNDVI(), output.SAVI(), output.getAlpha(),
-                Arrays.toString(imagePixel.L()), output.getZ0mxy(),
-                output.getEpsilonZero(), output.getEpsilonNB(),
-                output.getRLDown(), output.getEpsilonA(), output.getRLUp(),
-                output.getIAF(), output.getEVI(), output.getRSDown(),
-                output.getTauSW(), output.getAlphaToa(), imagePixel.Ta(),
-                imagePixel.d(), imagePixel.ux(), imagePixel.zx(),
-                imagePixel.hc());
+        
+		String line = getRow(i, j, lat, lon, g, rn, output.getTs(), output.getNDVI(),
+				output.SAVI(), output.getAlpha(), Arrays.toString(imagePixel.L()),
+				output.getZ0mxy(), output.getEpsilonZero(), output.getEpsilonNB(),
+				output.getRLDown(), output.getEpsilonA(), output.getRLUp(), output.getIAF(),
+				output.getEVI(), output.getRSDown(), output.getTauSW(), output.getAlphaToa(),
+				imagePixel.Ta(), imagePixel.d(), imagePixel.ux(), imagePixel.zx(), imagePixel.hc());
 
         return line;
     }

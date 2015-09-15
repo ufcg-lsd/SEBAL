@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -281,7 +280,7 @@ public class SEBALHelper {
 
 	public static Image readPixels(Product product, int iBegin, int iFinal, int jBegin, int jFinal,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser, BoundingBox boundingBox,
-			Properties properties) throws Exception {
+			String fmaskFilePath) throws Exception {
 
         Locale.setDefault(Locale.ROOT);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
@@ -323,8 +322,6 @@ public class SEBALHelper {
         		.getElemInt();
 		
         int centralMeridian = findCentralMeridian(zoneNumber);
-        
-        String fmaskFilePath = properties.getProperty("fmask_file_path");
         
         double[] fmask = null;
         if (fmaskFilePath != null  && !fmaskFilePath.isEmpty()){
