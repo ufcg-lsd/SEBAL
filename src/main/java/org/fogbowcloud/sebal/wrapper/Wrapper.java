@@ -146,20 +146,17 @@ public class Wrapper {
         BoundingBox boundingBox = null;
         if (boundingBoxVertices.size() > 3) {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
+        	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+        	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         }
         
-        LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
-        LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         Satellite satellite = new JSONSatellite("landsat5");
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
-        
-		int maskWidth = Math.min(iFinal, boundingBox.getX() + boundingBox.getW()) - Math.max(iBegin, boundingBox.getX());
-		int maskHeight = Math.min(jFinal, boundingBox.getY() + boundingBox.getH()) - Math.max(jBegin, boundingBox.getY());
-        
+               		
 		boolean cloudDetection = true;
 		if (fmaskFilePath != null) {
 			LOGGER.info("Fmask property was set.");
@@ -167,7 +164,7 @@ public class Wrapper {
 		}
 		
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, maskWidth, maskHeight, cloudDetection);
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
         
         saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
