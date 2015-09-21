@@ -305,8 +305,14 @@ public class SEBALHelper {
         
         int offSetX = boundingBox.getX();
         int offSetY = boundingBox.getY();
-        image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
-        image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
+//        image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
+//        image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
+        
+        image.width(Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX));
+        image.height(Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY));
+        
+        LOGGER.debug("Image width is " + image.width());
+        LOGGER.debug("Image height is " + image.height());
         
         double ULx = metadataRoot.getElement("L1_METADATA_FILE")
         		.getElement("PRODUCT_METADATA")
