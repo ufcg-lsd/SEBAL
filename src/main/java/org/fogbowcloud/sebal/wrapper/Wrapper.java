@@ -331,8 +331,11 @@ public class Wrapper {
         ImagePixel pixelQuente = processPixelQuenteFromFile(getFinalPixelQuenteFileName());
         ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName());
         List<ImagePixel> pixels = processPixelsFromFile();
+        LOGGER.debug("Number of pixels is " + pixels.size());
         Image image = SEBALHelper.readPixels(pixels, pixelQuente, pixelFrio,
                 pixelQuenteFrioChooser);
+        LOGGER.debug("Image width is " + image.width());
+        LOGGER.debug("Image height is " + image.height());
         image = new SEBAL().pixelHProcess(pixels, pixelQuente,
                 getPixelOutput(pixelQuente), getPixelOutput(pixelFrio), image);
         saveFinalProcessOutput(image);
@@ -507,6 +510,14 @@ public class Wrapper {
                 ImagePixelOutput outputFrio = new ImagePixelOutput();
                 outputFrio.setTs(Double.valueOf(fields[0]));
                 pixelFrio.setOutput(outputFrio);
+
+                double latitude = Double.valueOf(fields[1]);
+                double longitude = Double.valueOf(fields[2]);
+                GeoLoc geoLoc = new GeoLoc();
+                geoLoc.setLat(latitude);
+                geoLoc.setLon(longitude);
+                pixelFrio.geoLoc(geoLoc);
+                
                 return pixelFrio;
             }
         }, filePath);
@@ -553,6 +564,14 @@ public class Wrapper {
                 outputQuente.setSAVI(Double.valueOf(fields[6]));
                 outputQuente.setTs(Double.valueOf(fields[7]));
                 pixelQuente.setOutput(outputQuente);
+                
+                double latitude = Double.valueOf(fields[8]);
+                double longitude = Double.valueOf(fields[9]);
+                GeoLoc geoLoc = new GeoLoc();
+                geoLoc.setLat(latitude);
+                geoLoc.setLon(longitude);
+                pixelQuente.geoLoc(geoLoc);
+                
                 return pixelQuente;
             }
         }, fileName);

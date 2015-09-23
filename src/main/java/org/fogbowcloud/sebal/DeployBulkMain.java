@@ -21,19 +21,21 @@ public class DeployBulkMain {
 		int rightX = Integer.parseInt(args[4]);
 		int lowerY = Integer.parseInt(args[5]);
 
-		int numberOfPartitions = Integer.parseInt(args[6]);
-		int partitionIndex = Integer.parseInt(args[7]);
+		String phase = args[6];
+		
+		int numberOfPartitions = Integer.parseInt(args[7]);
+		int partitionIndex = Integer.parseInt(args[8]);
 
-		String boundingBoxPath = args[8];
+		String boundingBoxPath = args[9];
 				
-		String confFile = args[9];
+		String confFile = args[10];
 		Properties properties = new Properties();
 		FileInputStream input = new FileInputStream(confFile);
 		properties.load(input);
 
 		String fmaskFilePath = null;
-		if (args.length > 9) {
-			fmaskFilePath = args[10];
+		if (args.length > 10) {
+			fmaskFilePath = args[11];
 		}
 		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
@@ -41,6 +43,6 @@ public class DeployBulkMain {
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath);
-		wrapper.doTask(TaskType.F1);
+		wrapper.doTask(phase);
 	}
 }
