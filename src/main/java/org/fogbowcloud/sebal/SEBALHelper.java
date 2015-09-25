@@ -270,6 +270,8 @@ public class SEBALHelper {
     public static Image readPixels(List<ImagePixel> pixelsQuente,
             List<ImagePixel> pixelsFrio,
             PixelQuenteFrioChooser pixelQuenteFrioChooser) {
+    	pixelQuenteFrioChooser.setPixelFrioCandidates(pixelsFrio);
+    	pixelQuenteFrioChooser.setPixelQuenteCandidates(pixelsQuente);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         List<ImagePixel> pixels = new ArrayList<ImagePixel>();
         pixels.addAll(pixelsFrio);

@@ -18,6 +18,8 @@ public interface Image {
 	
 	void pixelQuente(ImagePixel pixelQuente);
 
+	void selectPixelsQuenteFrioCandidates();
+	
 	void choosePixelsQuenteFrio();
 	
 	int width();
@@ -27,5 +29,9 @@ public interface Image {
 	int height();
 
 	void height(int height);
+	
+	List<ImagePixel> pixelQuenteCandidates();
+	
+	List<ImagePixel> pixelFrioCandidates();
 
 }
