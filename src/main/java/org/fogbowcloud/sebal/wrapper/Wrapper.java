@@ -112,10 +112,10 @@ public class Wrapper {
 		this.fmaskFilePath = fmaskFilePath;
 	}
     
-    public void doTask(String taskType) throws Exception {
+    public void doTask(String taskType, String landsat_type) throws Exception {
         try {
             if (taskType.equalsIgnoreCase(TaskType.F1)) {
-                F1(pixelQuenteFrioChooser);
+                F1(pixelQuenteFrioChooser, landsat_type);
                 return;
             }
             if (taskType.equalsIgnoreCase(TaskType.C)) {
@@ -127,7 +127,7 @@ public class Wrapper {
                 return;
             }
             if (taskType.equalsIgnoreCase(TaskType.F1F2)) {
-                F1F2(pixelQuenteFrioChooser);
+                F1F2(pixelQuenteFrioChooser, landsat_type);
                 return;
             }
         } catch (Throwable e) {
@@ -136,7 +136,7 @@ public class Wrapper {
         }
     }
 
-    public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
+    public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, String landsat_type)
             throws Exception {
     	LOGGER.info("Executing F1 phase...");
     	
@@ -153,7 +153,14 @@ public class Wrapper {
         
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
-        Satellite satellite = new JSONSatellite("landsat5");
+        
+        Satellite satellite;
+        if(landsat_type.equalsIgnoreCase("landsat5")) {
+        	satellite = new JSONSatellite("landsat5");
+        } else if(landsat_type.equalsIgnoreCase("landsat7")){
+        	satellite = new JSONSatellite("landsat7");
+        } else
+        	satellite = new JSONSatellite("landsat8");
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
                		
@@ -577,9 +584,9 @@ public class Wrapper {
         }, fileName);
     }
 
-    public void F1F2(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
+    public void F1F2(PixelQuenteFrioChooser pixelQuenteFrioChooser, String landsat_type) {
         try {
-            F1(pixelQuenteFrioChooser);
+            F1(pixelQuenteFrioChooser, landsat_type);
             F2(pixelQuenteFrioChooser);
         } catch (Exception e) {
             e.printStackTrace();

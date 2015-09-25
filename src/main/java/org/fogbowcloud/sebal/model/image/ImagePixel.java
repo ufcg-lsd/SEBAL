@@ -11,8 +11,11 @@ public interface ImagePixel {
 	// Radiancia
 	double[] L();
 	
-	// Angulo zenital
+	// Cosseno do Angulo zenital
 	double cosTheta();
+	
+	// Seno do Angulo zenital
+	double sinTheta();
 	
 	// Altitude (elevacao)
 	double z();

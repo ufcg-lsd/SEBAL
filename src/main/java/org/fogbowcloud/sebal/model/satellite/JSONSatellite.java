@@ -14,6 +14,11 @@ public class JSONSatellite implements Satellite {
 	}
 	
 	@Override
+	public String landsatName() {
+		return this.json.toString();
+	}
+	
+	@Override
 	public double LLambdaMin(int band) {
 		return json.optJSONArray("band" + band).optDouble(3);
 	}
@@ -24,8 +29,13 @@ public class JSONSatellite implements Satellite {
 	}
 
 	@Override
-	public double ESUN(int band) {
+	public double ESUNsat5(int band) {
 		return json.optJSONArray("band" + band).optDouble(7);
+	}
+	
+	@Override
+	public double ESUNsat7(int band) {
+		return json.optJSONArray("band" + band).optDouble(9);
 	}
 
 	@Override

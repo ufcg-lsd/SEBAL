@@ -4,6 +4,7 @@ public class DefaultImagePixel implements ImagePixel {
 
 	private double[] L;
 	private double cosTheta;
+	private double sinTheta;
 	private Image image;
 	private double z;
 	private double Ta;
@@ -41,6 +42,11 @@ public class DefaultImagePixel implements ImagePixel {
 	@Override
 	public double cosTheta() {
 		return cosTheta;
+	}
+	
+	@Override
+	public double sinTheta() {
+		return sinTheta;
 	}
 
 	@Override

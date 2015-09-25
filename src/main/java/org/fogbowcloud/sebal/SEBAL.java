@@ -13,6 +13,7 @@ import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
 import org.python.modules.math;
@@ -41,23 +42,50 @@ public class SEBAL {
         return LLambdaMin + ((LLambdaMax - LLambdaMin) / 255.0) * DN;
     }
 
-    double rho(double LLambda, double d, double ESUN, double cosTheta) {
+    double rhosat5(double LLambda, double d, double ESUN, double cosTheta) {
         return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
     }
+    
+    double rhosat7(double LLambda, double d, double ESUN, double sinTheta) {
+        return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * sinTheta);
+    }
 
-    double alphaToa(double rho1, double rho2, double rho3, double rho4,
+    //Verify the implications of the follow changes
+    double alphaToasat5(double rho1, double rho2, double rho3, double rho4,
             double rho5, double rho7) {
         return 0.298221 * rho1 + 0.270098 * rho2 + 0.230997 * rho3 + 0.155051
                 * rho4 + 0.033085 * rho5 + 0.012548 * rho7;
+    }
+    
+    double alphaToasat7(double rho1, double rho2, double rho3, double rho4,
+            double rho5, double rho6, double rho8, double rho9, Satellite satellite) {
+    	double alphasat7 = 0.0;
+    	
+    	double ESUNsum = 0.0;
+    	
+    	for(int i = 0; i < 9; i++) {
+    		ESUNsum += satellite.ESUNsat7(i + 1);
+    	}
+    	
+	    alphasat7 = ((satellite.ESUNsat7(1)/ESUNsum) * rho1) + ((satellite.ESUNsat7(2)/ESUNsum) * rho2)
+	    		+ ((satellite.ESUNsat7(3)/ESUNsum) * rho3) + ((satellite.ESUNsat7(4)/ESUNsum) * rho4) 
+	    		+ ((satellite.ESUNsat7(5)/ESUNsum) * rho5) + ((satellite.ESUNsat7(6)/ESUNsum) * rho6)
+	    		+ ((satellite.ESUNsat7(8)/ESUNsum) * rho8) + ((satellite.ESUNsat7(9)/ESUNsum) * rho9);
+        return alphasat7;
     }
 
     double tauSW(double z) {
         return 0.75 + 2 * 0.00001 * z;
     }
 
-    double alpha(double alphaToa, double tauSW) {
+    double alpha5(double alphaToa5, double tauSW) {
         double alphaP = 0.03;
-        return (alphaToa - alphaP) / Math.pow(tauSW, 2);
+        return (alphaToa5 - alphaP) / Math.pow(tauSW, 2);
+    }
+    
+    double alpha7(double alphaToa7, double tauSW) {
+        double alphaP = 0.03;
+        return (alphaToa7 - alphaP) / Math.pow(tauSW, 2);
     }
 
     double RSDown(double cosTheta, double d, double tauSW) {
@@ -639,7 +667,7 @@ public class SEBAL {
         
         // System.out.println("rho " + Arrays.toString(rho));
         output.setRho(rho);
-        double alphaToa = alphaToa(rho[0], rho[1], rho[2], rho[3], rho[4],
+        double alphaToa = alphaToasat5(rho[0], rho[1], rho[2], rho[3], rho[4],
                 rho[6]);
         output.setAlphaToa(alphaToa);
         // System.out.println("alphaToa " + alphaToa);
@@ -648,7 +676,7 @@ public class SEBAL {
         output.setTauSW(tauSW);
         // System.out.println("tauSW " + tauSW);
 
-        double alpha = alpha(alphaToa, tauSW);
+        double alpha = alpha5(alphaToa, tauSW);
         output.setAlpha(alpha);
         // System.out.println("alpha " + alpha);
 
@@ -743,18 +771,33 @@ public class SEBAL {
 	}
 	
 	private double[] calcRho(Satellite satellite, ImagePixel imagePixel) {
-		double[] rho = new double[7];
-		double[] LLambda = imagePixel.L();
-		
-		for (int i = 0; i < rho.length; i++) {
-            if (i == 5) {
-                continue;
-            }
-            double rhoI = rho(LLambda[i],
-                    earthSunDistance.get(imagePixel.image().getDay()),
-                    satellite.ESUN(i + 1), imagePixel.cosTheta());
-            rho[i] = rhoI;
-        }
+		if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
+			double[] rho = new double[7];
+			double[] LLambda = imagePixel.L();
+			
+			for (int i = 0; i < rho.length; i++) {
+	            if (i == 5) {
+	                continue;
+	            }
+	            double rhoI = rhosat5(LLambda[i],
+	                    earthSunDistance.get(imagePixel.image().getDay()),
+	                    satellite.ESUNsat5(i + 1), imagePixel.cosTheta());
+	            rho[i] = rhoI;
+	        }
+		} else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+			double[] rho = new double[9];
+			double[] LLambda = imagePixel.L();
+			
+			for (int i = 0; i < rho.length; i++) {
+	            if (i == 5) {
+	                continue;
+	            }
+	            double rhoI = rhosat7(LLambda[i],
+	                    earthSunDistance.get(imagePixel.image().getDay()),
+	                    satellite.ESUNsat7(i + 1), imagePixel.sinTheta());
+	            rho[i] = rhoI;
+	        }
+		}
 		return rho;
 	}
 
