@@ -15,6 +15,7 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.wrapper.LandsatType;
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.junit.Before;
@@ -41,7 +42,7 @@ public class TestWrapper {
 
 	@Test
 	public void testF1() throws Exception {
-		wrapper.doTask(TaskType.F1);
+		wrapper.doTask(TaskType.F1, LandsatType.LANDSAT5);
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".frio.csv").exists());
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".quente.csv").exists()); 
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".pixels.csv").exists());
@@ -49,8 +50,8 @@ public class TestWrapper {
 
 	@Test
 	public void testF2() throws Exception {
-		wrapper.doTask(TaskType.C);
-		wrapper.doTask(TaskType.F2);
+		wrapper.doTask(TaskType.C, LandsatType.LANDSAT5);
+		wrapper.doTask(TaskType.F2, LandsatType.LANDSAT5);
 		assertTrue(new File(MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".F2.csv").exists());
 	}
 

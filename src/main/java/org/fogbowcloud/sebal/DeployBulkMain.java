@@ -22,6 +22,7 @@ public class DeployBulkMain {
 		int lowerY = Integer.parseInt(args[5]);
 
 		String phase = args[6];
+		String landsat = null;
 		
 		int numberOfPartitions = Integer.parseInt(args[7]);
 		int partitionIndex = Integer.parseInt(args[8]);
@@ -43,6 +44,6 @@ public class DeployBulkMain {
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath);
-		wrapper.doTask(phase);
+		wrapper.doTask(phase, landsat);
 	}
 }
