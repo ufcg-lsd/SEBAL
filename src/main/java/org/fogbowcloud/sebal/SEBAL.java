@@ -41,6 +41,10 @@ public class SEBAL {
     double LLambda(double LLambdaMin, double LLambdaMax, double DN) {
         return LLambdaMin + ((LLambdaMax - LLambdaMin) / 255.0) * DN;
     }
+    
+    double LLambda8(double aL, double mL, int DN) {
+        return aL + (mL * DN);
+    }
 
     double rhosat5(double LLambda, double d, double ESUN, double cosTheta) {
         return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
@@ -48,6 +52,11 @@ public class SEBAL {
     
     double rhosat7(double LLambda, double d, double ESUN, double sinTheta) {
         return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * sinTheta);
+    }
+    
+    double rhoSat8(double aP, double mP, double LLambda, double sinThetaSunEle, double DN) {
+    	
+    	return (aP + (mP * DN)) / sinThetaSunEle;
     }
 
     //Verify the implications of the follow changes
@@ -671,6 +680,10 @@ public class SEBAL {
         if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
         	calcRhosat7(satellite, imagePixel);
         }
+        
+        if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
+        	calcRhosat8(satellite, imagePixel);
+        }
         // System.out.println("rho " + Arrays.toString(rho));
         output.setRho(rho);
         
@@ -821,6 +834,26 @@ public class SEBAL {
                     satellite.ESUNsat7(i + 1), imagePixel.sinTheta());
             rho[i] = rhoI;
         }
+		return rho;
+	}
+	
+	public double[] calcRhosat8(Satellite satellite, ImagePixel imagePixel) {
+		double[] rho = new double[11];
+		int[] DN = imagePixel.DN();
+		double[] aL = imagePixel.Al();
+		double[] mL = imagePixel.Ml();
+		double[] aP = imagePixel.Ap();
+		double[] mP = imagePixel.Mp();
+		double[] LLambda = null;
+		
+		for (int i = 0; i < rho.length; i++) {
+            if (i == 5) {
+                continue;
+            }
+            LLambda[i] = LLambda8(aL[i], mL[i], DN[i]);
+            double rhoI = rhoSat8(aP[i], mP[i], LLambda[i], imagePixel.sinThetaSunEle(), DN[i]);
+            rho[i] = rhoI;
+		}
 		return rho;
 	}
 

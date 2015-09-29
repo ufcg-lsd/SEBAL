@@ -157,8 +157,10 @@ public class Wrapper {
         Satellite satellite;
         if(landsat_type.equalsIgnoreCase("landsat5")) {
         	satellite = new JSONSatellite("landsat5");
-        } else
+        } else if(landsat_type.equalsIgnoreCase("landsat7")) {
         	satellite = new JSONSatellite("landsat7");
+        } else
+        	satellite = new JSONSatellite("landsat8");
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
                		
