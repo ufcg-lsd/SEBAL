@@ -1,0 +1,17 @@
+{
+ "name": "landsat7",
+ "altitude": ,
+ "inclination": ,
+ "period": ,
+ "cycle": ,
+ "crossing": "", 
+ "k1": ,
+ "k2": ,
+ "band1": [],
+ "band2": [], 
+ "band3": [], 
+ "band4": [], 
+ "band5": [], 
+ "band6": [], 
+ "band7": []
+} 
