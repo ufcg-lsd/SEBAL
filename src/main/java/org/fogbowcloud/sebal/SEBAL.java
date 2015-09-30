@@ -878,8 +878,8 @@ public class SEBAL {
 	}
 	
 	public double[] calcRhosat8(Satellite satellite, ImagePixel imagePixel) {
-		double[] rho = new double[11];
 		int[] DN = imagePixel.DN();
+		double[] rho = new double[11];
 		double[] aL = imagePixel.Al();
 		double[] mL = imagePixel.Ml();
 		double[] aP = imagePixel.Ap();
