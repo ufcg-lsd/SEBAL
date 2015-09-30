@@ -67,7 +67,7 @@ public class SEBAL {
     }
     
     double alphaToasat7(double rho1, double rho2, double rho3, double rho4,
-            double rho5, double rho6, double rho8, double rho9, Satellite satellite) {
+            double rho5, double rho7, Satellite satellite) {
     	double alphasat7 = 0.0;
     	
     	double ESUNsum = 0.0;
@@ -78,9 +78,14 @@ public class SEBAL {
     	
 	    alphasat7 = ((satellite.ESUNsat7(1)/ESUNsum) * rho1) + ((satellite.ESUNsat7(2)/ESUNsum) * rho2)
 	    		+ ((satellite.ESUNsat7(3)/ESUNsum) * rho3) + ((satellite.ESUNsat7(4)/ESUNsum) * rho4) 
-	    		+ ((satellite.ESUNsat7(5)/ESUNsum) * rho5) + ((satellite.ESUNsat7(6)/ESUNsum) * rho6)
-	    		+ ((satellite.ESUNsat7(8)/ESUNsum) * rho8) + ((satellite.ESUNsat7(9)/ESUNsum) * rho9);
+	    		+ ((satellite.ESUNsat7(5)/ESUNsum) * rho5) + ((satellite.ESUNsat7(6)/ESUNsum) * rho7);
         return alphasat7;
+    }
+    
+    double alphaToasat8(double rho1, double rho2, double rho3, double rho4,
+            double rho5, double rho7) {
+        return 0.19824703 * rho1 + 0.206089263 * rho2 + 0.201360858 * rho3 + 0.177142198
+                * rho4 + 0.114980971 * rho5 + 0.008649521 * rho7;
     }
 
     double tauSW(double z) {
@@ -95,6 +100,11 @@ public class SEBAL {
     double alpha7(double alphaToa7, double tauSW) {
         double alphaP = 0.03;
         return (alphaToa7 - alphaP) / Math.pow(tauSW, 2);
+    }
+    
+    double alpha8(double alphaToa8, double tauSW) {
+        double alphaP = 0.03;
+        return (alphaToa8 - alphaP) / Math.pow(tauSW, 2);
     }
 
     double RSDown(double cosTheta, double d, double tauSW) {
@@ -155,9 +165,17 @@ public class SEBAL {
         return 0.95 + 0.01 * IAF;
     }
 
+    // Temperatura de Superfície para landsat5 e landsat7
     double TS(double K2, double epsilonNB, double K1, double LLambda6) {
 
         Double ts = K2 / Math.log((epsilonNB * K1 / LLambda6) + 1);
+        return ts;
+    }
+    
+ // Temperatura de Superfície para landsat5 e landsat7
+    double TSsat8(double K2, double epsilonNB, double K1, double LLambda10) {
+
+        Double ts = K2 / Math.log((epsilonNB * K1 / LLambda10) + 1);
         return ts;
     }
 
@@ -696,7 +714,13 @@ public class SEBAL {
         
         if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
 	        alphaToa = alphaToasat7(rho[0], rho[1], rho[2], rho[3], rho[4],
-	                rho[5], rho[7], rho[8], satellite);
+	                rho[6], satellite);
+	        output.setAlphaToa(alphaToa);
+        }
+        
+        if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
+	        alphaToa = alphaToasat8(rho[0], rho[1], rho[2], rho[3], rho[4],
+	                rho[6]);
 	        output.setAlphaToa(alphaToa);
         }
         // System.out.println("alphaToa " + alphaToa);
@@ -704,8 +728,17 @@ public class SEBAL {
         double tauSW = tauSW(imagePixel.z());
         output.setTauSW(tauSW);
         // System.out.println("tauSW " + tauSW);
-
-        double alpha = alpha5(alphaToa, tauSW);
+        
+        double alpha = 0.0;
+        if(satellite.landsatName().equalsIgnoreCase("landsat5"))
+        	alpha = alpha5(alphaToa, tauSW);
+        
+        if(satellite.landsatName().equalsIgnoreCase("landsat7"))
+        	alpha = alpha7(alphaToa, tauSW);
+        
+        if(satellite.landsatName().equalsIgnoreCase("landsat8"))
+        	alpha = alpha8(alphaToa, tauSW);
+        
         output.setAlpha(alpha);
         // System.out.println("alpha " + alpha);
 
@@ -737,7 +770,14 @@ public class SEBAL {
         output.setEpsilonZero(epsilonZero);
         // System.out.println("epsilonZero " + epsilonZero);
 
-        double TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[5]);
+        double TS = 0.0;
+        if(satellite.landsatName().equalsIgnoreCase("landsat5")
+        		|| satellite.landsatName().equalsIgnoreCase("landsat7"))
+        	TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[5]);
+        
+        if(satellite.landsatName().equalsIgnoreCase("landsat8"))
+        		TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[9]);
+        
         output.setTs(TS);
         // System.out.println("TS " + TS);
 
