@@ -530,7 +530,7 @@ public class Wrapper {
         }, filePath);
     }
 
-    interface PixelParser {
+    public interface PixelParser {
         ImagePixel parseLine(String[] line);
     }
 
