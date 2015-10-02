@@ -5,6 +5,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -29,15 +31,12 @@ public class TestImageHelper {
 	
 	private static String filePath;
 	
-	public TestImageHelper() {
-		
-	}
-	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
 	public static Image readPixelsFromCSV(PixelParser pixelParser, String filePath,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
 		
+		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -45,64 +44,63 @@ public class TestImageHelper {
         Elevation elevation = new Elevation();
         WeatherStation station = new WeatherStation();
         
+        // Reading and storing data from .csv file to pixels in a image
         imageCSV.pixels(processPixelsFromFile());
         
-        //image.pixels(processPixelsFromFile());
-	
-        //MetadataElement metadataRoot = product.getMetadataRoot();
+        // Sun Elevation for Landsat 5
+        //
+        // Modify this to support multiple satellite types
         Double sunElevation = 49.00392091;
-        /*
-        double ULx = metadataRoot.getElement("L1_METADATA_FILE")
-        		.getElement("PRODUCT_METADATA")
-        		.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData()
-        		.getElemDouble();
-        double ULy = metadataRoot.getElement("L1_METADATA_FILE")
-        		.getElement("PRODUCT_METADATA")
-        		.getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData()
-        		.getElemDouble();
-
-        int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
-        		.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
-        		.getElemInt();
 		
-        int centralMeridian = findCentralMeridian(zoneNumber);*/
-		
+        // Initializing an array to store band values taken from .csv file
         double[] LArray = new double[imageCSV.pixelFrio().L().length];
         double L = 0.0;
         int counter = 0;
         
+        // Scanning csv image to calculate and store values in another image
 		for (ImagePixel imagePixelCSV : imageCSV.pixels()) {
 	            L = imagePixelCSV.output().getLambdaE();
 	            LArray[counter] = L;
 	            counter++;
 	            
-	            imagePixelCSV.L(LArray);
+	            imagePixel.L(LArray);
 	            
-                imagePixelCSV.cosTheta(Math.sin(Math.toRadians(sunElevation)));      
+	            // Calculate cosTheta for the imagePixel
+                imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
+                // Calculate the elevation based on image coordinates
                 Double z = elevation.z(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
                
+                // Calculate Ta based on image coordinates and date/time
+                //
+                // The date and time are dependents of the product, the following calculation must change to support
+                // a date/time obtained from .csv file
 				double Ta = station.Ta(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
 						startTime.getAsDate());
-				imagePixelCSV.Ta(Ta);
+				imagePixel.Ta(Ta);
 
+				// Calculate ux based on image coordinates and date/time
+                //
+                // The date and time are dependents of the product, the following calculation must change to support
+                // a date/time obtained from .csv file
 				double ux = station.ux(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
 						startTime.getAsDate());
-				imagePixelCSV.ux(ux);
-
-				double zx = station.zx(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
-				imagePixelCSV.zx(zx);
-
-				double d = station.d(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
-				imagePixelCSV.d(d);
-
-				double hc = station.hc(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
-				imagePixelCSV.hc(hc);
+				imagePixel.ux(ux);
 				
-				//if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
-				//	imagePixel.isValid(false);
-				//}
+				// Calculate zx based on image coordinates
+				double zx = station.zx(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				imagePixel.zx(zx);
 
+				// Calculate ux based on image coordinates
+				double d = station.d(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				imagePixel.d(d);
+				
+				// Calculate ux based on image coordinates
+				double hc = station.hc(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				imagePixel.hc(hc);
+
+				// Add image csv to variable image from imagePixel
+				// The csv pixel is then add to the other image pixel
                 imagePixel.image(imageCSV);
                 image.addPixel(imagePixelCSV);
         }
@@ -188,12 +186,108 @@ public class TestImageHelper {
     	return getAllPixelsFilePath(getFilePath(), "");
     }
 	
+	// Analyze to make sure that the file path is right
 	private static String getAllPixelsFilePath(String filePath, String mtlName) {
 		if (mtlName == null || mtlName.isEmpty()) {
 			return filePath + "/" + ".pixels.csv";
 		}
 		return filePath + "/" + mtlName + "/" + ".pixels.csv";
 	}
+	
+	// Implement this method
+	private static ImagePixel processPixelFrioFromFile(String filePath)
+            throws IOException {
+        return processSinglePixelFile(new PixelParser() {
+            @Override
+            public ImagePixel parseLine(String[] fields) {
+                DefaultImagePixel pixelFrio = new DefaultImagePixel();
+                ImagePixelOutput outputFrio = new ImagePixelOutput();
+                outputFrio.setTs(Double.valueOf(fields[0]));
+                pixelFrio.setOutput(outputFrio);
+
+                double latitude = Double.valueOf(fields[1]);
+                double longitude = Double.valueOf(fields[2]);
+                GeoLoc geoLoc = new GeoLoc();
+                geoLoc.setLat(latitude);
+                geoLoc.setLon(longitude);
+                pixelFrio.geoLoc(geoLoc);
+                
+                return pixelFrio;
+            }
+        }, filePath);
+    }
+	
+	// Implement this method
+	private static ImagePixel processPixelQuenteFromFile(String fileName)
+            throws IOException {
+        return processSinglePixelFile(new PixelParser() {
+            @Override
+            public ImagePixel parseLine(String[] fields) {
+                DefaultImagePixel pixelQuente = new DefaultImagePixel();
+                pixelQuente.ux(Double.valueOf(fields[0]));
+                pixelQuente.zx(Double.valueOf(fields[1]));
+                pixelQuente.hc(Double.valueOf(fields[2]));
+                pixelQuente.d(Double.valueOf(fields[3]));
+
+                ImagePixelOutput outputQuente = new ImagePixelOutput();
+                outputQuente.setG(Double.valueOf(fields[4]));
+                outputQuente.setRn(Double.valueOf(fields[5]));
+                outputQuente.setSAVI(Double.valueOf(fields[6]));
+                outputQuente.setTs(Double.valueOf(fields[7]));
+                pixelQuente.setOutput(outputQuente);
+                
+                double latitude = Double.valueOf(fields[8]);
+                double longitude = Double.valueOf(fields[9]);
+                GeoLoc geoLoc = new GeoLoc();
+                geoLoc.setLat(latitude);
+                geoLoc.setLon(longitude);
+                pixelQuente.geoLoc(geoLoc);
+                
+                return pixelQuente;
+            }
+        }, fileName);
+    }
+	
+    private static ImagePixel processSinglePixelFile(PixelParser pixelParser,
+            String file) throws IOException {
+        List<ImagePixel> allPixels = processPixelsFile(pixelParser, file);
+        return allPixels.isEmpty() ? null : allPixels.get(0);
+    }
+    
+    /*public static Calendar createCalendar() {
+        final Calendar calendar = GregorianCalendar.getInstance(UTC_TIME_ZONE, Locale.ENGLISH);
+        calendar.clear();
+        calendar.set(2000, 0, 1);
+        return calendar;
+    }
+    
+    public Calendar getAsCalendar() {
+        final Calendar calendar = createCalendar();
+        calendar.add(Calendar.DATE, getDaysFraction());
+        calendar.add(Calendar.SECOND, (int) getSecondsFraction());
+        calendar.add(Calendar.MILLISECOND, (int) Math.round(getMicroSecondsFraction() / 1000.0));
+        return calendar;
+    }
+    
+    public Date getAsDate() {
+        return getAsCalendar().getTime();
+    }
+    
+    public int getDaysFraction() {
+        return this.getElemIntAt(0);
+    }
+
+    public long getSecondsFraction() {
+        return this.getElemIntAt(1);
+    }
+
+    public long getMicroSecondsFraction() {
+        return this.getElemIntAt(2);
+    }
+    
+    public int getElemIntAt(String[] fields, int index) {
+        return Integer.valueOf(fields[index]);
+    }*/
 	
 	public static String getFilePath() {
 		return filePath;
