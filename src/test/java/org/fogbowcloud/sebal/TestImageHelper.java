@@ -25,6 +25,7 @@ import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
 import org.geotools.swing.process.ProcessParameterPage;
+import org.hsqldb.SetFunction;
 import org.apache.log4j.Logger;
 
 public class TestImageHelper {
@@ -33,11 +34,12 @@ public class TestImageHelper {
 	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
-	public static Image readPixelsFromCSV(PixelParser pixelParser, String filePath,
+	public static Image readPixelsFromCSV(String filePath,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
 		
 		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
+        setFilePath(filePath);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         DefaultImagePixel imagePixel = new DefaultImagePixel();
         DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
@@ -51,6 +53,9 @@ public class TestImageHelper {
         //
         // Modify this to support multiple satellite types
         Double sunElevation = 49.00392091;
+        // Sun Elevation for Landsat 7
+        //
+        //Double sunElevation = 53.52375; 
 		
         // Initializing an array to store band values taken from .csv file
         double[] LArray = new double[imageCSV.pixelFrio().L().length];
@@ -189,9 +194,9 @@ public class TestImageHelper {
 	// Analyze to make sure that the file path is right
 	private static String getAllPixelsFilePath(String filePath, String mtlName) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return filePath + "/" + ".pixels.csv";
+			return filePath + "/" + ".result.csv";
 		}
-		return filePath + "/" + mtlName + "/" + ".pixels.csv";
+		return filePath + "/" + mtlName + "/" + ".result.csv";
 	}
 	
 	// Implement this method
@@ -254,47 +259,13 @@ public class TestImageHelper {
         return allPixels.isEmpty() ? null : allPixels.get(0);
     }
     
-    /*public static Calendar createCalendar() {
-        final Calendar calendar = GregorianCalendar.getInstance(UTC_TIME_ZONE, Locale.ENGLISH);
-        calendar.clear();
-        calendar.set(2000, 0, 1);
-        return calendar;
-    }
-    
-    public Calendar getAsCalendar() {
-        final Calendar calendar = createCalendar();
-        calendar.add(Calendar.DATE, getDaysFraction());
-        calendar.add(Calendar.SECOND, (int) getSecondsFraction());
-        calendar.add(Calendar.MILLISECOND, (int) Math.round(getMicroSecondsFraction() / 1000.0));
-        return calendar;
-    }
-    
-    public Date getAsDate() {
-        return getAsCalendar().getTime();
-    }
-    
-    public int getDaysFraction() {
-        return this.getElemIntAt(0);
-    }
-
-    public long getSecondsFraction() {
-        return this.getElemIntAt(1);
-    }
-
-    public long getMicroSecondsFraction() {
-        return this.getElemIntAt(2);
-    }
-    
-    public int getElemIntAt(String[] fields, int index) {
-        return Integer.valueOf(fields[index]);
-    }*/
 	
 	public static String getFilePath() {
 		return filePath;
 	}
 
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
+	public static void setFilePath(String anotherfilePath) {
+		filePath = anotherfilePath;
 	}
 
 }
