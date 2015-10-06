@@ -37,6 +37,11 @@ public class JSONSatellite implements Satellite {
 	public double ESUNsat7(int band) {
 		return json.optJSONArray("band" + band).optDouble(9);
 	}
+	
+	@Override
+	public double ESUNsat8(int band) {
+		return json.optJSONArray("band" + band).optDouble(11);
+	}
 
 	@Override
 	public double K1() {

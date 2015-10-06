@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class DeployBulkMain {
@@ -44,6 +43,6 @@ public class DeployBulkMain {
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath);
-		wrapper.doTask(phase, landsat);
+		wrapper.doTask(phase);
 	}
 }

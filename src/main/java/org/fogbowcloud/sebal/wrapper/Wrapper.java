@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
@@ -112,10 +113,10 @@ public class Wrapper {
 		this.fmaskFilePath = fmaskFilePath;
 	}
     
-    public void doTask(String taskType, String landsat_type) throws Exception {
+    public void doTask(String taskType) throws Exception {
         try {
             if (taskType.equalsIgnoreCase(TaskType.F1)) {
-                F1(pixelQuenteFrioChooser, landsat_type);
+                F1(pixelQuenteFrioChooser);
                 return;
             }
             if (taskType.equalsIgnoreCase(TaskType.C)) {
@@ -127,7 +128,7 @@ public class Wrapper {
                 return;
             }
             if (taskType.equalsIgnoreCase(TaskType.F1F2)) {
-                F1F2(pixelQuenteFrioChooser, landsat_type);
+                F1F2(pixelQuenteFrioChooser);
                 return;
             }
         } catch (Throwable e) {
@@ -136,7 +137,7 @@ public class Wrapper {
         }
     }
 
-    public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, String landsat_type)
+    public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
     	LOGGER.info("Executing F1 phase...");
     	
@@ -154,10 +155,15 @@ public class Wrapper {
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         
+        MetadataElement metadataRoot = product.getMetadataRoot();
+        String landsatType = metadataRoot.getElement("L1_METADATA_FILE")
+                .getElement("PRODUCT_METADATA").getAttribute("SPACECRAFT_ID")
+                .getData().getElemString();
+        
         Satellite satellite;
-        if(landsat_type.equalsIgnoreCase("landsat5")) {
+        if(landsatType.equalsIgnoreCase("LANDSAT_5")) {
         	satellite = new JSONSatellite("landsat5");
-        } else if(landsat_type.equalsIgnoreCase("landsat7")) {
+        } else if(landsatType.equalsIgnoreCase("LANDSAT_7")) {
         	satellite = new JSONSatellite("landsat7");
         } else
         	satellite = new JSONSatellite("landsat8");
@@ -584,9 +590,9 @@ public class Wrapper {
         }, fileName);
     }
 
-    public void F1F2(PixelQuenteFrioChooser pixelQuenteFrioChooser, String landsat_type) {
+    public void F1F2(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
         try {
-            F1(pixelQuenteFrioChooser, landsat_type);
+            F1(pixelQuenteFrioChooser);
             F2(pixelQuenteFrioChooser);
         } catch (Exception e) {
             e.printStackTrace();

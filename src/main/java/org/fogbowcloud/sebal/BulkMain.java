@@ -2,7 +2,6 @@ package org.fogbowcloud.sebal;
 
 import java.io.File;
 
-import org.fogbowcloud.sebal.wrapper.LandsatType;
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
@@ -33,6 +32,6 @@ public class BulkMain {
 
 		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
 				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, null, null);
-		wrapper.doTask(TaskType.F1, LandsatType.LANDSAT5);
+		wrapper.doTask(TaskType.F1);
 	}
 }

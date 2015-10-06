@@ -9,20 +9,29 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
+import org.apache.log4j.Logger;
+import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestImage {
+public class TestImageLandsat5 {
 	
+	private Properties properties;
+	private String mtlFile;
+	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
 	private static final int J_FINAL = 3100;
 	private static final int J_BEGIN = 3000;
 	private static final int I_FINAL = 3100;
@@ -34,6 +43,17 @@ public class TestImage {
 	String desiredValuesFile = "result.csv";
 	String obtainedValuesFile = MTL_NAME + "/" + I_BEGIN + "." + I_FINAL + "." + J_BEGIN + "." + J_FINAL + ".F2.csv";
 
+	public TestImageLandsat5() {
+		properties = new Properties();
+		
+		String mtlFilePath = properties.getProperty("mtl_file_path");
+		if (mtlFilePath == null || mtlFilePath.isEmpty()) {
+			LOGGER.error("Property mtl_file_path must be set.");
+			throw new IllegalArgumentException("Property mtl_file_path must be set.");
+		}
+		this.mtlFile = mtlFilePath;
+	}
+	
 	@Before
 	public void setUp() throws Exception {
 		imageHelper = new TestImageHelper();
@@ -67,6 +87,26 @@ public class TestImage {
 	public void acceptanceTest() throws Exception {
 		testF1();
 		testF2();
+		
+		long now = System.currentTimeMillis();
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
+		
+		MetadataElement metadataRoot = product.getMetadataRoot();
+        String landsatType = metadataRoot.getElement("L1_METADATA_FILE")
+                .getElement("PRODUCT_METADATA").getAttribute("SPACECRAFT_ID")
+                .getData().getElemString();
+		
+		Satellite satellite;
+        if(landsatType.equalsIgnoreCase("LANDSAT_5")) {
+        	satellite = new JSONSatellite("landsat5");
+        } else if(landsatType.equalsIgnoreCase("LANDSAT_7")) {
+        	satellite = new JSONSatellite("landsat7");
+        } else
+        	satellite = new JSONSatellite("landsat8");
+		
+		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
+		
 		// See if there's a way to modify this to List<ImagePixel> here and in TestImageHelper
 		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFile, 
 				wrapper.getPixelQuenteFrioChooser());

@@ -13,7 +13,6 @@ import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.EarthSunDistance;
 import org.python.modules.math;
@@ -840,6 +839,9 @@ public class SEBAL {
 		}
 		if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
 			 calcRhosat7(satellite, imagePixel);	
+		}
+		if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
+			 calcRhosat8(satellite, imagePixel);	
 		}
 		ImagePixelOutput output = imagePixel.output();
 		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;

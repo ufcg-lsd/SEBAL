@@ -11,6 +11,8 @@ public interface Satellite {
 	double ESUNsat5(int band);
 	
 	double ESUNsat7(int band);
+	
+	double ESUNsat8(int band);
 
 	double K1();
 	
