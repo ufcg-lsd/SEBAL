@@ -81,7 +81,7 @@ public class RenderHelper {
 //				RenderHelper.NET_CDF);
 		
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, RenderHelper.TIFF);
+				maskHeight, daysSince1970, args[9]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -156,7 +156,7 @@ public class RenderHelper {
 			for (String driver : drivers) {
 				if (driver.equals(TIFF)) {
 					Driver tiffDriver = gdal.GetDriverByName("GTiff");
-					String tiffFile = new File(outputPath, imgPrefix + "_new_" + varName + ".tiff")
+					String tiffFile = new File(outputPath, imgPrefix + "_new_4_" + varName + ".tiff")
 							.getAbsolutePath();
 					Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
@@ -208,7 +208,7 @@ public class RenderHelper {
 					bmpBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 					bmpBand.FlushCache();
 				} else if (format.equals(NET_CDF)) {
-					netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
+					netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterNetCDF);
 					netCDFBand.FlushCache();
 
 					try {
@@ -221,8 +221,16 @@ public class RenderHelper {
 		}
 
 		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
-			System.out.println("uLon="+ ulLon);
-			System.out.println("uLat="+ ulLat);
+//			double[] geoTransform = dstNdviTiff.GetGeoTransform();
+//			for (double d : geoTransform) {
+//				System.out.println(d);
+//			}
+			/*
+			 * In case of north up images, the GT(2) and GT(4) coefficients are
+			 * zero, and the GT(1) is pixel width, and GT(5) is pixel height.
+			 * The (GT(0),GT(3)) position is the top left corner of the top left
+			 * pixel of the raster.
+			 */
 			dstNdviTiff
 					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
 			SpatialReference srs = new SpatialReference();

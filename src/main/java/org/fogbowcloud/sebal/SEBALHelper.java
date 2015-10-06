@@ -27,7 +27,9 @@ import org.apache.log4j.Logger;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.PixelPos;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -345,7 +347,7 @@ public class SEBALHelper {
         for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
         	int fmaskJ = 0;
             for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
-//            	LOGGER.debug(i + " " + j);
+            	LOGGER.debug(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
 
@@ -360,13 +362,25 @@ public class SEBALHelper {
                 
                 double easting = i * 30 + ULx;
                 double northing = (-1 * j * 30 + ULy);
-                                
+
 				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
 						zoneNumber, centralMeridian);
                 double latitude = Double.valueOf(String.format("%.10g%n",
                       latLonCoordinate.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
                       latLonCoordinate.getLon()));
+                
+//                PixelPos pixelPos = new PixelPos(i, j);
+
+                imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
+//                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+//                double latitude = Double.valueOf(String.format("%.10g%n",
+//                        geoPos.getLat()));
+//                double longitude = Double.valueOf(String.format("%.10g%n",
+//                        geoPos.getLon()));
+//                
+//                LOGGER.debug("lat diff=" + Math.abs(latitude - latitudeConv));
+//                LOGGER.debug("lon diff=" + Math.abs(longitude - longitudeConv));
 
                 Double z = elevation.z(latitude, longitude);
                
@@ -378,23 +392,21 @@ public class SEBALHelper {
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
                                 
-				double Ta = station.Ta(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
-						startTime.getAsDate());
+				double Ta = station.Ta(latitude, longitude, startTime.getAsDate());
 				imagePixel.Ta(Ta);
 
-				double ux = station.ux(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
-						startTime.getAsDate());
+				double ux = station.ux(latitude, longitude, startTime.getAsDate());
 				imagePixel.ux(ux);
 
-				double zx = station.zx(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double zx = station.zx(latitude, longitude);
 				imagePixel.zx(zx);
 
-				double d = station.d(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double d = station.d(latitude, longitude);
 				imagePixel.d(d);
 
-				double hc = station.hc(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double hc = station.hc(latitude, longitude);
 				imagePixel.hc(hc);
-				
+                
 				if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
 					imagePixel.isValid(false);
 				}
