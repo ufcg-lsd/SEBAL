@@ -58,18 +58,20 @@ public class TestImageHelper {
         //Double sunElevation = 53.52375; 
 		
         // Initializing an array to store band values taken from .csv file
-        double[] LArray = new double[imageCSV.pixelFrio().L().length];
-        double L = 0.0;
-        int counter = 0;
+        //double[] LArray = new double[imageCSV.pixelFrio().L().length];
+        //double L = 0.0;
+        //int counter = 0;
         
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel imagePixelCSV : imageCSV.pixels()) {
-	            L = imagePixelCSV.output().getLambdaE();
-	            LArray[counter] = L;
-	            counter++;
+	            //L = imagePixelCSV.output().getLambdaE();
+	            //LArray[counter] = L;
+	            //counter++;
 	            
-	            imagePixel.L(LArray);
+	            //imagePixel.L(LArray);
 	            
+				imagePixel.L(imagePixelCSV.L());
+			
 	            // Calculate cosTheta for the imagePixel
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 
@@ -80,17 +82,19 @@ public class TestImageHelper {
                 //
                 // The date and time are dependents of the product, the following calculation must change to support
                 // a date/time obtained from .csv file
-				double Ta = station.Ta(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
+                
+				/*double Ta = station.Ta(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
 						startTime.getAsDate());
-				imagePixel.Ta(Ta);
+				imagePixel.Ta(Ta);*/
 
 				// Calculate ux based on image coordinates and date/time
                 //
                 // The date and time are dependents of the product, the following calculation must change to support
                 // a date/time obtained from .csv file
-				double ux = station.ux(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
+				
+                /*double ux = station.ux(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
 						startTime.getAsDate());
-				imagePixel.ux(ux);
+				imagePixel.ux(ux);*/
 				
 				// Calculate zx based on image coordinates
 				double zx = station.zx(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
@@ -103,6 +107,29 @@ public class TestImageHelper {
 				// Calculate ux based on image coordinates
 				double hc = station.hc(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
 				imagePixel.hc(hc);
+				
+				// Calculate G based on obtained Rn
+				double G = 0.5*imagePixelCSV.output().Rn();
+				imagePixel.output().setG(G);
+				
+				// Calculate z0mxy based on obtained SAVI
+				double z0mx = -5.809;
+		        double z0my = 5.62;
+		        double z0mxy = Math.exp(z0mx + imagePixelCSV.output().SAVI() * z0my);
+		        imagePixel.output().setZ0mxy(z0mxy);
+				
+				// Calculate IAF based on obtained SAVI
+				double IAF = 0 - Math.log(((0.69-imagePixelCSV.output().SAVI())/0.59)/0.91);
+				imagePixel.output().setIAF(IAF);
+				
+				// The following implementation need to be analyzed to use C1/C2 and LC, which have not 
+				// yet been obtained
+				
+				//double[] rho = imagePixelCSV.output().getRho();
+				
+				// Calculate EVI based on obtained rho, C1/C2 (correlation coefficients of atmospheric
+				// effects for red and blue) and LC (correlation factor for ground interference)
+				//double EVI = G*((rho[3] - rho[2])/(rho[3] + C1*rho[2] - C2*rho[0] + LC));
 
 				// Add image csv to variable image from imagePixel
 				// The csv pixel is then add to the other image pixel
@@ -122,54 +149,62 @@ public class TestImageHelper {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
                 imagePixel.setOutput(getImagePixelOutput(fields));
-                double band1 = Double.valueOf(fields[10].substring(1));
-                double band2 = Double.valueOf(fields[11]);
-                double band3 = Double.valueOf(fields[12]);
-                double band4 = Double.valueOf(fields[13]);
-                double band5 = Double.valueOf(fields[14]);
-                double band6 = Double.valueOf(fields[15]);
-                double band7 = Double.valueOf(fields[16].substring(0,
-                        fields[16].length() - 1));
-                double[] L = { band1, band2, band3, band4, band5, band6, band7 };
+                int band1 = Integer.valueOf(fields[2].substring(1));
+                int band2 = Integer.valueOf(fields[3]);
+                int band3 = Integer.valueOf(fields[4]);
+                int band4 = Integer.valueOf(fields[5]);
+                int band5 = Integer.valueOf(fields[6]);
+                int band6 = Integer.valueOf(fields[7]);
+                int band7 = Integer.valueOf(fields[8].substring(0,
+                		fields[8].length() - 1));
+                int[] DN = { band1, band2, band3, band4, band5, band6, band7 };
+                imagePixel.DN(DN);
+                double[] L = { Double.valueOf(fields[10]), Double.valueOf(fields[11]),
+                		Double.valueOf(fields[12]), Double.valueOf(fields[13]), 
+                		Double.valueOf(fields[14]), Double.valueOf(fields[15]),
+                		Double.valueOf(fields[16]) };
                 imagePixel.L(L);
-                imagePixel.Ta(Double.valueOf(fields[28]));
-                imagePixel.d(Double.valueOf(fields[29]));
-                imagePixel.ux(Double.valueOf(fields[30]));
-                imagePixel.zx(Double.valueOf(fields[31]));
-                imagePixel.hc(Double.valueOf(fields[32]));
+                double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
+                		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
+                		Double.valueOf(fields[21]), Double.valueOf(fields[22]),
+                		Double.valueOf(fields[23]) };
+                imagePixel.output().setRho(rho);
+                //imagePixel.Ta(Double.valueOf(fields[28]));
+                //imagePixel.d(Double.valueOf(fields[29]));
+                //imagePixel.ux(Double.valueOf(fields[30]));
+                //imagePixel.zx(Double.valueOf(fields[31]));
+                //imagePixel.hc(Double.valueOf(fields[32]));
                 return imagePixel;
             }
         }, getAllPixelsFileName());
     }
 	
 	private static GeoLoc getGeoLoc(String[] fields) {
-        int i = Integer.valueOf(fields[0]);
-        int j = Integer.valueOf(fields[1]);
-        double lat = Double.valueOf(fields[2]);
-        double lon = Double.valueOf(fields[3]);
+        int i = 0;
+        int j = 0;
+        double lat = Double.valueOf(fields[0]);
+        double lon = Double.valueOf(fields[1]);
         GeoLoc geoloc = new GeoLoc(i, j, lat, lon);
         return geoloc;
     }
 	
 	private static ImagePixelOutput getImagePixelOutput(String[] fields) {
 	        ImagePixelOutput output = new ImagePixelOutput();
-	        output.setG(Double.valueOf(fields[4]));
-	        output.setRn(Double.valueOf(fields[5]));
-	        output.setTs(Double.valueOf(fields[6]));
-	        output.setNDVI(Double.valueOf(fields[7]));
-	        output.setSAVI(Double.valueOf(fields[8]));
-	        output.setAlpha(Double.valueOf(fields[9]));
-	        output.setZ0mxy(Double.valueOf(fields[17]));
-	        output.setEpsilonZero(Double.valueOf(fields[18]));
-	        output.setEpsilonNB(Double.valueOf(fields[19]));
-	        output.setRLDown(Double.valueOf(fields[20]));
-	        output.setEpsilonA(Double.valueOf(fields[21]));
-	        output.setRLUp(Double.valueOf(fields[22]));
-	        output.setIAF(Double.valueOf(fields[23]));
-	        output.setEVI(Double.valueOf(fields[24]));
-	        output.setRSDown(Double.valueOf(fields[25]));
-	        output.setTauSW(Double.valueOf(fields[26]));
-	        output.setAlphaToa(Double.valueOf(fields[27]));
+	        output.setRn(Double.valueOf(fields[37]));
+	        output.setTs(Double.valueOf(fields[33]));
+	        output.setNDVI(Double.valueOf(fields[28]));
+	        output.setSAVI(Double.valueOf(fields[29]));
+	        output.setAlpha(Double.valueOf(fields[26]));
+	        //output.setZ0mxy(Double.valueOf(fields[17]));
+	        output.setEpsilonZero(Double.valueOf(fields[32]));
+	        output.setEpsilonNB(Double.valueOf(fields[31]));
+	        output.setRLDown(Double.valueOf(fields[36]));
+	        output.setEpsilonA(Double.valueOf(fields[35]));
+	        output.setRLUp(Double.valueOf(fields[34]));
+	        //output.setEVI(Double.valueOf(fields[24]));
+	        output.setRSDown(Double.valueOf(fields[27]));
+	        output.setTauSW(Double.valueOf(fields[25]));
+	        output.setAlphaToa(Double.valueOf(fields[24]));
 	        return output;
 	 }
 	
@@ -200,7 +235,7 @@ public class TestImageHelper {
 	}
 	
 	// Implement this method
-	private static ImagePixel processPixelFrioFromFile(String filePath)
+	/*private static ImagePixel processPixelFrioFromFile(String filePath)
             throws IOException {
         return processSinglePixelFile(new PixelParser() {
             @Override
@@ -220,10 +255,10 @@ public class TestImageHelper {
                 return pixelFrio;
             }
         }, filePath);
-    }
+    }*/
 	
 	// Implement this method
-	private static ImagePixel processPixelQuenteFromFile(String fileName)
+	/*private static ImagePixel processPixelQuenteFromFile(String fileName)
             throws IOException {
         return processSinglePixelFile(new PixelParser() {
             @Override
@@ -251,13 +286,13 @@ public class TestImageHelper {
                 return pixelQuente;
             }
         }, fileName);
-    }
+    }*/
 	
-    private static ImagePixel processSinglePixelFile(PixelParser pixelParser,
+    /*private static ImagePixel processSinglePixelFile(PixelParser pixelParser,
             String file) throws IOException {
         List<ImagePixel> allPixels = processPixelsFile(pixelParser, file);
         return allPixels.isEmpty() ? null : allPixels.get(0);
-    }
+    }*/
     
 	
 	public static String getFilePath() {

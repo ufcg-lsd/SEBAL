@@ -1,7 +1,6 @@
 package org.fogbowcloud.sebal;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,7 +22,7 @@ import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.junit.Test;
 
-public class TestImageLandsat5 {
+public class TestImageLandsat8 {
 	
 	private Properties properties;
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
@@ -31,9 +30,9 @@ public class TestImageLandsat5 {
 	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 	Wrapper wrapper;
 	TestImageHelper imageHelper;
-	String desiredValuesFilePath = "/home/result.csv";
+	String desiredValuesFile = "result.csv";
 	
-	public TestImageLandsat5() throws IOException {
+	public TestImageLandsat8() throws IOException {
 		properties = new Properties();
 		imageHelper = new TestImageHelper();
 		
@@ -41,7 +40,7 @@ public class TestImageLandsat5 {
 		
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
 	}
-
+	
 	@Test
 	public void acceptanceTest(String outputDir, String boundingBoxFileName, Properties properties,
 			String fmaskFilePath) throws Exception {
@@ -55,7 +54,7 @@ public class TestImageLandsat5 {
 		
 		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
 		
-		Satellite satellite = new JSONSatellite("landsat5");
+		Satellite satellite = new JSONSatellite("landsat7");
 		
 		boolean cloudDetection = true;
 		if (fmaskFilePath != null) {
@@ -67,7 +66,7 @@ public class TestImageLandsat5 {
                 satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
 		
 		// See if there's a way to modify this to List<ImagePixel> here and in TestImageHelper
-		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFilePath, this.pixelQuenteFrioChooser);
+		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFile, this.pixelQuenteFrioChooser);
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
 		List<ImagePixel> obtainedValues = updatedImage.pixels();
