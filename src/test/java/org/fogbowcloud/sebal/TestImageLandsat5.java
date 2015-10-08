@@ -4,12 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
@@ -26,8 +29,8 @@ import org.junit.Test;
 public class TestImageLandsat5 {
 	
 	private Properties properties;
-	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
+	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
 	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 	Wrapper wrapper;
 	TestImageHelper imageHelper;
@@ -66,11 +69,16 @@ public class TestImageLandsat5 {
 		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
                 satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
 		
-		// See if there's a way to modify this to List<ImagePixel> here and in TestImageHelper
+		/*saveProcessOutput(updatedImage);
+        savePixelQuente(updatedImage, getPixelQuenteFileName());
+        savePixelFrio(updatedImage, getPixelFrioFileName());
+        LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));*/
+		
+		List<ImagePixel> obtainedValues = updatedImage.pixels();
+		
 		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFilePath, this.pixelQuenteFrioChooser);
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
-		List<ImagePixel> obtainedValues = updatedImage.pixels();
 		//DefaultImagePixel obtainedImagePixel = new DefaultImagePixel();
 		// DefaultImagePixel obtainedImagePixel = processPixelsFromFile(obtainedValuesFile);
 		// Modify processPixelsFromFile() to return a image instead of a list, this way is possible to use the code
@@ -238,5 +246,122 @@ public class TestImageLandsat5 {
 		GeoLoc geoloc = new GeoLoc(i,j,lat,lon);
 		return geoloc;
 	}
+	
+	/*private void saveProcessOutput(Image updatedImage) {
+        List<ImagePixel> pixels = updatedImage.pixels();
+        String allPixelsFileName = getAllPixelsFileName();
+
+        File outputFile = new File(allPixelsFileName);
+        try {
+            FileUtils.write(outputFile, "");
+            for (ImagePixel imagePixel : pixels) {
+                String resultLine = generateResultLine(imagePixel);
+                FileUtils.write(outputFile, resultLine, true);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+	
+	private void savePixelFrio(Image updatedImage, String fileName) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        ImagePixel pixelFrio = updatedImage.pixelFrio();
+        if (pixelFrio != null) {
+            String line = generatePixelFrioResultLine(pixelFrio);
+            stringBuilder.append(line);
+        }
+
+        createResultsFile(fileName, stringBuilder);
+    }
+	
+	private String getPixelFrioFileName() {
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
+                + "." + jFinal + ".frio.csv";
+    }
+	
+	private void savePixelQuente(Image updatedImage, String fileName) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        ImagePixel pixelQuente = updatedImage.pixelQuente();
+        if (pixelQuente != null) {
+            String line = generatePixelQuenteResultLine(pixelQuente);
+            stringBuilder.append(line);
+        }
+
+        createResultsFile(fileName, stringBuilder);
+    }
+	
+	private String getPixelQuenteFileName() {
+        return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
+                + "." + jFinal + ".quente.csv";
+    }
+	
+	private String getAllPixelsFileName() {
+    	return SEBALHelper.getAllPixelsFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
+    }
+	
+	private String generateResultLine(ImagePixel imagePixel) {
+        int i = imagePixel.geoLoc().getI();
+        int j = imagePixel.geoLoc().getJ();
+        double lat = imagePixel.geoLoc().getLat();
+        double lon = imagePixel.geoLoc().getLon();
+        ImagePixelOutput output = getPixelOutput(imagePixel);
+        double g = output.G();
+        double rn = output.Rn();
+        
+		String line = getRow(i, j, lat, lon, g, rn, output.getTs(), output.getNDVI(),
+				output.SAVI(), output.getAlpha(), Arrays.toString(imagePixel.L()),
+				output.getZ0mxy(), output.getEpsilonZero(), output.getEpsilonNB(),
+				output.getRLDown(), output.getEpsilonA(), output.getRLUp(), output.getIAF(),
+				output.getEVI(), output.getRSDown(), output.getTauSW(), output.getAlphaToa(),
+				imagePixel.Ta(), imagePixel.d(), imagePixel.ux(), imagePixel.zx(), imagePixel.hc());
+
+        return line;
+    }
+	
+	private static String getRow(Object... rowItems) {
+        StringBuilder sb = new StringBuilder();
+        for (Object rowItem : rowItems) {
+            sb.append(rowItem).append(",");
+        }
+        sb.setCharAt(sb.length() - 1, '\n');
+        return sb.toString();
+    }
+	
+	private ImagePixelOutput getPixelOutput(ImagePixel pixel) {
+        if (pixel != null) {
+            return pixel.output();
+        }
+        return null;
+    }
+	
+	private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
+		ImagePixelOutput outputFrio = getPixelOutput(pixelFrio);
+		String pixelFrioOutput = String.valueOf(outputFrio.getTs()) + ","
+				+ pixelFrio.geoLoc().getLat() + "," + pixelFrio.geoLoc().getLon();
+        return pixelFrioOutput;
+    }
+	
+	private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
+        ImagePixelOutput outputQuente = getPixelOutput(pixelQuente);
+		String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx() + ","
+				+ pixelQuente.hc() + "," + pixelQuente.d() + "," + outputQuente.G() + ","
+				+ outputQuente.Rn() + "," + outputQuente.SAVI() + "," + outputQuente.getTs() + ","
+				+ pixelQuente.geoLoc().getLat() + "," + pixelQuente.geoLoc().getLon();
+        return pixelQuenteOutput;
+    }
+	
+	private void createResultsFile(String fileName, StringBuilder stringBuilder) {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try {
+            FileUtils.writeStringToFile(file, stringBuilder.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }*/
 
 }

@@ -77,6 +77,7 @@ public class TestImageHelper {
 
                 // Calculate the elevation based on image coordinates
                 Double z = elevation.z(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+                imagePixel.z(z);
                
                 // Calculate Ta based on image coordinates and date/time
                 //
@@ -166,14 +167,8 @@ public class TestImageHelper {
                 imagePixel.L(L);
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
-                		Double.valueOf(fields[21]), Double.valueOf(fields[22]),
-                		Double.valueOf(fields[23]) };
+                		Double.valueOf(fields[21]), Double.valueOf(fields[23])};
                 imagePixel.output().setRho(rho);
-                //imagePixel.Ta(Double.valueOf(fields[28]));
-                //imagePixel.d(Double.valueOf(fields[29]));
-                //imagePixel.ux(Double.valueOf(fields[30]));
-                //imagePixel.zx(Double.valueOf(fields[31]));
-                //imagePixel.hc(Double.valueOf(fields[32]));
                 return imagePixel;
             }
         }, getAllPixelsFileName());
@@ -195,7 +190,6 @@ public class TestImageHelper {
 	        output.setNDVI(Double.valueOf(fields[28]));
 	        output.setSAVI(Double.valueOf(fields[29]));
 	        output.setAlpha(Double.valueOf(fields[26]));
-	        //output.setZ0mxy(Double.valueOf(fields[17]));
 	        output.setEpsilonZero(Double.valueOf(fields[32]));
 	        output.setEpsilonNB(Double.valueOf(fields[31]));
 	        output.setRLDown(Double.valueOf(fields[36]));
