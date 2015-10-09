@@ -360,25 +360,25 @@ public class SEBALHelper {
   
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
                 
-                double easting = i * 30 + ULx;
-                double northing = (-1 * j * 30 + ULy);
-
-				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
-						zoneNumber, centralMeridian);
-                double latitude = Double.valueOf(String.format("%.10g%n",
-                      latLonCoordinate.getLat()));
-                double longitude = Double.valueOf(String.format("%.10g%n",
-                      latLonCoordinate.getLon()));
-                
-//                PixelPos pixelPos = new PixelPos(i, j);
+//                double easting = i * 30 + ULx;
+//                double northing = (-1 * j * 30 + ULy);
+//
+//				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
+//						zoneNumber, centralMeridian);
+//                double latitude = Double.valueOf(String.format("%.10g%n",
+//                      latLonCoordinate.getLat()));
+//                double longitude = Double.valueOf(String.format("%.10g%n",
+//                      latLonCoordinate.getLon()));
+//                
+                PixelPos pixelPos = new PixelPos(i, j);
 
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
-//                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
-//                double latitude = Double.valueOf(String.format("%.10g%n",
-//                        geoPos.getLat()));
-//                double longitude = Double.valueOf(String.format("%.10g%n",
-//                        geoPos.getLon()));
-//                
+                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+                double latitude = Double.valueOf(String.format("%.10g%n",
+                        geoPos.getLat()));
+                double longitude = Double.valueOf(String.format("%.10g%n",
+                        geoPos.getLon()));
+                
 //                LOGGER.debug("lat diff=" + Math.abs(latitude - latitudeConv));
 //                LOGGER.debug("lon diff=" + Math.abs(longitude - longitudeConv));
 
