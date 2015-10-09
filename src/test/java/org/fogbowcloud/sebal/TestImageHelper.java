@@ -4,17 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.MetadataElement;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData.UTC;
-import org.fogbowcloud.sebal.model.image.BoundingBox;
 import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
@@ -24,8 +16,6 @@ import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
-import org.geotools.swing.process.ProcessParameterPage;
-import org.hsqldb.SetFunction;
 import org.apache.log4j.Logger;
 
 public class TestImageHelper {
@@ -110,27 +100,23 @@ public class TestImageHelper {
 				imagePixel.hc(hc);
 				
 				// Calculate G based on obtained Rn
-				double G = 0.5*imagePixelCSV.output().Rn();
+				double G = new SEBAL().G(imagePixelCSV.output().getTs(), imagePixelCSV.output().getAlpha(), 
+						imagePixelCSV.output().getNDVI(), imagePixelCSV.output().Rn());
 				imagePixel.output().setG(G);
 				
 				// Calculate z0mxy based on obtained SAVI
-				double z0mx = -5.809;
-		        double z0my = 5.62;
-		        double z0mxy = Math.exp(z0mx + imagePixelCSV.output().SAVI() * z0my);
+		        double z0mxy = new SEBAL().z0mxy(imagePixelCSV.output().SAVI());
 		        imagePixel.output().setZ0mxy(z0mxy);
 				
 				// Calculate IAF based on obtained SAVI
-				double IAF = 0 - Math.log(((0.69-imagePixelCSV.output().SAVI())/0.59)/0.91);
+		        double IAF = new SEBAL().IAF(imagePixelCSV.output().SAVI());
 				imagePixel.output().setIAF(IAF);
-				
-				// The following implementation need to be analyzed to use C1/C2 and LC, which have not 
-				// yet been obtained
-				
-				//double[] rho = imagePixelCSV.output().getRho();
 				
 				// Calculate EVI based on obtained rho, C1/C2 (correlation coefficients of atmospheric
 				// effects for red and blue) and LC (correlation factor for ground interference)
-				//double EVI = G*((rho[3] - rho[2])/(rho[3] + C1*rho[2] - C2*rho[0] + LC));
+				double[] rho = imagePixelCSV.output().getRho();
+				double EVI = new SEBAL().EVI(rho[0], rho[2], rho[3]);
+				imagePixel.output().setEVI(EVI);
 
 				// Add image csv to variable image from imagePixel
 				// The csv pixel is then add to the other image pixel
@@ -158,12 +144,7 @@ public class TestImageHelper {
                 int band6 = Integer.valueOf(fields[7]);
                 int band7 = Integer.valueOf(fields[8].substring(0,
                 		fields[8].length() - 1));
-                int[] DN = { band1, band2, band3, band4, band5, band6, band7 };
-                imagePixel.DN(DN);
-                double[] L = { Double.valueOf(fields[10]), Double.valueOf(fields[11]),
-                		Double.valueOf(fields[12]), Double.valueOf(fields[13]), 
-                		Double.valueOf(fields[14]), Double.valueOf(fields[15]),
-                		Double.valueOf(fields[16]) };
+                double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
@@ -195,7 +176,6 @@ public class TestImageHelper {
 	        output.setRLDown(Double.valueOf(fields[36]));
 	        output.setEpsilonA(Double.valueOf(fields[35]));
 	        output.setRLUp(Double.valueOf(fields[34]));
-	        //output.setEVI(Double.valueOf(fields[24]));
 	        output.setRSDown(Double.valueOf(fields[27]));
 	        output.setTauSW(Double.valueOf(fields[25]));
 	        output.setAlphaToa(Double.valueOf(fields[24]));

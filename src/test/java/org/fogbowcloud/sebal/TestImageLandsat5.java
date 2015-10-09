@@ -1,20 +1,15 @@
 package org.fogbowcloud.sebal;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
@@ -28,51 +23,23 @@ import org.junit.Test;
 
 public class TestImageLandsat5 {
 	
-	private Properties properties;
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
 	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-	Wrapper wrapper;
 	TestImageHelper imageHelper;
-	String desiredValuesFilePath = "/home/result.csv";
+	String obtainedValuesFilePath = "/home/result.csv";
+	String desiredValuesFilePath = "/home/desired.csv";
 	
-	public TestImageLandsat5() throws IOException {
-		properties = new Properties();
+	public TestImageLandsat5(Properties properties) throws IOException {
 		imageHelper = new TestImageHelper();
-		
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
 		
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
 	}
 
 	@Test
-	public void acceptanceTest(String outputDir, String boundingBoxFileName, Properties properties,
-			String fmaskFilePath) throws Exception {
+	public void acceptanceTest(String outputDir, String boundingBoxFileName, Properties properties) throws Exception {
 		
-		LOGGER.info("Executing F1 phase...");
-		long now = System.currentTimeMillis();
-		
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
-		
-        this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-		
-		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
-		
-		Satellite satellite = new JSONSatellite("landsat5");
-		
-		boolean cloudDetection = true;
-		if (fmaskFilePath != null) {
-			LOGGER.info("Fmask property was set.");
-			cloudDetection = false;
-		}
-		
-		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
-		
-		/*saveProcessOutput(updatedImage);
-        savePixelQuente(updatedImage, getPixelQuenteFileName());
-        savePixelFrio(updatedImage, getPixelFrioFileName());
-        LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));*/
+		Image updatedImage = F1(this.pixelQuenteFrioChooser);
 		
 		List<ImagePixel> obtainedValues = updatedImage.pixels();
 		
@@ -101,7 +68,7 @@ public class TestImageLandsat5 {
 			
 			HOutput desiredHOutIncial = desiredOutput.gethOuts().get(0);
 			HOutput obtainedHOutIncial = obtainedOutput.gethOuts().get(0);
-			
+				
 			assertField(desiredHOutIncial.getH(), obtainedHOutIncial.getH());
 			assertField(desiredHOutIncial.getA(), obtainedHOutIncial.getA());
 			assertField(desiredHOutIncial.getB(), obtainedHOutIncial.getB());
@@ -143,6 +110,30 @@ public class TestImageLandsat5 {
 			assertField(desiredOutput.getEvapo24h(), obtainedOutput.getEvapo24h());
 			assertField(desiredOutput.getLambda24h(), obtainedOutput.getLambda24h());
 		}
+	}
+	
+	public Image F1(PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+		
+		LOGGER.info("Executing F1 phase...");
+		long now = System.currentTimeMillis();
+		
+		// See if processPixelsFromFile can be used instead
+		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser);
+		
+		Satellite satellite = new JSONSatellite("landsat5");
+		
+		boolean cloudDetection = false;
+		
+		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
+		
+		/*saveProcessOutput(updatedImage);
+        savePixelQuente(updatedImage, getPixelQuenteFileName());
+        savePixelFrio(updatedImage, getPixelFrioFileName());*/
+        LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
+        
+        return updatedImage;
+		
 	}
 
 	private void assertField(Double desiredValue, Double obtainedValue) {
