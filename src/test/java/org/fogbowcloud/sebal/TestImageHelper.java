@@ -13,6 +13,7 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
@@ -25,7 +26,7 @@ public class TestImageHelper {
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
 	public static Image readPixelsFromCSV(String filePath,
-			PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+			PixelQuenteFrioChooser pixelQuenteFrioChooser, String valueFlag, Satellite satellite) throws Exception {
 		
 		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
@@ -86,6 +87,11 @@ public class TestImageHelper {
                 /*double ux = station.ux(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(),
 						startTime.getAsDate());
 				imagePixel.ux(ux);*/
+                
+                if(valueFlag.equals("obtainedValues")) {
+                	double[] rho = new SEBAL().calcRhosat5(satellite, imagePixelCSV);
+                	imagePixelCSV.output().setRho(rho);
+                }
 				
 				// Calculate zx based on image coordinates
 				double zx = station.zx(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
@@ -148,7 +154,7 @@ public class TestImageHelper {
                 imagePixel.L(L);
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
-                		Double.valueOf(fields[21]), Double.valueOf(fields[23])};
+                		Double.valueOf(fields[21]), Double.valueOf(fields[23]) };
                 imagePixel.output().setRho(rho);
                 return imagePixel;
             }
@@ -206,68 +212,7 @@ public class TestImageHelper {
 			return filePath + "/" + ".result.csv";
 		}
 		return filePath + "/" + mtlName + "/" + ".result.csv";
-	}
-	
-	// Implement this method
-	/*private static ImagePixel processPixelFrioFromFile(String filePath)
-            throws IOException {
-        return processSinglePixelFile(new PixelParser() {
-            @Override
-            public ImagePixel parseLine(String[] fields) {
-                DefaultImagePixel pixelFrio = new DefaultImagePixel();
-                ImagePixelOutput outputFrio = new ImagePixelOutput();
-                outputFrio.setTs(Double.valueOf(fields[0]));
-                pixelFrio.setOutput(outputFrio);
-
-                double latitude = Double.valueOf(fields[1]);
-                double longitude = Double.valueOf(fields[2]);
-                GeoLoc geoLoc = new GeoLoc();
-                geoLoc.setLat(latitude);
-                geoLoc.setLon(longitude);
-                pixelFrio.geoLoc(geoLoc);
-                
-                return pixelFrio;
-            }
-        }, filePath);
-    }*/
-	
-	// Implement this method
-	/*private static ImagePixel processPixelQuenteFromFile(String fileName)
-            throws IOException {
-        return processSinglePixelFile(new PixelParser() {
-            @Override
-            public ImagePixel parseLine(String[] fields) {
-                DefaultImagePixel pixelQuente = new DefaultImagePixel();
-                pixelQuente.ux(Double.valueOf(fields[0]));
-                pixelQuente.zx(Double.valueOf(fields[1]));
-                pixelQuente.hc(Double.valueOf(fields[2]));
-                pixelQuente.d(Double.valueOf(fields[3]));
-
-                ImagePixelOutput outputQuente = new ImagePixelOutput();
-                outputQuente.setG(Double.valueOf(fields[4]));
-                outputQuente.setRn(Double.valueOf(fields[5]));
-                outputQuente.setSAVI(Double.valueOf(fields[6]));
-                outputQuente.setTs(Double.valueOf(fields[7]));
-                pixelQuente.setOutput(outputQuente);
-                
-                double latitude = Double.valueOf(fields[8]);
-                double longitude = Double.valueOf(fields[9]);
-                GeoLoc geoLoc = new GeoLoc();
-                geoLoc.setLat(latitude);
-                geoLoc.setLon(longitude);
-                pixelQuente.geoLoc(geoLoc);
-                
-                return pixelQuente;
-            }
-        }, fileName);
-    }*/
-	
-    /*private static ImagePixel processSinglePixelFile(PixelParser pixelParser,
-            String file) throws IOException {
-        List<ImagePixel> allPixels = processPixelsFile(pixelParser, file);
-        return allPixels.isEmpty() ? null : allPixels.get(0);
-    }*/
-    
+	}    
 	
 	public static String getFilePath() {
 		return filePath;

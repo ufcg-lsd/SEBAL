@@ -29,6 +29,7 @@ public class TestImageLandsat5 {
 	TestImageHelper imageHelper;
 	String obtainedValuesFilePath = "/home/result.csv";
 	String desiredValuesFilePath = "/home/desired.csv";
+	Satellite satellite = null;
 	
 	public TestImageLandsat5(Properties properties) throws IOException {
 		imageHelper = new TestImageHelper();
@@ -43,7 +44,9 @@ public class TestImageLandsat5 {
 		
 		List<ImagePixel> obtainedValues = updatedImage.pixels();
 		
-		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFilePath, this.pixelQuenteFrioChooser);
+		String desiredFlag = "desiredValues";
+		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFilePath, this.pixelQuenteFrioChooser, 
+				desiredFlag, satellite);
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
 		//DefaultImagePixel obtainedImagePixel = new DefaultImagePixel();
@@ -116,11 +119,13 @@ public class TestImageLandsat5 {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
+		String obtaineddFlag = "obtainedValues";
+		
+		satellite = new JSONSatellite("landsat5");
 		
 		// See if processPixelsFromFile can be used instead
-		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser);
-		
-		Satellite satellite = new JSONSatellite("landsat5");
+		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser, obtaineddFlag, 
+				satellite);
 		
 		boolean cloudDetection = false;
 		

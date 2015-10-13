@@ -847,7 +847,7 @@ public class SEBAL {
 		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;
 	}
 	
-	private double[] calcRhosat5(Satellite satellite, ImagePixel imagePixel) {
+	protected double[] calcRhosat5(Satellite satellite, ImagePixel imagePixel) {
 		double[] rho = new double[7];
 		double[] LLambda = imagePixel.L();
 			
