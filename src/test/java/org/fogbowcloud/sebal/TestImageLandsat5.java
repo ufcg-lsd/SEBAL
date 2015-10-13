@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
@@ -149,7 +148,7 @@ public class TestImageLandsat5 {
 		ImagePixel parseLine(String[] line);
 	}
 
-	private List<ImagePixel> processPixelsFromFile(String fileName) throws IOException {
+	/*private List<ImagePixel> processPixelsFromFile(String fileName) throws IOException {
 		return processPixelsFile(new PixelParser() {
 			@Override
 			public ImagePixel parseLine(String[] fields) {
@@ -241,7 +240,7 @@ public class TestImageLandsat5 {
 		double lon = Double.valueOf(fields[3]);
 		GeoLoc geoloc = new GeoLoc(i,j,lat,lon);
 		return geoloc;
-	}
+	}*/
 	
 	/*private void saveProcessOutput(Image updatedImage) {
         List<ImagePixel> pixels = updatedImage.pixels();

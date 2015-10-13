@@ -47,11 +47,6 @@ public class TestImageHelper {
         // Sun Elevation for Landsat 7
         //
         //Double sunElevation = 53.52375; 
-		
-        // Initializing an array to store band values taken from .csv file
-        //double[] LArray = new double[imageCSV.pixelFrio().L().length];
-        //double L = 0.0;
-        //int counter = 0;
         
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel imagePixelCSV : imageCSV.pixels()) {
