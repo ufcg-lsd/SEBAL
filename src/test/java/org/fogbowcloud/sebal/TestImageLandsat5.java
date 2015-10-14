@@ -2,8 +2,6 @@ package org.fogbowcloud.sebal;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,15 +116,18 @@ public class TestImageLandsat5 {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
-		String obtaineddFlag = "obtainedValues";
 		
 		satellite = new JSONSatellite("landsat5");
 		
+		String obtainedFlag = "obtainedValues";
 		// See if processPixelsFromFile can be used instead
-		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser, obtaineddFlag, 
+		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser, obtainedFlag, 
 				satellite);
 		
 		boolean cloudDetection = false;
+		
+		image.width(0);
+		image.height(0);
 		
 		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
                 satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);

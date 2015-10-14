@@ -25,7 +25,7 @@ public class TestImageHelper {
 	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
-	public static Image readPixelsFromCSV(String filePath,
+	protected static Image readPixelsFromCSV(String filePath,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser, String valueFlag, Satellite satellite) throws Exception {
 		
 		// Initializing image variables
@@ -137,13 +137,13 @@ public class TestImageHelper {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
                 imagePixel.setOutput(getImagePixelOutput(fields));
-                int band1 = Integer.valueOf(fields[2].substring(1));
-                int band2 = Integer.valueOf(fields[3]);
-                int band3 = Integer.valueOf(fields[4]);
-                int band4 = Integer.valueOf(fields[5]);
-                int band5 = Integer.valueOf(fields[6]);
-                int band6 = Integer.valueOf(fields[7]);
-                int band7 = Integer.valueOf(fields[8].substring(0,
+                int band1 = Integer.valueOf(fields[11].substring(1));
+                int band2 = Integer.valueOf(fields[12]);
+                int band3 = Integer.valueOf(fields[13]);
+                int band4 = Integer.valueOf(fields[14]);
+                int band5 = Integer.valueOf(fields[15]);
+                int band6 = Integer.valueOf(fields[16]);
+                int band7 = Integer.valueOf(fields[17].substring(0,
                 		fields[8].length() - 1));
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
