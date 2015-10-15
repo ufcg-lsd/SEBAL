@@ -53,7 +53,7 @@ public class TestImageHelper {
         //
         //Double sunElevation = 53.52375;
         String date = "2001-[0]5-[1]5";
-        Date D = null; 
+        Date D = null;
         D.valueOf(date);
         
         int counter = 0;
@@ -224,9 +224,9 @@ public class TestImageHelper {
 	// Analyze to make sure that the file path is right
 	private static String getAllPixelsFilePath(String filePath, String mtlName) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return filePath + "/" + ".result.csv";
+			return filePath + "/" + "desired.csv";
 		}
-		return filePath + "/" + mtlName + "/" + ".result.csv";
+		return filePath + "/" + mtlName + "/" + "desired.csv";
 	}    
 	
 	public static String getFilePath() {

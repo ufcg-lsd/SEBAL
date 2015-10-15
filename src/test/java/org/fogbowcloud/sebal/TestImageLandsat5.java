@@ -24,8 +24,7 @@ public class TestImageLandsat5 {
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
 	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 	TestImageHelper imageHelper;
-	String obtainedValuesFilePath = "/home/result.csv";
-	String desiredValuesFilePath = "/home/result.csv";
+	String filePath = "/home/Documents/Fogbow/Estudo/SEBAL/";
 	Satellite satellite = null;
 	
 	public TestImageLandsat5(Properties properties) throws IOException {
@@ -42,7 +41,7 @@ public class TestImageLandsat5 {
 		List<ImagePixel> obtainedValues = updatedImage.pixels();
 		
 		String desiredFlag = "desiredValues";
-		Image desiredValues = imageHelper.readPixelsFromCSV(desiredValuesFilePath, this.pixelQuenteFrioChooser, 
+		Image desiredValues = imageHelper.readPixelsFromCSV(filePath, this.pixelQuenteFrioChooser, 
 				desiredFlag, satellite);
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
@@ -121,7 +120,7 @@ public class TestImageLandsat5 {
 		
 		String obtainedFlag = "obtainedValues";
 		// See if processPixelsFromFile can be used instead
-		Image image = imageHelper.readPixelsFromCSV(obtainedValuesFilePath, pixelQuenteFrioChooser, obtainedFlag, 
+		Image image = imageHelper.readPixelsFromCSV(filePath, pixelQuenteFrioChooser, obtainedFlag, 
 				satellite);
 		
 		boolean cloudDetection = false;
