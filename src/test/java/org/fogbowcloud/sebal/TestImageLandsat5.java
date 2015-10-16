@@ -22,15 +22,17 @@ public class TestImageLandsat5 {
 	
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
-	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-	TestImageHelper imageHelper;
-	String filePath = "/home/Documents/Fogbow/Estudo/SEBAL/";
-	Satellite satellite = null;
+	private List<BoundingBoxVertice> boundingBoxVertices;
+	private TestImageHelper imageHelper;
+	private String filePath;
+	private Satellite satellite;
 	
 	public TestImageLandsat5(Properties properties) throws IOException {
-		imageHelper = new TestImageHelper();
-		
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
+		imageHelper = new TestImageHelper();
+		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+		filePath = "/home/Documents/Fogbow/Estudo/SEBAL/";
+		satellite = null;
 	}
 
 	@Test
@@ -67,7 +69,7 @@ public class TestImageLandsat5 {
 			
 			HOutput desiredHOutIncial = desiredOutput.gethOuts().get(0);
 			HOutput obtainedHOutIncial = obtainedOutput.gethOuts().get(0);
-				
+			
 			assertField(desiredHOutIncial.getH(), obtainedHOutIncial.getH());
 			assertField(desiredHOutIncial.getA(), obtainedHOutIncial.getA());
 			assertField(desiredHOutIncial.getB(), obtainedHOutIncial.getB());

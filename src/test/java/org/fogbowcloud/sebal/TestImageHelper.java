@@ -52,7 +52,7 @@ public class TestImageHelper {
         // Sun Elevation for Landsat 7
         //
         //Double sunElevation = 53.52375;
-        String date = "2001-[0]5-[1]5";
+        String date = "2001-05-15";
         Date D = null;
         D.valueOf(date);
         
