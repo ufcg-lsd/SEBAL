@@ -21,22 +21,24 @@ import org.junit.Test;
 public class TestImageLandsat5 {
 	
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
-	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
+	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat5.class);
 	private List<BoundingBoxVertice> boundingBoxVertices;
 	private TestImageHelper imageHelper;
 	private String filePath;
 	private Satellite satellite;
+	private Properties properties;
 	
-	public TestImageLandsat5(Properties properties) throws IOException {
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
+	public TestImageLandsat5() throws IOException {
+		this.properties = new Properties();
+		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(this.properties);
 		imageHelper = new TestImageHelper();
 		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-		filePath = "/home/Documents/Fogbow/Estudo/SEBAL/";
+		filePath = "/home/esdras/Documentos/Fogbow/Estudo/SEBAL";
 		satellite = null;
 	}
 
 	@Test
-	public void acceptanceTest(String outputDir, String boundingBoxFileName, Properties properties) throws Exception {
+	public void acceptanceTest() throws Exception {
 		
 		Image updatedImage = F1(this.pixelQuenteFrioChooser);
 		
@@ -115,7 +117,8 @@ public class TestImageLandsat5 {
 	
 	public Image F1(PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
 		
-		LOGGER.info("Executing F1 phase...");
+		System.out.println("Executing F1 phase...");
+		//LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
 		
 		satellite = new JSONSatellite("landsat5");
@@ -137,7 +140,8 @@ public class TestImageLandsat5 {
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());*/
         LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
-        
+        //System.out.println("F1 phase execution time is " + (System.currentTimeMillis() - now));
+		
         return updatedImage;
 		
 	}

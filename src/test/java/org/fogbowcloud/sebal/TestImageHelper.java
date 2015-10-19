@@ -41,8 +41,8 @@ public class TestImageHelper {
         // Reading and storing data from .csv file to pixels in a image
         if(valueFlag.equals("obtainedValues")) {
         	imageCSV.pixels(processPixelsFromObtainedFile());
-        }
-        imageCSV.pixels(processPixelsFromFile());
+        } else
+        	imageCSV.pixels(processPixelsFromFile());
         
         // Sun Elevation for Landsat 5
         //
@@ -125,6 +125,7 @@ public class TestImageHelper {
         }
         
         LOGGER.debug("Pixels size=" + image.pixels().size());
+//		System.out.println("Pixels size=" + image.pixels().size());
         
         return image;
     }
@@ -146,9 +147,9 @@ public class TestImageHelper {
                 		fields[8].length() - 1));
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
-                double[] rho = { Double.valueOf(fields[18]), Double.valueOf(fields[19]),
-                		Double.valueOf(fields[20]), Double.valueOf(fields[21]),
-                		Double.valueOf(fields[22]), Double.valueOf(fields[24]) };
+                double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
+                		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
+                		Double.valueOf(fields[21]), Double.valueOf(fields[23]) };
                 imagePixel.output().setRho(rho);
                 return imagePixel;
             }
@@ -161,13 +162,13 @@ public class TestImageHelper {
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
-                double band1 = Double.valueOf(fields[11].substring(1));
-                double band2 = Double.valueOf(fields[12]);
-                double band3 = Double.valueOf(fields[13]);
-                double band4 = Double.valueOf(fields[14]);
-                double band5 = Double.valueOf(fields[15]);
-                double band6 = Double.valueOf(fields[16]);
-                double band7 = Double.valueOf(fields[17].substring(0,
+                double band1 = Double.valueOf(fields[10].substring(1));
+                double band2 = Double.valueOf(fields[11]);
+                double band3 = Double.valueOf(fields[12]);
+                double band4 = Double.valueOf(fields[13]);
+                double band5 = Double.valueOf(fields[14]);
+                double band6 = Double.valueOf(fields[15]);
+                double band7 = Double.valueOf(fields[16].substring(0,
                 		fields[8].length() - 1));
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
@@ -187,19 +188,19 @@ public class TestImageHelper {
 	
 	private static ImagePixelOutput getImagePixelOutput(String[] fields) {
 	        ImagePixelOutput output = new ImagePixelOutput();
-	        output.setRn(Double.valueOf(fields[38]));
-	        output.setTs(Double.valueOf(fields[34]));
-	        output.setNDVI(Double.valueOf(fields[29]));
-	        output.setSAVI(Double.valueOf(fields[30]));
-	        output.setAlpha(Double.valueOf(fields[27]));
-	        output.setEpsilonZero(Double.valueOf(fields[33]));
-	        output.setEpsilonNB(Double.valueOf(fields[32]));
-	        output.setRLDown(Double.valueOf(fields[37]));
-	        output.setEpsilonA(Double.valueOf(fields[36]));
-	        output.setRLUp(Double.valueOf(fields[35]));
-	        output.setRSDown(Double.valueOf(fields[28]));
-	        output.setTauSW(Double.valueOf(fields[26]));
-	        output.setAlphaToa(Double.valueOf(fields[25]));
+	        output.setRn(Double.valueOf(fields[37]));
+	        output.setTs(Double.valueOf(fields[33]));
+	        output.setNDVI(Double.valueOf(fields[28]));
+	        output.setSAVI(Double.valueOf(fields[29]));
+	        output.setAlpha(Double.valueOf(fields[26]));
+	        output.setEpsilonZero(Double.valueOf(fields[32]));
+	        output.setEpsilonNB(Double.valueOf(fields[31]));
+	        output.setRLDown(Double.valueOf(fields[36]));
+	        output.setEpsilonA(Double.valueOf(fields[35]));
+	        output.setRLUp(Double.valueOf(fields[34]));
+	        output.setRSDown(Double.valueOf(fields[27]));
+	        output.setTauSW(Double.valueOf(fields[25]));
+	        output.setAlphaToa(Double.valueOf(fields[24]));
 	        return output;
 	 }
 	
