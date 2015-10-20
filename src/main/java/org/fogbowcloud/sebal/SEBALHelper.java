@@ -224,7 +224,7 @@ public class SEBALHelper {
 		return new UTMCoordinate(easting, northing);
     }
 	
-	private static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
+	public static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
 			double utmZoneCenterLongitude) throws FactoryException, TransformException {
 	
 		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);

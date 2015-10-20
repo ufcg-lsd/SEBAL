@@ -40,13 +40,13 @@ public class TestImageLandsat5 {
 	@Test
 	public void acceptanceTest() throws Exception {
 		
-		Image updatedImage = F1(this.pixelQuenteFrioChooser);
-		
-		List<ImagePixel> obtainedValues = updatedImage.pixels();
-		
 		String desiredFlag = "desiredValues";
 		Image desiredValues = imageHelper.readPixelsFromCSV(filePath, this.pixelQuenteFrioChooser, 
 				desiredFlag, satellite);
+		
+		Image updatedImage = F1(this.pixelQuenteFrioChooser);
+		
+		List<ImagePixel> obtainedValues = updatedImage.pixels();
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
 		//DefaultImagePixel obtainedImagePixel = new DefaultImagePixel();

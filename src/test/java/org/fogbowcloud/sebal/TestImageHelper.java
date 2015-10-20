@@ -5,9 +5,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
@@ -18,13 +21,15 @@ import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
-import org.apache.log4j.Logger;
+import org.mockito.Mockito;
 
 public class TestImageHelper {
 	
 	private static String filePath;
 	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
+	
+	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 
 	protected static Image readPixelsFromCSV(String filePath,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser, String valueFlag, Satellite satellite) throws Exception {
@@ -36,7 +41,20 @@ public class TestImageHelper {
         DefaultImagePixel imagePixel = new DefaultImagePixel();
         DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
         Elevation elevation = new Elevation();
-        WeatherStation station = new WeatherStation();
+        
+        // Mocking WeatherStation class
+        // Change the return values
+        WeatherStation station = Mockito.mock(WeatherStation.class);
+        Mockito.when(station.Ta(Mockito.anyDouble(), Mockito.anyDouble(),
+        		Mockito.any(Date.class))).thenReturn(77.0);
+        Mockito.when(station.zx(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(77.0);
+        Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
+        		Mockito.any(Date.class))).thenReturn(77.0);
+        Mockito.when(station.d(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(77.0);
+        Mockito.when(station.hc(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(77.0);
         
         // Reading and storing data from .csv file to pixels in a image
         if(valueFlag.equals("obtainedValues")) {
@@ -56,6 +74,7 @@ public class TestImageHelper {
         Date D = null;
         D.valueOf(date);
         
+        
         int counter = 0;
         
         // Scanning csv image to calculate and store values in another image
@@ -65,34 +84,37 @@ public class TestImageHelper {
 			
 	            // Calculate cosTheta for the imagePixel
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation[counter])));
-                counter++;
-
+                counter++;                              
+               
+                double latitude = imagePixelCSV.geoLoc().getLat();
+                double longitude = imagePixelCSV.geoLoc().getLon();
+                
                 // Calculate the elevation based on image coordinates
-                Double z = elevation.z(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+                Double z = elevation.z(latitude, longitude);
                 imagePixel.z(z);
                
                 // Calculate Ta based on image coordinates and date/time
-				double Ta = station.Ta(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(), D);
+				double Ta = station.Ta(latitude, longitude, D);
 				imagePixel.Ta(Ta);
 
 				// Calculate ux based on image coordinates and date/time
-                double ux = station.ux(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon(), D);
+                double ux = station.ux(latitude, longitude, D);
 				imagePixel.ux(ux);
                 
 				// Calculate rho based on the satellite and imagePixelCSV
                 double[] rho = new SEBAL().calcRhosat5(satellite, imagePixelCSV);
-                imagePixelCSV.output().setRho(rho);
+                imagePixel.output().setRho(rho);
 				
 				// Calculate zx based on image coordinates
-				double zx = station.zx(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				double zx = station.zx(latitude, longitude);
 				imagePixel.zx(zx);
 
 				// Calculate ux based on image coordinates
-				double d = station.d(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				double d = station.d(latitude, longitude);
 				imagePixel.d(d);
 				
 				// Calculate ux based on image coordinates
-				double hc = station.hc(imagePixelCSV.geoLoc().getLat(), imagePixelCSV.geoLoc().getLon());
+				double hc = station.hc(latitude, longitude);
 				imagePixel.hc(hc);
 				
 				if(valueFlag.equals("desiredValues")) {
@@ -180,10 +202,35 @@ public class TestImageHelper {
 	private static GeoLoc getGeoLoc(String[] fields) {
         int i = 0;
         int j = 0;
-        double lat = Double.valueOf(fields[0]);
-        double lon = Double.valueOf(fields[1]);
-        GeoLoc geoloc = new GeoLoc(i, j, lat, lon);
-        return geoloc;
+        
+        // Modify this later based on John's data
+        int zoneNumber = 24;
+        
+        int centralMeridian = -33;
+        
+        
+        // Converting UTM to latitude and longitude
+		LatLonCoordinate latLonCoordinate;
+		try {
+			latLonCoordinate = SEBALHelper.convertUtmToLatLon(Double.valueOf(fields[0]), 
+					Double.valueOf(fields[1]),
+					zoneNumber, centralMeridian);
+			
+			// Setting latitude in imagePixel
+	        double latitude = Double.valueOf(String.format("%.10g%n",
+	              latLonCoordinate.getLat()));
+	        
+	        // Setting longitude in imagePixel
+	        double longitude = Double.valueOf(String.format("%.10g%n",
+	              latLonCoordinate.getLon()));
+	        
+	        GeoLoc geoloc = new GeoLoc(i, j, latitude, longitude);
+	        return geoloc;
+		} catch (Exception e) {
+			LOGGER.error("Error while converting coordinates.", e);
+		}	
+		
+		return null;       
     }
 	
 	private static ImagePixelOutput getImagePixelOutput(String[] fields) {
