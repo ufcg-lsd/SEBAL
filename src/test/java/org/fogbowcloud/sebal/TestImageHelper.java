@@ -37,36 +37,36 @@ public class TestImageHelper {
 		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
         setFilePath(filePath);
-        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
-        DefaultImagePixel imagePixel = new DefaultImagePixel();
-        DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
+        //DefaultImagePixel imagePixel = new DefaultImagePixel();
+//        DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
         Elevation elevation = new Elevation();
         
         // Mocking WeatherStation class
         // Change the return values
         WeatherStation station = Mockito.mock(WeatherStation.class);
         Mockito.when(station.Ta(Mockito.anyDouble(), Mockito.anyDouble(),
-        		Mockito.any(Date.class))).thenReturn(77.0);
+        		Mockito.any(Date.class))).thenReturn(32.233);
         Mockito.when(station.zx(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(77.0);
+        		Mockito.anyDouble())).thenReturn(6.0);
         Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
-        		Mockito.any(Date.class))).thenReturn(77.0);
+        		Mockito.any(Date.class))).thenReturn(4.388);
         Mockito.when(station.d(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(77.0);
+        		Mockito.anyDouble())).thenReturn(4.0 * 2/3);
         Mockito.when(station.hc(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(77.0);
+        		Mockito.anyDouble())).thenReturn(4.0);
         
+        List<ImagePixel> pixels;
         // Reading and storing data from .csv file to pixels in a image
         if(valueFlag.equals("obtainedValues")) {
-        	imageCSV.pixels(processPixelsFromObtainedFile());
+        	pixels = processPixelsFromObtainedFile();
         } else
-        	imageCSV.pixels(processPixelsFromFile());
+        	pixels = processPixelsFromFile();
         
         // Sun Elevation for Landsat 5
         //
         // Modify this to support multiple satellite types
         //Double sunElevation = 49.00392091;
-        Double[] sunElevation = {1983.0, 1796.0, 1536.0, 1031.0, 220.0, 0.0, 83.44};
+        Double sunElevation = 0.0;
         // Sun Elevation for Landsat 7
         //
         //Double sunElevation = 53.52375;
@@ -77,77 +77,74 @@ public class TestImageHelper {
         
         int counter = 0;
         
+        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         // Scanning csv image to calculate and store values in another image
-		for (ImagePixel imagePixelCSV : imageCSV.pixels()) {
-	            
-				imagePixel.L(imagePixelCSV.L());
+		for (ImagePixel pixelFromCSV : pixels) {
 			
-	            // Calculate cosTheta for the imagePixel
-                imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation[counter])));
-                counter++;                              
-               
-                double latitude = imagePixelCSV.geoLoc().getLat();
-                double longitude = imagePixelCSV.geoLoc().getLon();
-                
-                // Calculate the elevation based on image coordinates
-                Double z = elevation.z(latitude, longitude);
-                imagePixel.z(z);
-               
-                // Calculate Ta based on image coordinates and date/time
-				double Ta = station.Ta(latitude, longitude, D);
-				imagePixel.Ta(Ta);
+			DefaultImagePixel currentPixel = new DefaultImagePixel();			
+			currentPixel.L(pixelFromCSV.L());
+			
+			currentPixel.geoLoc(pixelFromCSV.geoLoc());
+			
+			currentPixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
+			                               
+			double latitude = pixelFromCSV.geoLoc().getLat();
+			double longitude = pixelFromCSV.geoLoc().getLon();
 
-				// Calculate ux based on image coordinates and date/time
-                double ux = station.ux(latitude, longitude, D);
-				imagePixel.ux(ux);
-                
-				// Calculate rho based on the satellite and imagePixelCSV
-                double[] rho = new SEBAL().calcRhosat5(satellite, imagePixelCSV);
-                imagePixel.output().setRho(rho);
-				
-				// Calculate zx based on image coordinates
-				double zx = station.zx(latitude, longitude);
-				imagePixel.zx(zx);
+			// Setting elevation
+			currentPixel.z(pixelFromCSV.z());
+			
+			// Calculate Ta based on image coordinates and date/time
+			double Ta = station.Ta(latitude, longitude, D);
+			currentPixel.Ta(Ta);
 
-				// Calculate ux based on image coordinates
-				double d = station.d(latitude, longitude);
-				imagePixel.d(d);
-				
-				// Calculate ux based on image coordinates
-				double hc = station.hc(latitude, longitude);
-				imagePixel.hc(hc);
-				
-				if(valueFlag.equals("desiredValues")) {
-					// Calculate G based on obtained Rn
-					double G = new SEBAL().G(imagePixelCSV.output().getTs(), imagePixelCSV.output().getAlpha(), 
-							imagePixelCSV.output().getNDVI(), imagePixelCSV.output().Rn());
-					imagePixel.output().setG(G);
-					
-					// Calculate z0mxy based on obtained SAVI
-			        double z0mxy = new SEBAL().z0mxy(imagePixelCSV.output().SAVI());
-			        imagePixel.output().setZ0mxy(z0mxy);
-					
-					// Calculate IAF based on obtained SAVI
-			        double IAF = new SEBAL().IAF(imagePixelCSV.output().SAVI());
-					imagePixel.output().setIAF(IAF);
-				}
-				
-				// Calculate EVI based on obtained rho, C1/C2 (correlation coefficients of atmospheric
-				// effects for red and blue) and LC (correlation factor for ground interference)
-				if(rho.length == 7) {
-					rho = imagePixelCSV.output().getRho();
-					double EVI = new SEBAL().EVI(rho[0], rho[2], rho[3]);
-					imagePixel.output().setEVI(EVI);
-				}
+			// Calculate ux based on image coordinates and date/time
+			double ux = station.ux(latitude, longitude, D);
+			currentPixel.ux(ux);
 
-				// Add image csv to variable image from imagePixel
-				// The csv pixel is then add to the other image pixel
-                imagePixel.image(imageCSV);
-                image.addPixel(imagePixelCSV);
+			// Calculate rho based on the satellite and imagePixelCSV
+			double[] rho = new SEBAL().calcRhosat5(satellite, pixelFromCSV);
+			currentPixel.output().setRho(rho);
+
+			// Calculate zx based on image coordinates
+			double zx = station.zx(latitude, longitude);
+			currentPixel.zx(zx);
+
+			// Calculate ux based on image coordinates
+			double d = station.d(latitude, longitude);
+			currentPixel.d(d);
+
+			// Calculate ux based on image coordinates
+			double hc = station.hc(latitude, longitude);
+			currentPixel.hc(hc);
+
+			/*if (valueFlag.equals("desiredValues")) {
+				// Calculate G based on obtained Rn
+				double G = new SEBAL().G(pixelFromCSV.output().getTs(),
+						pixelFromCSV.output().getAlpha(), pixelFromCSV.output()
+								.getNDVI(), pixelFromCSV.output().Rn());
+				currentPixel.output().setG(G);
+
+				// Calculate z0mxy based on obtained SAVI
+				double z0mxy = new SEBAL().z0mxy(pixelFromCSV.output().SAVI());
+				currentPixel.output().setZ0mxy(z0mxy);
+
+				// Calculate IAF based on obtained SAVI
+				double IAF = new SEBAL().IAF(pixelFromCSV.output().SAVI());
+				currentPixel.output().setIAF(IAF);
+			}
+
+			rho = pixelFromCSV.output().getRho();
+			double EVI = new SEBAL().EVI(rho[0], rho[2], rho[3]);
+			currentPixel.output().setEVI(EVI);*/
+
+			// Add image csv to variable image from imagePixel
+			// The csv pixel is then add to the other image pixel
+			currentPixel.image(image);
+			image.addPixel(currentPixel);
         }
         
         LOGGER.debug("Pixels size=" + image.pixels().size());
-//		System.out.println("Pixels size=" + image.pixels().size());
         
         return image;
     }
@@ -159,6 +156,8 @@ public class TestImageHelper {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
                 imagePixel.setOutput(getImagePixelOutput(fields));
+                double elevation = Double.valueOf(fields[9]);
+                imagePixel.z(elevation);
                 double band1 = Double.valueOf(fields[11].substring(1));
                 double band2 = Double.valueOf(fields[12]);
                 double band3 = Double.valueOf(fields[13]);
@@ -184,6 +183,8 @@ public class TestImageHelper {
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
+                double elevation = Double.valueOf(fields[9]);
+                imagePixel.z(elevation);
                 double band1 = Double.valueOf(fields[10].substring(1));
                 double band2 = Double.valueOf(fields[11]);
                 double band3 = Double.valueOf(fields[12]);
@@ -206,7 +207,7 @@ public class TestImageHelper {
         // Modify this later based on John's data
         int zoneNumber = 24;
         
-        int centralMeridian = -33;
+        int centralMeridian = -39;
         
         
         // Converting UTM to latitude and longitude

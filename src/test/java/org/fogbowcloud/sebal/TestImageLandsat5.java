@@ -107,11 +107,6 @@ public class TestImageLandsat5 {
 			assertField(desiredOutput.getRSDown(), obtainedOutput.getRSDown());
 			assertField(desiredOutput.getTauSW(), obtainedOutput.getTauSW());
 			assertField(desiredOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
-			//assertField(desiredOutput.getFrEvapo(), obtainedOutput.getFrEvapo());
-			//assertField(desiredOutput.getTau24h(), obtainedOutput.getTau24h());
-			//assertField(desiredOutput.getRn24h(), obtainedOutput.getRn24h());
-			//assertField(desiredOutput.getEvapo24h(), obtainedOutput.getEvapo24h());
-			//assertField(desiredOutput.getLambda24h(), obtainedOutput.getLambda24h());
 		}
 	}
 	
@@ -140,7 +135,6 @@ public class TestImageLandsat5 {
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());*/
         LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
-        //System.out.println("F1 phase execution time is " + (System.currentTimeMillis() - now));
 		
         return updatedImage;
 		
