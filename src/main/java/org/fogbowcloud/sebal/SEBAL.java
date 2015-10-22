@@ -19,7 +19,7 @@ import org.python.modules.math;
 
 public class SEBAL {
 
-    private EarthSunDistance earthSunDistance;
+    private EarthSunDistance earthSunDistance = new EarthSunDistance();
 	
 	private static final Logger LOGGER = Logger.getLogger(SEBAL.class);
    
@@ -690,36 +690,52 @@ public class SEBAL {
         double[] LLambda = imagePixel.L();
 
         double[] rho = null;
+        double r0 = 0.0;
+        double r1 = 0.0;
+        double r2 = 0.0;
+    	double r3 = 0.0;
+    	double r4 = 0.0;
+    	double r5 = 0.0;
+    	double r6 = 0.0;
+    	double r7 = 0.0;
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
-        	calcRhosat5(satellite, imagePixel);
+        	rho = calcRhosat5(satellite, imagePixel, imagePixel.image().getDay());
+        	r0 = rho[0];
+        	r1 = rho[1];
+        	r2 = rho[2];
+        	r3 = rho[3];
+        	r4 = rho[4];
+        	r5 = rho[5];
+        	r6 = rho[6];
+        	r7 = rho[7];
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
-        	calcRhosat7(satellite, imagePixel);
+        	rho = calcRhosat7(satellite, imagePixel);
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
-        	calcRhosat8(satellite, imagePixel);
+        	rho = calcRhosat8(satellite, imagePixel);
         }
         // System.out.println("rho " + Arrays.toString(rho));
         output.setRho(rho);
         
         double alphaToa = 0;
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
-	        alphaToa = alphaToasat5(rho[0], rho[1], rho[2], rho[3], rho[4],
-	                rho[6]);
+	        alphaToa = alphaToasat5(r0, r1, r2, r3, r4,
+	                r6);
 	        output.setAlphaToa(alphaToa);
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
-	        alphaToa = alphaToasat7(rho[0], rho[1], rho[2], rho[3], rho[4],
-	                rho[6], satellite);
+	        alphaToa = alphaToasat7(r0, r1, r2, r3, r4,
+	                r6, satellite);
 	        output.setAlphaToa(alphaToa);
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
-	        alphaToa = alphaToasat8(rho[0], rho[1], rho[2], rho[3], rho[4],
-	                rho[6]);
+	        alphaToa = alphaToasat8(r0, r1, r2, r3, r4,
+	                r6);
 	        output.setAlphaToa(alphaToa);
         }
         // System.out.println("alphaToa " + alphaToa);
@@ -745,15 +761,15 @@ public class SEBAL {
                 earthSunDistance.get(imagePixel.image().getDay()), tauSW);
         output.setRSDown(RSDown);
 
-        double NDVI = NDVI(rho[2], rho[3]);
+        double NDVI = NDVI(r2, r3);
         output.setNDVI(NDVI);
         // System.out.println("NDVI " + NDVI);
 
-        double SAVI = SAVI(rho[2], rho[3]);
+        double SAVI = SAVI(r2, r3);
         // System.out.println("SAVI " + SAVI);
         output.setSAVI(SAVI);
 
-        double EVI = EVI(rho[0], rho[2], rho[3]);
+        double EVI = EVI(r0, r2, r3);
         // System.out.println("EVI " + EVI);
         output.setEVI(EVI);
 
@@ -800,17 +816,17 @@ public class SEBAL {
         // System.out.println("G " + G);
         output.setG(G);
         
-        double NDSI = NDSI(rho[1], rho[4]);
+        double NDSI = NDSI(r1, r4);
         output.setNDSI(NDSI);
         
-        boolean waterTest = cloudDetectionWaterTest(NDVI, rho[3]);
+        boolean waterTest = cloudDetectionWaterTest(NDVI, r3);
         output.setWaterTest(waterTest); 
         
         // Potential cloud layer - pass one
-        boolean basicTest = cloudDetectionBasicTest(output.getNDVI(), output.getTs(), output.getNDSI(), rho[6]);
-        boolean whitenessTest = cloudDetectionWhitenessTest(rho[0], rho[1], rho[2]);
-        boolean hotTest = cloudDetectionHotTest(rho[0], rho[2]);
-        boolean b4b5Test = cloudDetectionB4B5Test(rho[3], rho[4]);
+        boolean basicTest = cloudDetectionBasicTest(output.getNDVI(), output.getTs(), output.getNDSI(), r6);
+        boolean whitenessTest = cloudDetectionWhitenessTest(r0, r1, r2);
+        boolean hotTest = cloudDetectionHotTest(r0, r2);
+        boolean b4b5Test = cloudDetectionB4B5Test(r3, r4);
         
         
         //potential cloud pixel
@@ -834,8 +850,24 @@ public class SEBAL {
 	
 	private boolean isSnowPixel(Satellite satellite, ImagePixel imagePixel) {
 		double[] rho = null;
+		double r0 = 0.0;
+        double r1 = 0.0;
+        double r2 = 0.0;
+    	double r3 = 0.0;
+    	double r4 = 0.0;
+    	double r5 = 0.0;
+    	double r6 = 0.0;
+    	double r7 = 0.0;
 		if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
-			 calcRhosat5(satellite, imagePixel);	
+			 calcRhosat5(satellite, imagePixel, imagePixel.image().getDay());
+			 r0 = rho[0];
+	         r1 = rho[1];
+	         r2 = rho[2];
+	         r3 = rho[3];
+	         r4 = rho[4];
+	         r5 = rho[5];
+	         r6 = rho[6];
+	         r7 = rho[7];
 		}
 		if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
 			 calcRhosat7(satellite, imagePixel);	
@@ -844,10 +876,10 @@ public class SEBAL {
 			 calcRhosat8(satellite, imagePixel);	
 		}
 		ImagePixelOutput output = imagePixel.output();
-		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;
+		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && r3 > 0.11 && r1 > 0.1;
 	}
 	
-	protected double[] calcRhosat5(Satellite satellite, ImagePixel imagePixel) {
+	protected double[] calcRhosat5(Satellite satellite, ImagePixel imagePixel, int day) {
 		double[] rho = new double[7];
 		double[] LLambda = imagePixel.L();
 			
@@ -856,7 +888,7 @@ public class SEBAL {
 	            continue;
 	         }
 	         double rhoI = rhosat5(LLambda[i],
-	                 earthSunDistance.get(imagePixel.image().getDay()),
+	                 earthSunDistance.get(day),
 	                 satellite.ESUNsat5(i + 1), imagePixel.cosTheta());
 	         rho[i] = rhoI;
 		}

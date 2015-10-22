@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +39,7 @@ public class TestImageHelper {
         Locale.setDefault(Locale.ROOT);
         setFilePath(filePath);
         //DefaultImagePixel imagePixel = new DefaultImagePixel();
-//        DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
+        //DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
         Elevation elevation = new Elevation();
         
         // Mocking WeatherStation class
@@ -65,19 +66,19 @@ public class TestImageHelper {
         // Sun Elevation for Landsat 5
         //
         // Modify this to support multiple satellite types
-        //Double sunElevation = 49.00392091;
-        Double sunElevation = 0.0;
+        Double sunElevation = 49.00392091;
         // Sun Elevation for Landsat 7
         //
         //Double sunElevation = 53.52375;
-        String date = "2001-05-15";
-        Date D = null;
-        D.valueOf(date);
+        String oldDate = "2001-05-15";
+        Date date = Date.valueOf(oldDate);
+        int day = 15;
         
         
         int counter = 0;
         
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
+        image.setDay(day);
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel pixelFromCSV : pixels) {
 			
@@ -85,27 +86,31 @@ public class TestImageHelper {
 			currentPixel.L(pixelFromCSV.L());
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
+			//currentPixel.geoLoc().setLat(pixelFromCSV.geoLoc().getLat());
+			//currentPixel.geoLoc().setLon(pixelFromCSV.geoLoc().getLon());
 			
 			currentPixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
 			                               
-			double latitude = pixelFromCSV.geoLoc().getLat();
-			double longitude = pixelFromCSV.geoLoc().getLon();
+			double latitude = currentPixel.geoLoc().getLat();
+			double longitude = currentPixel.geoLoc().getLon();
 
 			// Setting elevation
 			currentPixel.z(pixelFromCSV.z());
 			
 			// Calculate Ta based on image coordinates and date/time
-			double Ta = station.Ta(latitude, longitude, D);
+			double Ta = station.Ta(latitude, longitude, date);
 			currentPixel.Ta(Ta);
 
 			// Calculate ux based on image coordinates and date/time
-			double ux = station.ux(latitude, longitude, D);
+			double ux = station.ux(latitude, longitude, date);
 			currentPixel.ux(ux);
 
 			// Calculate rho based on the satellite and imagePixelCSV
-			double[] rho = new SEBAL().calcRhosat5(satellite, pixelFromCSV);
-			currentPixel.output().setRho(rho);
-
+			/*if(valueFlag.equals("obtainedValues")) {
+				currentPixel.setOutput(new ImagePixelOutput());
+				double[] rho = new SEBAL().calcRhosat5(satellite, pixelFromCSV, image.getDay());
+				currentPixel.output().setRho(rho);
+			}*/
 			// Calculate zx based on image coordinates
 			double zx = station.zx(latitude, longitude);
 			currentPixel.zx(zx);

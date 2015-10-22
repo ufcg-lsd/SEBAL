@@ -44,6 +44,8 @@ public class TestImageLandsat5 {
 		Image desiredValues = imageHelper.readPixelsFromCSV(filePath, this.pixelQuenteFrioChooser, 
 				desiredFlag, satellite);
 		
+		List<ImagePixel> desiredList = desiredValues.pixels();
+		
 		Image updatedImage = F1(this.pixelQuenteFrioChooser);
 		
 		List<ImagePixel> obtainedValues = updatedImage.pixels();
@@ -57,7 +59,7 @@ public class TestImageLandsat5 {
 		int counter = 0;
 		
 		// See if the arguments on 'for' are correct
-		for (ImagePixel imagePixel : desiredValues.pixels()) {
+		for (ImagePixel imagePixel : desiredList) {
 			//System.out.println(i);
 			GeoLoc desiredGeoLoc = imagePixel.geoLoc();
 			ImagePixelOutput desiredOutput = imagePixel.output();
@@ -69,6 +71,7 @@ public class TestImageLandsat5 {
 			assertEquals(obtainedGeoLoc.getI(), desiredGeoLoc.getI());
 			assertEquals(obtainedGeoLoc.getJ(), desiredGeoLoc.getJ());
 			
+			// Verify how to fix this
 			HOutput desiredHOutIncial = desiredOutput.gethOuts().get(0);
 			HOutput obtainedHOutIncial = obtainedOutput.gethOuts().get(0);
 			
