@@ -85,6 +85,8 @@ public class TestImageHelper {
 			DefaultImagePixel currentPixel = new DefaultImagePixel();			
 			currentPixel.L(pixelFromCSV.L());
 			
+			currentPixel.setOutput(pixelFromCSV.output());
+			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
 			//currentPixel.geoLoc().setLat(pixelFromCSV.geoLoc().getLat());
 			//currentPixel.geoLoc().setLon(pixelFromCSV.geoLoc().getLon());
@@ -107,10 +109,10 @@ public class TestImageHelper {
 
 			// Calculate rho based on the satellite and imagePixelCSV
 			/*if(valueFlag.equals("obtainedValues")) {
-				currentPixel.setOutput(new ImagePixelOutput());
 				double[] rho = new SEBAL().calcRhosat5(satellite, pixelFromCSV, image.getDay());
 				currentPixel.output().setRho(rho);
 			}*/
+			
 			// Calculate zx based on image coordinates
 			double zx = station.zx(latitude, longitude);
 			currentPixel.zx(zx);
@@ -163,14 +165,13 @@ public class TestImageHelper {
                 imagePixel.setOutput(getImagePixelOutput(fields));
                 double elevation = Double.valueOf(fields[9]);
                 imagePixel.z(elevation);
-                double band1 = Double.valueOf(fields[11].substring(1));
-                double band2 = Double.valueOf(fields[12]);
-                double band3 = Double.valueOf(fields[13]);
-                double band4 = Double.valueOf(fields[14]);
-                double band5 = Double.valueOf(fields[15]);
-                double band6 = Double.valueOf(fields[16]);
-                double band7 = Double.valueOf(fields[17].substring(0,
-                		fields[8].length() - 1));
+                double band1 = Double.valueOf(fields[10]);
+                double band2 = Double.valueOf(fields[11]);
+                double band3 = Double.valueOf(fields[12]);
+                double band4 = Double.valueOf(fields[13]);
+                double band5 = Double.valueOf(fields[14]);
+                double band6 = Double.valueOf(fields[15]);
+                double band7 = Double.valueOf(fields[16]);
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
@@ -190,14 +191,13 @@ public class TestImageHelper {
                 imagePixel.geoLoc(getGeoLoc(fields));
                 double elevation = Double.valueOf(fields[9]);
                 imagePixel.z(elevation);
-                double band1 = Double.valueOf(fields[10].substring(1));
+                double band1 = Double.valueOf(fields[10]);
                 double band2 = Double.valueOf(fields[11]);
                 double band3 = Double.valueOf(fields[12]);
                 double band4 = Double.valueOf(fields[13]);
                 double band5 = Double.valueOf(fields[14]);
                 double band6 = Double.valueOf(fields[15]);
-                double band7 = Double.valueOf(fields[16].substring(0,
-                		fields[8].length() - 1));
+                double band7 = Double.valueOf(fields[16]);
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
                 return imagePixel;
