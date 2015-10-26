@@ -4,12 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.DefaultImage;
@@ -19,65 +16,20 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
-import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
 import org.mockito.Mockito;
 
 public class TestImageHelper {
 	
-	private static String filePath;
-	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
-	
-	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 
-	protected static Image readPixelsFromCSV(String filePath,
-			PixelQuenteFrioChooser pixelQuenteFrioChooser, String valueFlag, Satellite satellite) throws Exception {
+	protected static DefaultImage setInitialProperties( boolean isExpected,
+			PixelQuenteFrioChooser pixelQuenteFrioChooser,
+			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
+			Double sunElevation, Date accquiredDate, int day) throws Exception {
 		
-		// Initializing image variables
-        Locale.setDefault(Locale.ROOT);
-        setFilePath(filePath);
-        //DefaultImagePixel imagePixel = new DefaultImagePixel();
-        //DefaultImage imageCSV = new DefaultImage(pixelQuenteFrioChooser);
-        Elevation elevation = new Elevation();
-        
-        // Mocking WeatherStation class
-        // Change the return values
-        WeatherStation station = Mockito.mock(WeatherStation.class);
-        Mockito.when(station.Ta(Mockito.anyDouble(), Mockito.anyDouble(),
-        		Mockito.any(Date.class))).thenReturn(32.233);
-        Mockito.when(station.zx(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(6.0);
-        Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
-        		Mockito.any(Date.class))).thenReturn(4.388);
-        Mockito.when(station.d(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(4.0 * 2/3);
-        Mockito.when(station.hc(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(4.0);
-        
-        List<ImagePixel> pixels;
-        // Reading and storing data from .csv file to pixels in a image
-        if(valueFlag.equals("obtainedValues")) {
-        	pixels = processPixelsFromObtainedFile();
-        } else
-        	pixels = processPixelsFromFile();
-        
-        // Sun Elevation for Landsat 5
-        //
-        // Modify this to support multiple satellite types
-        Double sunElevation = 49.00392091;
-        // Sun Elevation for Landsat 7
-        //
-        //Double sunElevation = 53.52375;
-        String oldDate = "2001-05-15";
-        Date date = Date.valueOf(oldDate);
-        int day = 15;
-        
-        
-        int counter = 0;
-        
-        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
+		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         image.setDay(day);
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel pixelFromCSV : pixels) {
@@ -85,7 +37,9 @@ public class TestImageHelper {
 			DefaultImagePixel currentPixel = new DefaultImagePixel();			
 			currentPixel.L(pixelFromCSV.L());
 			
-			currentPixel.setOutput(pixelFromCSV.output());
+			ImagePixelOutput output = new ImagePixelOutput();
+			output = pixelFromCSV.output();
+			currentPixel.setOutput(output);
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
 			//currentPixel.geoLoc().setLat(pixelFromCSV.geoLoc().getLat());
@@ -100,18 +54,19 @@ public class TestImageHelper {
 			currentPixel.z(pixelFromCSV.z());
 			
 			// Calculate Ta based on image coordinates and date/time
-			double Ta = station.Ta(latitude, longitude, date);
+			double Ta = station.Ta(latitude, longitude, accquiredDate);
 			currentPixel.Ta(Ta);
 
 			// Calculate ux based on image coordinates and date/time
-			double ux = station.ux(latitude, longitude, date);
+			double ux = station.ux(latitude, longitude, accquiredDate);
 			currentPixel.ux(ux);
 
-			// Calculate rho based on the satellite and imagePixelCSV
-			/*if(valueFlag.equals("obtainedValues")) {
-				double[] rho = new SEBAL().calcRhosat5(satellite, pixelFromCSV, image.getDay());
+			// Calculate rho based on the satellite and currentPixel
+			if (!isExpected) {
+				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel,
+						image.getDay());
 				currentPixel.output().setRho(rho);
-			}*/
+			}
 			
 			// Calculate zx based on image coordinates
 			double zx = station.zx(latitude, longitude);
@@ -150,13 +105,10 @@ public class TestImageHelper {
 			currentPixel.image(image);
 			image.addPixel(currentPixel);
         }
-        
-        LOGGER.debug("Pixels size=" + image.pixels().size());
-        
-        return image;
-    }
+		return image;
+	}
 	
-	private static List<ImagePixel> processPixelsFromFile() throws IOException {
+	protected static List<ImagePixel> readExpectedPixelsFromFile(String dataFilePath) throws IOException {
         return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
@@ -176,19 +128,21 @@ public class TestImageHelper {
                 imagePixel.L(L);
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
-                		Double.valueOf(fields[21]), Double.valueOf(fields[23]) };
+                		Double.valueOf(fields[21]), 0.0, Double.valueOf(fields[23]) };
                 imagePixel.output().setRho(rho);
                 return imagePixel;
             }
-        }, getAllPixelsFileName());
+        }, dataFilePath);
     }
 	
-	private static List<ImagePixel> processPixelsFromObtainedFile() throws IOException {
+	protected static List<ImagePixel> processPixelsFromObtainedFile(String dataFilePath) throws IOException {
         return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
+                ImagePixelOutput output = new ImagePixelOutput();
+                imagePixel.setOutput(output);
                 double elevation = Double.valueOf(fields[9]);
                 imagePixel.z(elevation);
                 double band1 = Double.valueOf(fields[10]);
@@ -202,7 +156,7 @@ public class TestImageHelper {
                 imagePixel.L(L);
                 return imagePixel;
             }
-        }, getAllPixelsFileName());
+        }, dataFilePath);
     }
 	
 	private static GeoLoc getGeoLoc(String[] fields) {
@@ -270,25 +224,4 @@ public class TestImageHelper {
         br.close();
         return pixels;
     }
-	
-	private static String getAllPixelsFileName() {
-    	return getAllPixelsFilePath(getFilePath(), "");
-    }
-	
-	// Analyze to make sure that the file path is right
-	private static String getAllPixelsFilePath(String filePath, String mtlName) {
-		if (mtlName == null || mtlName.isEmpty()) {
-			return filePath + "/" + "desired.csv";
-		}
-		return filePath + "/" + mtlName + "/" + "desired.csv";
-	}    
-	
-	public static String getFilePath() {
-		return filePath;
-	}
-
-	public static void setFilePath(String anotherfilePath) {
-		filePath = anotherfilePath;
-	}
-
 }

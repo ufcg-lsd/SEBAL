@@ -3,11 +3,14 @@ package org.fogbowcloud.sebal;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.HOutput;
@@ -16,8 +19,10 @@ import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
+import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class TestImageLandsat5 {
 	
@@ -25,7 +30,7 @@ public class TestImageLandsat5 {
 	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat5.class);
 	private List<BoundingBoxVertice> boundingBoxVertices;
 	private TestImageHelper imageHelper;
-	private String filePath;
+	private String testDataFilePath;
 	private Satellite satellite;
 	private Properties properties;
 	
@@ -34,22 +39,60 @@ public class TestImageLandsat5 {
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(this.properties);
 		imageHelper = new TestImageHelper();
 		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-		filePath = "/home/esdras/Documentos/Fogbow/Estudo/SEBAL";
+		testDataFilePath = "sebal-l5-test-data.csv";
 		satellite = null;
 	}
 
 	@Test
 	public void acceptanceTest() throws Exception {
 		
-		String desiredFlag = "desiredValues";
-		Image desiredValues = imageHelper.readPixelsFromCSV(filePath, this.pixelQuenteFrioChooser, 
-				desiredFlag, satellite);
+		// Initializing image variables
+        Locale.setDefault(Locale.ROOT);
+        
+        // Mocking WeatherStation class
+        // Change the return values
+        WeatherStation station = Mockito.mock(WeatherStation.class);
+        Mockito.when(station.Ta(Mockito.anyDouble(), Mockito.anyDouble(),
+        		Mockito.any(Date.class))).thenReturn(32.233);
+        Mockito.when(station.zx(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(6.0);
+        Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
+        		Mockito.any(Date.class))).thenReturn(4.388);
+        Mockito.when(station.d(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(4.0 * 2/3);
+        Mockito.when(station.hc(Mockito.anyDouble(), 
+        		Mockito.anyDouble())).thenReturn(4.0);
+        
+        List<ImagePixel> expectedPixels;
+        // Reading and storing data from .csv file to pixels in a image
+//        if(valueFlag.equals("obtainedValues")) {
+//        	pixels = processPixelsFromObtainedFile(dataFilePath);
+//        } else
+        expectedPixels = TestImageHelper.readExpectedPixelsFromFile(testDataFilePath);
+        
+        // Sun Elevation for Landsat 5
+        //
+        // Modify this to support multiple satellite types
+        Double sunElevation = 49.00392091;
+        // Sun Elevation for Landsat 7
+        //
+        //Double sunElevation = 53.52375;
+        Date accquiredDate = Date.valueOf("2001-05-15");
+        int day = 15;
+        
+		TestImageHelper.setInitialProperties(true, pixelQuenteFrioChooser,
+				satellite, station, expectedPixels, sunElevation,
+				accquiredDate, day);
+	
+		/*Image expectedImage = TestImageHelper.readExpectedPixelsFromCSV(testDataFilePath, this.pixelQuenteFrioChooser, 
+				true, satellite);*/
 		
-		List<ImagePixel> desiredList = desiredValues.pixels();
+/*		List<ImagePixel> expectedPixels = expectedImage.pixels();*/
 		
-		Image updatedImage = F1(this.pixelQuenteFrioChooser);
+		Image processedImage = F1(this.pixelQuenteFrioChooser, satellite, station, expectedPixels, sunElevation, 
+				accquiredDate, day);
 		
-		List<ImagePixel> obtainedValues = updatedImage.pixels();
+		List<ImagePixel> obtainedPixels = processedImage.pixels();
 		
 		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
 		//DefaultImagePixel obtainedImagePixel = new DefaultImagePixel();
@@ -58,22 +101,22 @@ public class TestImageLandsat5 {
 		// beneath here
 		
 		// See if the arguments on 'for' are correct
-		for (int i = 0; i < obtainedValues.size(); i++) {
+		for (int i = 0; i < obtainedPixels.size(); i++) {
 			//System.out.println(i);			
-			GeoLoc desiredGeoLoc = desiredList.get(i).geoLoc();
-			ImagePixelOutput desiredOutput = desiredList.get(i).output();
+			GeoLoc desiredGeoLoc = expectedPixels.get(i).geoLoc();
+			ImagePixelOutput desiredOutput = expectedPixels.get(i).output();
 
 			// Verify how to fix this
-			GeoLoc obtainedGeoLoc = obtainedValues.get(i).geoLoc();
-			ImagePixelOutput obtainedOutput = obtainedValues.get(i).output();
+			GeoLoc obtainedGeoLoc = obtainedPixels.get(i).geoLoc();
+			ImagePixelOutput obtainedOutput = obtainedPixels.get(i).output();
 
 			assertEquals(obtainedGeoLoc.getI(), desiredGeoLoc.getI());
 			assertEquals(obtainedGeoLoc.getJ(), desiredGeoLoc.getJ());
 			
-			double[] desiredL = desiredList.get(i).L();
-			double[] obtainedL = obtainedValues.get(i).L();
+			double[] desiredL = expectedPixels.get(i).L();
+			double[] obtainedL = obtainedPixels.get(i).L();
 			
-			for(int j = 0; j < desiredList.get(i).L().length; j++) {
+			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
 				System.out.println(desiredL[j] + " - " + obtainedL[j]);
 				assertField(desiredL[j], obtainedL[j]);
 			}
@@ -81,8 +124,10 @@ public class TestImageLandsat5 {
 			double[] desiredRho = desiredOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < desiredList.get(i).output().getRho().length; j++)
+			for(int j = 0; j < desiredRho.length; j++) {
 				assertField(desiredRho[j], obtainedRho[j]);
+				System.out.println(desiredRho[j] + " - " + obtainedRho[j]);
+			}
 			
 			assertField(desiredOutput.G(), obtainedOutput.G());
 			assertField(desiredOutput.Rn(), obtainedOutput.Rn());
@@ -144,7 +189,8 @@ public class TestImageLandsat5 {
 		}
 	}
 	
-	public Image F1(PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+	public Image F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, WeatherStation station,
+			List<ImagePixel> pixels, double sunElevation, Date accquiredDate, int day) throws Exception {
 		
 		System.out.println("Executing F1 phase...");
 		//LOGGER.info("Executing F1 phase...");
@@ -154,28 +200,30 @@ public class TestImageLandsat5 {
 		
 		String obtainedFlag = "obtainedValues";
 		// See if processPixelsFromFile can be used instead
-		Image image = imageHelper.readPixelsFromCSV(filePath, pixelQuenteFrioChooser, obtainedFlag, 
-				satellite);
+		List<ImagePixel> inputPixels = imageHelper.processPixelsFromObtainedFile(testDataFilePath);
+	    DefaultImage inputImage = TestImageHelper.setInitialProperties(false, pixelQuenteFrioChooser,
+					satellite, station, inputPixels, sunElevation, accquiredDate, day);
+	    inputImage.width(0);
+	    inputImage.height(0);
 		
+				
 		boolean cloudDetection = false;
 		
-		image.width(0);
-		image.height(0);
 		
-		Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
+		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
+                satellite, boundingBoxVertices, inputImage.width(), inputImage.height(), cloudDetection);
 		
 		/*saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
         savePixelFrio(updatedImage, getPixelFrioFileName());*/
         LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
 		
-        return updatedImage;
+        return processedImage;
 		
 	}
 
-	private void assertField(double desiredValue, double obtainedValue) {
-		assertEquals(desiredValue, obtainedValue, Math.abs(desiredValue * 0.05));
+	private void assertField(double expectedValue, double obtainedValue) {
+		assertEquals(expectedValue, obtainedValue, Math.abs(expectedValue * 0.05));
 	}
 
 	interface PixelParser {

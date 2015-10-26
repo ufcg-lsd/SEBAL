@@ -884,13 +884,16 @@ public class SEBAL {
 		double[] LLambda = imagePixel.L();
 			
 		for (int i = 0; i < rho.length; i++) {
-	         if (i == 5) {
+	         /*if (i == 5) {
 	            continue;
-	         }
-	         double rhoI = rhosat5(LLambda[i],
-	                 earthSunDistance.get(day),
-	                 satellite.ESUNsat5(i + 1), imagePixel.cosTheta());
-	         rho[i] = rhoI;
+	         }*/
+			if(i == 5)
+				rho[i] = 0.0;
+			
+	        double rhoI = rhosat5(LLambda[i],
+	                earthSunDistance.get(day),
+	                satellite.ESUNsat5(i + 1), imagePixel.cosTheta());
+	        rho[i] = rhoI;
 		}
 		return rho;
 	}
