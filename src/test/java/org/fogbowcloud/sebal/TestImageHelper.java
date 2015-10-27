@@ -60,13 +60,6 @@ public class TestImageHelper {
 			// Calculate ux based on image coordinates and date/time
 			double ux = station.ux(latitude, longitude, accquiredDate);
 			currentPixel.ux(ux);
-
-			// Calculate rho based on the satellite and currentPixel
-			if (!isExpected) {
-				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel,
-						image.getDay());
-				currentPixel.output().setRho(rho);
-			}
 			
 			// Calculate zx based on image coordinates
 			double zx = station.zx(latitude, longitude);
@@ -79,6 +72,34 @@ public class TestImageHelper {
 			// Calculate ux based on image coordinates
 			double hc = station.hc(latitude, longitude);
 			currentPixel.hc(hc);
+			
+			/*if(!isExpected) {
+				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel, day);
+                currentPixel.output().setRho(rho);
+			}*/
+			
+			if(!isExpected) {
+				ImagePixelOutput otherOutput = new SEBAL().processPixel(satellite, currentPixel);
+				currentPixel.output().setG(otherOutput.G());
+				currentPixel.output().setAlpha(otherOutput.getAlpha());
+				currentPixel.output().setAlphaToa(otherOutput.getAlphaToa());
+				currentPixel.output().setEpsilonA(otherOutput.getEpsilonA());
+				currentPixel.output().setEpsilonNB(otherOutput.getEpsilonNB());
+				currentPixel.output().setEpsilonZero(otherOutput.getEpsilonZero());
+				currentPixel.output().setEVI(otherOutput.getEVI());
+				currentPixel.output().setNDSI(otherOutput.getNDSI());
+				currentPixel.output().setNDVI(otherOutput.getNDVI());
+				currentPixel.output().setPCP(otherOutput.getPCP());
+				currentPixel.output().setRho(otherOutput.getRho());
+				currentPixel.output().setRLDown(otherOutput.getRLDown());
+				currentPixel.output().setRLUp(otherOutput.getRLUp());
+				currentPixel.output().setRn(otherOutput.Rn());
+				currentPixel.output().setRSDown(otherOutput.getRSDown());
+				currentPixel.output().setSAVI(otherOutput.SAVI());
+				currentPixel.output().setTauSW(otherOutput.getTauSW());
+				currentPixel.output().setTs(otherOutput.getTs());
+				currentPixel.output().setIAF(otherOutput.getIAF());
+			}
 
 			/*if (valueFlag.equals("desiredValues")) {
 				// Calculate G based on obtained Rn
@@ -154,6 +175,7 @@ public class TestImageHelper {
                 double band7 = Double.valueOf(fields[16]);
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
+
                 return imagePixel;
             }
         }, dataFilePath);
