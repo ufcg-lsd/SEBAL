@@ -24,10 +24,10 @@ public class TestImageHelper {
 	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
-	protected static DefaultImage setInitialProperties( boolean isExpected,
+	protected static DefaultImage setProperties( boolean isExpected,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
-			Double sunElevation, Date accquiredDate, int day) throws Exception {
+			Double sunElevation, Date accquiredDate, int day, double cosTheta) throws Exception {
 		
 		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         image.setDay(day);
@@ -45,8 +45,10 @@ public class TestImageHelper {
 			//currentPixel.geoLoc().setLat(pixelFromCSV.geoLoc().getLat());
 			//currentPixel.geoLoc().setLon(pixelFromCSV.geoLoc().getLon());
 			
-			currentPixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
-			                               
+			//currentPixel.cosTheta(Math.cos(Math.sin(Math.toRadians(sunElevation))));
+			
+			currentPixel.cosTheta(cosTheta);
+			
 			double latitude = currentPixel.geoLoc().getLat();
 			double longitude = currentPixel.geoLoc().getLon();
 
@@ -73,34 +75,11 @@ public class TestImageHelper {
 			double hc = station.hc(latitude, longitude);
 			currentPixel.hc(hc);
 			
-			/*if(!isExpected) {
-				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel, day);
-                currentPixel.output().setRho(rho);
-			}*/
+//			if(!isExpected) {
+//				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel, day);
+//                currentPixel.output().setRho(rho);
+//			}
 			
-			if(!isExpected) {
-				ImagePixelOutput otherOutput = new SEBAL().processPixel(satellite, currentPixel);
-				currentPixel.output().setG(otherOutput.G());
-				currentPixel.output().setAlpha(otherOutput.getAlpha());
-				currentPixel.output().setAlphaToa(otherOutput.getAlphaToa());
-				currentPixel.output().setEpsilonA(otherOutput.getEpsilonA());
-				currentPixel.output().setEpsilonNB(otherOutput.getEpsilonNB());
-				currentPixel.output().setEpsilonZero(otherOutput.getEpsilonZero());
-				currentPixel.output().setEVI(otherOutput.getEVI());
-				currentPixel.output().setNDSI(otherOutput.getNDSI());
-				currentPixel.output().setNDVI(otherOutput.getNDVI());
-				currentPixel.output().setPCP(otherOutput.getPCP());
-				currentPixel.output().setRho(otherOutput.getRho());
-				currentPixel.output().setRLDown(otherOutput.getRLDown());
-				currentPixel.output().setRLUp(otherOutput.getRLUp());
-				currentPixel.output().setRn(otherOutput.Rn());
-				currentPixel.output().setRSDown(otherOutput.getRSDown());
-				currentPixel.output().setSAVI(otherOutput.SAVI());
-				currentPixel.output().setTauSW(otherOutput.getTauSW());
-				currentPixel.output().setTs(otherOutput.getTs());
-				currentPixel.output().setIAF(otherOutput.getIAF());
-			}
-
 			/*if (valueFlag.equals("desiredValues")) {
 				// Calculate G based on obtained Rn
 				double G = new SEBAL().G(pixelFromCSV.output().getTs(),
@@ -156,7 +135,7 @@ public class TestImageHelper {
         }, dataFilePath);
     }
 	
-	protected static List<ImagePixel> processPixelsFromObtainedFile(String dataFilePath) throws IOException {
+	protected static List<ImagePixel> readInputPixelsFromFile(String dataFilePath) throws IOException {
         return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
@@ -221,6 +200,7 @@ public class TestImageHelper {
 	        output.setTs(Double.valueOf(fields[33]));
 	        output.setNDVI(Double.valueOf(fields[28]));
 	        output.setSAVI(Double.valueOf(fields[29]));
+	        output.setIAF(Double.parseDouble(fields[30]));
 	        output.setAlpha(Double.valueOf(fields[26]));
 	        output.setEpsilonZero(Double.valueOf(fields[32]));
 	        output.setEpsilonNB(Double.valueOf(fields[31]));

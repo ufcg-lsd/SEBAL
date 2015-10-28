@@ -70,23 +70,24 @@ public class TestImageLandsat5 {
         //
         // Modify this to support multiple satellite types
         Double sunElevation = 49.00392091;
+        double cosTheta = 0.715517;
         // Sun Elevation for Landsat 7
         //
         //Double sunElevation = 53.52375;
         Date accquiredDate = Date.valueOf("2001-05-15");
         int day = 15;
         
-		TestImageHelper.setInitialProperties(true, pixelQuenteFrioChooser,
+		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
-				accquiredDate, day);
+				accquiredDate, day, cosTheta);
 	
 		/*Image expectedImage = TestImageHelper.readExpectedPixelsFromCSV(testDataFilePath, this.pixelQuenteFrioChooser, 
 				true, satellite);*/
 		
 /*		List<ImagePixel> expectedPixels = expectedImage.pixels();*/
 		
-		List<ImagePixel> obtainedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
-				accquiredDate, day);
+		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
+				accquiredDate, day, cosTheta);
 		
 		/*Image processedImage = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
 				accquiredDate, day);*/
@@ -100,20 +101,20 @@ public class TestImageLandsat5 {
 		// beneath here
 		
 		// See if the arguments on 'for' are correct
-		for (int i = 0; i < obtainedPixels.size(); i++) {
+		for (int i = 0; i < processedPixels.size(); i++) {
 			//System.out.println(i);			
 			GeoLoc expectedGeoLoc = expectedPixels.get(i).geoLoc();
 			ImagePixelOutput expectedOutput = expectedPixels.get(i).output();
 
 			// Verify how to fix this
-			GeoLoc obtainedGeoLoc = obtainedPixels.get(i).geoLoc();
-			ImagePixelOutput obtainedOutput = obtainedPixels.get(i).output();
+			GeoLoc obtainedGeoLoc = processedPixels.get(i).geoLoc();
+			ImagePixelOutput obtainedOutput = processedPixels.get(i).output();
 
 			assertEquals(obtainedGeoLoc.getI(), expectedGeoLoc.getI());
 			assertEquals(obtainedGeoLoc.getJ(), expectedGeoLoc.getJ());
 			
 			double[] expectedL = expectedPixels.get(i).L();
-			double[] obtainedL = obtainedPixels.get(i).L();
+			double[] obtainedL = processedPixels.get(i).L();
 			
 			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
 				System.out.println(expectedL[j] + " - " + obtainedL[j]);
@@ -130,9 +131,7 @@ public class TestImageLandsat5 {
 				System.out.println(expectedRho[j] + " - " + obtainedRho[j]);
 			}
 			
-			assertField(expectedOutput.G(), obtainedOutput.G());
 			assertField(expectedOutput.Rn(), obtainedOutput.Rn());
-			assertField(expectedOutput.getLambdaE(), obtainedOutput.getLambdaE());
 			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
 			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());
 			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
@@ -152,7 +151,7 @@ public class TestImageLandsat5 {
 	}
 	
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, WeatherStation station,
-			double sunElevation, Date accquiredDate, int day) throws Exception {
+			double sunElevation, Date accquiredDate, int day, double cosTheta) throws Exception {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
@@ -160,18 +159,14 @@ public class TestImageLandsat5 {
 		satellite = new JSONSatellite("landsat5");
 		
 		// See if processPixelsFromFile can be used instead
-		List<ImagePixel> inputPixels = imageHelper.processPixelsFromObtainedFile(testDataFilePath);
-	    DefaultImage inputImage = TestImageHelper.setInitialProperties(false, pixelQuenteFrioChooser,
-					satellite, station, inputPixels, sunElevation, accquiredDate, day);
-	    inputImage.width(0);
-	    inputImage.height(0);
+		List<ImagePixel> inputPixels = imageHelper.readInputPixelsFromFile(testDataFilePath);
+	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
+					satellite, station, inputPixels, sunElevation, accquiredDate, day, cosTheta);
 				
-		boolean cloudDetection = false;
+		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
+                satellite, boundingBoxVertices, 0, 0, false);
 		
-		/*Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
-                satellite, boundingBoxVertices, inputImage.width(), inputImage.height(), cloudDetection);*/
-		
-		List<ImagePixel> processedPixels = inputImage.pixels();
+		List<ImagePixel> processedPixels = processedImage.pixels();
 		
 		/*saveProcessOutput(updatedImage);
         savePixelQuente(updatedImage, getPixelQuenteFileName());
