@@ -711,20 +711,18 @@ public class SEBAL {
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
 	        alphaToa = alphaToasat5(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6]);
-	        output.setAlphaToa(alphaToa);
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
 	        alphaToa = alphaToasat7(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6], satellite);
-	        output.setAlphaToa(alphaToa);
         }
         
         if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
 	        alphaToa = alphaToasat8(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6]);
-	        output.setAlphaToa(alphaToa);
         }
+        output.setAlphaToa(alphaToa);
         // System.out.println("alphaToa " + alphaToa);
 
         double tauSW = tauSW(imagePixel.z());

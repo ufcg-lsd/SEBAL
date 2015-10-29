@@ -42,8 +42,6 @@ public class TestImageHelper {
 			currentPixel.setOutput(output);
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
-			//currentPixel.geoLoc().setLat(pixelFromCSV.geoLoc().getLat());
-			//currentPixel.geoLoc().setLon(pixelFromCSV.geoLoc().getLon());
 			
 			//currentPixel.cosTheta(Math.cos(Math.sin(Math.toRadians(sunElevation))));
 			

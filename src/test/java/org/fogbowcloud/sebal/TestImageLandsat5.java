@@ -80,25 +80,9 @@ public class TestImageLandsat5 {
 		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
 				accquiredDate, day, cosTheta);
-	
-		/*Image expectedImage = TestImageHelper.readExpectedPixelsFromCSV(testDataFilePath, this.pixelQuenteFrioChooser, 
-				true, satellite);*/
-		
-/*		List<ImagePixel> expectedPixels = expectedImage.pixels();*/
 		
 		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
 				accquiredDate, day, cosTheta);
-		
-		/*Image processedImage = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
-				accquiredDate, day);*/
-		
-		//List<ImagePixel> obtainedPixels = processedImage.pixels();
-		
-		// List<ImagePixel> obtainedValues = processPixelsFromFile(obtainedValuesFile);
-		//DefaultImagePixel obtainedImagePixel = new DefaultImagePixel();
-		// DefaultImagePixel obtainedImagePixel = processPixelsFromFile(obtainedValuesFile);
-		// Modify processPixelsFromFile() to return a image instead of a list, this way is possible to use the code
-		// beneath here
 		
 		// See if the arguments on 'for' are correct
 		for (int i = 0; i < processedPixels.size(); i++) {
@@ -116,6 +100,8 @@ public class TestImageLandsat5 {
 			double[] expectedL = expectedPixels.get(i).L();
 			double[] obtainedL = processedPixels.get(i).L();
 			
+			System.out.println("");
+			
 			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
 				System.out.println(expectedL[j] + " - " + obtainedL[j]);
 				assertField(expectedL[j], obtainedL[j]);
@@ -127,26 +113,65 @@ public class TestImageLandsat5 {
 			double[] obtainedRho = obtainedOutput.getRho();
 			
 			for(int j = 0; j < expectedRho.length; j++) {
-				//assertField(expectedRho[j], obtainedRho[j]);
+				assertField(expectedRho[j], obtainedRho[j]);
 				System.out.println(expectedRho[j] + " - " + obtainedRho[j]);
 			}
 			
-			assertField(expectedOutput.Rn(), obtainedOutput.Rn());
-			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
-			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());
-			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
-			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());
-			assertField(expectedOutput.getZ0mxy(), obtainedOutput.getZ0mxy());
-			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());
-			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());
-			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());
-			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
-			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
-			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
-			assertField(expectedOutput.getEVI(), obtainedOutput.getEVI());
-			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
-			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());
+			System.out.println("\n####AlphaToa####");
 			assertField(expectedOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
+			System.out.println(expectedOutput.getAlphaToa() + " - " + obtainedOutput.getAlphaToa());
+			
+			System.out.println("\n####TauSW####");
+			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());
+			System.out.println(expectedOutput.getTauSW() + " - " + obtainedOutput.getTauSW());
+			
+			System.out.println("\n####Alpha####");
+			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());
+			System.out.println(expectedOutput.getAlpha() + " - " + obtainedOutput.getAlpha());
+
+			System.out.println("\n####RSDown####");
+			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
+			System.out.println(expectedOutput.getRSDown() + " - " + obtainedOutput.getRSDown());
+			
+			System.out.println("\n####NDVI####");
+			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());
+			System.out.println(expectedOutput.getNDVI() + " - " + obtainedOutput.getNDVI());
+
+			System.out.println("\n####SAVI####");
+			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
+			System.out.println(expectedOutput.SAVI() + " - " + obtainedOutput.SAVI());
+
+			System.out.println("\n####LAI####");
+			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
+			System.out.println(expectedOutput.getIAF() + " - " + obtainedOutput.getIAF());
+			
+			System.out.println("\n####EpsilonNB####");
+			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());
+			System.out.println(expectedOutput.getEpsilonNB() + " - " + obtainedOutput.getEpsilonNB());
+
+			System.out.println("\n####EpsilonZero####");
+			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());
+			System.out.println(expectedOutput.getEpsilonZero() + " - " + obtainedOutput.getEpsilonZero());
+
+			System.out.println("\n####Ts####");
+			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
+			System.out.println(expectedOutput.getTs() + " - " + obtainedOutput.getTs());
+			
+			System.out.println("\n####RLUp####");
+			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
+			System.out.println(expectedOutput.getRLUp() + " - " + obtainedOutput.getRLUp());
+
+			System.out.println("\n####EpsilonA####");
+			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
+			System.out.println(expectedOutput.getEpsilonA() + " - " + obtainedOutput.getEpsilonA());
+
+			System.out.println("\n####RLDown####");
+			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());
+			System.out.println(expectedOutput.getRLDown() + " - " + obtainedOutput.getRLDown());
+
+			System.out.println("\n####Rn####");
+			assertField(expectedOutput.Rn(), obtainedOutput.Rn());
+			System.out.println(expectedOutput.Rn() + " - " + obtainedOutput.Rn());
 		}
 	}
 	

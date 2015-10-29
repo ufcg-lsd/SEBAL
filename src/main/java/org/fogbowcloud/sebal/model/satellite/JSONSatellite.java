@@ -8,14 +8,16 @@ import org.json.JSONObject;
 public class JSONSatellite implements Satellite {
 
 	private JSONObject json;
+	private String landsateName;
 
 	public JSONSatellite(String jsonPath) throws Exception {
 		this.json = new JSONObject(IOUtils.toString(new FileInputStream(jsonPath)));
+		this.landsateName = jsonPath;
 	}
 	
 	@Override
 	public String landsatName() {
-		return this.json.toString();
+		return this.landsateName;
 	}
 	
 	@Override
