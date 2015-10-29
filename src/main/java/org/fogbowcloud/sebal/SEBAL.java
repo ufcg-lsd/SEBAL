@@ -37,12 +37,23 @@ public class SEBAL {
                 * RLDown;
     }
 
-    double LLambda(double LLambdaMin, double LLambdaMax, double DN) {
-        return LLambdaMin + ((LLambdaMax - LLambdaMin) / 255.0) * DN;
+    double[] LLambda(double[] LLambdaMin, double[] LLambdaMax, int[] DN) {
+    	double[] L = null;
+    	
+    	for(int i = 0; i < LLambdaMax.length; i++) {
+    		L[i] = LLambdaMin[i] + ((LLambdaMax[i] - LLambdaMin[i]) / 255.0) * DN[i];
+    	}
+    	
+        return L;
     }
     
-    double LLambda8(double aL, double mL, int DN) {
-        return aL + (mL * DN);
+    double[] LLambda8(double[] aL, double[] mL, int[] DN) {
+    	double[] L = null;
+    	
+    	for(int i = 0; i < mL.length; i++) {
+    		L[i] = aL[i] + (mL[i] * DN[i]);
+    	}
+        return L; 
     }
 
     double rhosat5(double LLambda, double d, double ESUN, double cosTheta) {
@@ -58,11 +69,10 @@ public class SEBAL {
     	return (aP + (mP * DN)) / sinThetaSunEle;
     }
 
-    //Verify the implications of the follow changes
     double alphaToasat5(double rho1, double rho2, double rho3, double rho4,
             double rho5, double rho7) {
-        return 0.298221 * rho1 + 0.270098 * rho2 + 0.230997 * rho3 + 0.155051
-                * rho4 + 0.033085 * rho5 + 0.012548 * rho7;
+        return 0.298 * rho1 + 0.274 * rho2 + 0.233 * rho3 + 0.157
+                * rho4 + 0.033 * rho5 + 0.011 * rho7;
     }
     
     double alphaToasat7(double rho1, double rho2, double rho3, double rho4,
@@ -693,62 +703,51 @@ public class SEBAL {
 
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
         	rho = calcRhosat5(satellite, imagePixel);
-        }
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
         	rho = calcRhosat7(satellite, imagePixel);
-        }
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
+        	
+        } else
         	rho = calcRhosat8(satellite, imagePixel);
-        }
-        
-        output.setRho(rho);
         
         // System.out.println("rho " + Arrays.toString(rho));
+        output.setRho(rho);
         
         double alphaToa = 0;
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
 	        alphaToa = alphaToasat5(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6]);
-        }
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
 	        alphaToa = alphaToasat7(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6], satellite);
-        }
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
+        } else {
 	        alphaToa = alphaToasat8(rho[0], rho[1], rho[2], rho[3], rho[4],
 	                rho[6]);
         }
-        output.setAlphaToa(alphaToa);
         // System.out.println("alphaToa " + alphaToa);
+        output.setAlphaToa(alphaToa);
 
         double tauSW = tauSW(imagePixel.z());
-        output.setTauSW(tauSW);
         // System.out.println("tauSW " + tauSW);
+        output.setTauSW(tauSW);
         
         double alpha = 0.0;
-        if(satellite.landsatName().equalsIgnoreCase("landsat5"))
+        if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
         	alpha = alpha5(alphaToa, tauSW);
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat7"))
+        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
         	alpha = alpha7(alphaToa, tauSW);
-        
-        if(satellite.landsatName().equalsIgnoreCase("landsat8"))
+        } else
         	alpha = alpha8(alphaToa, tauSW);
         
-        output.setAlpha(alpha);
         // System.out.println("alpha " + alpha);
+        output.setAlpha(alpha);
 
         double RSDown = RSDown(imagePixel.cosTheta(),
                 earthSunDistance.get(imagePixel.image().getDay()), tauSW);
         output.setRSDown(RSDown);
         
         double NDVI = NDVI(rho[2], rho[3]);
-        output.setNDVI(NDVI);
         // System.out.println("NDVI " + NDVI);
+        output.setNDVI(NDVI);
 
         double SAVI = SAVI(rho[2], rho[3]);
         // System.out.println("SAVI " + SAVI);
@@ -759,16 +758,16 @@ public class SEBAL {
         output.setEVI(EVI);
 
         double IAF = IAF(SAVI);
-        output.setIAF(IAF);
         // System.out.println("IAF " + IAF);
+        output.setIAF(IAF);
 
         double epsilonNB = epsilonNB(IAF);
-        output.setEpsilonNB(epsilonNB);
         // System.out.)println("epsilonNB " + epsilonNB);
+        output.setEpsilonNB(epsilonNB);
 
         double epsilonZero = epsilonZero(IAF);
-        output.setEpsilonZero(epsilonZero);
         // System.out.println("epsilonZero " + epsilonZero);
+        output.setEpsilonZero(epsilonZero);
 
         double TS = 0.0;
         if(satellite.landsatName().equalsIgnoreCase("landsat5")
@@ -778,20 +777,20 @@ public class SEBAL {
         if(satellite.landsatName().equalsIgnoreCase("landsat8"))
         		TS = TS(satellite.K2(), epsilonNB, satellite.K1(), LLambda[9]);
         
-        output.setTs(TS);
         // System.out.println("TS " + TS);
+        output.setTs(TS);
 
         double RLUp = RLUp(epsilonZero, TS);
-        output.setRLUp(RLUp);
         // System.out.println("RLUp " + RLUp);
+        output.setRLUp(RLUp);
 
         double epsilonA = epsilonA(tauSW);
-        output.setEpsilonA(epsilonA);
         // System.out.println("epsilonA " + epsilonA);
+        output.setEpsilonA(epsilonA);
 
         double RLDown = RLDown(epsilonA, imagePixel.Ta());
-        output.setRLDown(RLDown);
         // System.out.println("RLDown " + RLDown);
+        output.setRLDown(RLDown);
 
         double Rn = Rn(alpha, RSDown, RLDown, RLUp, epsilonZero);
         // System.out.println("Rn " + Rn);
@@ -838,24 +837,7 @@ public class SEBAL {
     	rho = imagePixel.output().getRho();
     	double r1 = rho[1];
     	double r3 = rho[3];
-		/*if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
-			 rho = calcRhosat5(satellite, imagePixel, imagePixel.image().getDay());
-			 imagePixel.output().setRho(rho);
-			 r0 = rho[0];
-	         r1 = rho[1];
-	         r2 = rho[2];
-	         r3 = rho[3];
-	         r4 = rho[4];
-	         r5 = rho[5];
-	         r6 = rho[6];
-	         r7 = rho[7];
-		}
-		if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
-			 calcRhosat7(satellite, imagePixel);	
-		}
-		if(satellite.landsatName().equalsIgnoreCase("landsat8")) {
-			 calcRhosat8(satellite, imagePixel);	
-		}*/
+    	
 		ImagePixelOutput output = imagePixel.output();
 		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && r3 > 0.11 && r1 > 0.1;
 	}
@@ -863,7 +845,6 @@ public class SEBAL {
 	protected double[] calcRhosat5(Satellite satellite, ImagePixel imagePixel) {
 		double[] rho = new double[7];
 		double[] LLambda = imagePixel.L();
-		//double[] esun = {1983.0, 1796.0, 1536.0, 1031.0, 220.0, 1.0, 83.44};
 			
 		for (int i = 0; i < rho.length; i++) {
 	         /*if (i == 5) {
@@ -875,9 +856,6 @@ public class SEBAL {
 		        double rhoI = rhosat5(LLambda[i],
 		                earthSunDistance.get(imagePixel.image().getDay()),
 		                satellite.ESUNsat5(i + 1), imagePixel.cosTheta());
-				/*double rhoI = rhosat5(LLambda[i],
-						1.01087*1.01087,
-		                esun[i], Math.cos(0.715517));*/
 		        rho[i] = rhoI;
 			}
 		}
@@ -907,13 +885,12 @@ public class SEBAL {
 		double[] mL = imagePixel.Ml();
 		double[] aP = imagePixel.Ap();
 		double[] mP = imagePixel.Mp();
-		double[] LLambda = null;
+		double[] LLambda = imagePixel.L();
 		
 		for (int i = 0; i < rho.length; i++) {
             if (i == 5) {
                 continue;
             }
-            LLambda[i] = LLambda8(aL[i], mL[i], DN[i]);
             double rhoI = rhoSat8(aP[i], mP[i], LLambda[i], imagePixel.sinThetaSunEle(), DN[i]);
             rho[i] = rhoI;
 		}

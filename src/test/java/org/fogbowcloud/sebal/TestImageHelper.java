@@ -6,19 +6,16 @@ import java.io.IOException;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
 import org.fogbowcloud.sebal.model.image.GeoLoc;
-import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.fogbowcloud.sebal.wrapper.Wrapper.PixelParser;
-import org.mockito.Mockito;
 
 public class TestImageHelper {
 	
@@ -34,7 +31,8 @@ public class TestImageHelper {
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel pixelFromCSV : pixels) {
 			
-			DefaultImagePixel currentPixel = new DefaultImagePixel();			
+			DefaultImagePixel currentPixel = new DefaultImagePixel();
+			
 			currentPixel.L(pixelFromCSV.L());
 			
 			ImagePixelOutput output = new ImagePixelOutput();
@@ -42,9 +40,6 @@ public class TestImageHelper {
 			currentPixel.setOutput(output);
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
-			
-			//currentPixel.cosTheta(Math.cos(Math.sin(Math.toRadians(sunElevation))));
-			
 			currentPixel.cosTheta(cosTheta);
 			
 			double latitude = currentPixel.geoLoc().getLat();
@@ -73,32 +68,6 @@ public class TestImageHelper {
 			double hc = station.hc(latitude, longitude);
 			currentPixel.hc(hc);
 			
-//			if(!isExpected) {
-//				double[] rho = new SEBAL().calcRhosat5(satellite, currentPixel, day);
-//                currentPixel.output().setRho(rho);
-//			}
-			
-			/*if (valueFlag.equals("desiredValues")) {
-				// Calculate G based on obtained Rn
-				double G = new SEBAL().G(pixelFromCSV.output().getTs(),
-						pixelFromCSV.output().getAlpha(), pixelFromCSV.output()
-								.getNDVI(), pixelFromCSV.output().Rn());
-				currentPixel.output().setG(G);
-
-				// Calculate z0mxy based on obtained SAVI
-				double z0mxy = new SEBAL().z0mxy(pixelFromCSV.output().SAVI());
-				currentPixel.output().setZ0mxy(z0mxy);
-
-				// Calculate IAF based on obtained SAVI
-				double IAF = new SEBAL().IAF(pixelFromCSV.output().SAVI());
-				currentPixel.output().setIAF(IAF);
-			}
-
-			rho = pixelFromCSV.output().getRho();
-			double EVI = new SEBAL().EVI(rho[0], rho[2], rho[3]);
-			currentPixel.output().setEVI(EVI);*/
-
-			// Add image csv to variable image from imagePixel
 			// The csv pixel is then add to the other image pixel
 			currentPixel.image(image);
 			image.addPixel(currentPixel);
@@ -113,8 +82,7 @@ public class TestImageHelper {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
                 imagePixel.geoLoc(getGeoLoc(fields));
                 imagePixel.setOutput(getImagePixelOutput(fields));
-                double elevation = Double.valueOf(fields[9]);
-                imagePixel.z(elevation);
+                
                 double band1 = Double.valueOf(fields[10]);
                 double band2 = Double.valueOf(fields[11]);
                 double band3 = Double.valueOf(fields[12]);
@@ -124,10 +92,16 @@ public class TestImageHelper {
                 double band7 = Double.valueOf(fields[16]);
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
+                
+                double elevation = Double.valueOf(fields[9]);
+                imagePixel.z(elevation);
+
+                
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
                 		Double.valueOf(fields[21]), 0.0, Double.valueOf(fields[23]) };
                 imagePixel.output().setRho(rho);
+                
                 return imagePixel;
             }
         }, dataFilePath);
@@ -141,8 +115,7 @@ public class TestImageHelper {
                 imagePixel.geoLoc(getGeoLoc(fields));
                 ImagePixelOutput output = new ImagePixelOutput();
                 imagePixel.setOutput(output);
-                double elevation = Double.valueOf(fields[9]);
-                imagePixel.z(elevation);
+                
                 double band1 = Double.valueOf(fields[10]);
                 double band2 = Double.valueOf(fields[11]);
                 double band3 = Double.valueOf(fields[12]);
@@ -152,6 +125,9 @@ public class TestImageHelper {
                 double band7 = Double.valueOf(fields[16]);
                 double[] L = { band1, band2, band3, band4, band5, band6, band7 };
                 imagePixel.L(L);
+                
+                double elevation = Double.valueOf(fields[9]);
+                imagePixel.z(elevation);
 
                 return imagePixel;
             }
