@@ -95,80 +95,46 @@ public class TestImageLandsat5 {
 			assertEquals(obtainedGeoLoc.getJ(), expectedGeoLoc.getJ());
 			
 			double[] expectedL = expectedPixels.get(i).L();
-			double[] obtainedL = processedPixels.get(i).L();
-			
-			System.out.println("");
+			double[] obtainedL = processedPixels.get(i).L();			
 			
 			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
-				System.out.println(expectedL[j] + " - " + obtainedL[j]);
 				assertField(expectedL[j], obtainedL[j]);
-			}
-			
-			System.out.println("");
+			}					
 			
 			double[] expectedRho = expectedOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < expectedRho.length; j++) {
-				System.out.println(expectedRho[j] + " - " + obtainedRho[j]);
+			for(int j = 0; j < expectedRho.length; j++) {				
 				assertField(expectedRho[j], obtainedRho[j]);
 			}
-			
-			System.out.println("\n####AlphaToa####");
+						
 			assertField(expectedOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
-			System.out.println(expectedOutput.getAlphaToa() + " - " + obtainedOutput.getAlphaToa());
+						
+			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());			
+						
+			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());			
 			
-			System.out.println("\n####TauSW####");
-			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());
-			System.out.println(expectedOutput.getTauSW() + " - " + obtainedOutput.getTauSW());
-			
-			System.out.println("\n####Alpha####");
-			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());
-			System.out.println(expectedOutput.getAlpha() + " - " + obtainedOutput.getAlpha());
-
-			System.out.println("\n####RSDown####");
 			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
-			System.out.println(expectedOutput.getRSDown() + " - " + obtainedOutput.getRSDown());
+					
+			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());			
 			
-			System.out.println("\n####NDVI####");
-			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());
-			System.out.println(expectedOutput.getNDVI() + " - " + obtainedOutput.getNDVI());
-
-			System.out.println("\n####SAVI####");
 			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
-			System.out.println(expectedOutput.SAVI() + " - " + obtainedOutput.SAVI());
-
-			System.out.println("\n####LAI####");
+			
 			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
-			System.out.println(expectedOutput.getIAF() + " - " + obtainedOutput.getIAF());
+						
+			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());	
 			
-			System.out.println("\n####EpsilonNB####");
-			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());
-			System.out.println(expectedOutput.getEpsilonNB() + " - " + obtainedOutput.getEpsilonNB());
-
-			System.out.println("\n####EpsilonZero####");
-			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());
-			System.out.println(expectedOutput.getEpsilonZero() + " - " + obtainedOutput.getEpsilonZero());
-
-			System.out.println("\n####Ts####");
+			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());		
+			
 			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
-			System.out.println(expectedOutput.getTs() + " - " + obtainedOutput.getTs());
 			
-			System.out.println("\n####RLUp####");
 			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
-			System.out.println(expectedOutput.getRLUp() + " - " + obtainedOutput.getRLUp());
-
-			System.out.println("\n####EpsilonA####");
+			
 			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
-			System.out.println(expectedOutput.getEpsilonA() + " - " + obtainedOutput.getEpsilonA());
-
-			System.out.println("\n####RLDown####");
+			
 			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());
-			System.out.println(expectedOutput.getRLDown() + " - " + obtainedOutput.getRLDown());
 
-			System.out.println("\n####Rn####");
 			assertField(expectedOutput.Rn(), obtainedOutput.Rn());
-			System.out.println(expectedOutput.Rn() + " - " + obtainedOutput.Rn());
 		}
 	}
 	

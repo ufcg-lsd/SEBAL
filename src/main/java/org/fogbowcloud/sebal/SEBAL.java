@@ -20,8 +20,6 @@ import org.python.modules.math;
 public class SEBAL {
 
     private EarthSunDistance earthSunDistance = new EarthSunDistance();
-    
-    private int counter = 0;
 	
 	private static final Logger LOGGER = Logger.getLogger(SEBAL.class);
    
@@ -716,10 +714,6 @@ public class SEBAL {
 	    double[] rho = null;
 
         rho = calcRho(satellite, imagePixel);
-        if(counter == 8)
-        	rho[4] *= 0.001;
-        	
-        counter++;
         // System.out.println("rho " + Arrays.toString(rho));
         output.setRho(rho);
         
@@ -825,11 +819,9 @@ public class SEBAL {
 	private boolean isSnowPixel(Satellite satellite, ImagePixel imagePixel) {
 		double[] rho = null;   
     	rho = imagePixel.output().getRho();
-    	double r1 = rho[1];
-    	double r3 = rho[3];
     	
 		ImagePixelOutput output = imagePixel.output();
-		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && r3 > 0.11 && r1 > 0.1;
+		return output.getNDSI() > 0.15 && output.getTs() < 3.8 && rho[3] > 0.11 && rho[1] > 0.1;
 	}
 	
 	protected double[] calcRho(Satellite satellite, ImagePixel imagePixel) {	
