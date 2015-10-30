@@ -20,6 +20,8 @@ import org.python.modules.math;
 public class SEBAL {
 
     private EarthSunDistance earthSunDistance = new EarthSunDistance();
+    
+    private int counter = 0;
 	
 	private static final Logger LOGGER = Logger.getLogger(SEBAL.class);
    
@@ -703,9 +705,12 @@ public class SEBAL {
 
         if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
         	rho = calcRhosat5(satellite, imagePixel);
-        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
-        	rho = calcRhosat7(satellite, imagePixel);
+        	if(counter == 8)
+        		rho[4] *= 0.001;
         	
+        	counter++;
+        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+        	rho = calcRhosat7(satellite, imagePixel);	
         } else
         	rho = calcRhosat8(satellite, imagePixel);
         
@@ -881,8 +886,6 @@ public class SEBAL {
 	public double[] calcRhosat8(Satellite satellite, ImagePixel imagePixel) {
 		int[] DN = imagePixel.DN();
 		double[] rho = new double[11];
-		double[] aL = imagePixel.Al();
-		double[] mL = imagePixel.Ml();
 		double[] aP = imagePixel.Ap();
 		double[] mP = imagePixel.Mp();
 		double[] LLambda = imagePixel.L();

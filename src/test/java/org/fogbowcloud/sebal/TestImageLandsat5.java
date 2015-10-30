@@ -110,8 +110,8 @@ public class TestImageLandsat5 {
 			double[] obtainedRho = obtainedOutput.getRho();
 			
 			for(int j = 0; j < expectedRho.length; j++) {
-				//assertField(expectedRho[j], obtainedRho[j]);
 				System.out.println(expectedRho[j] + " - " + obtainedRho[j]);
+				assertField(expectedRho[j], obtainedRho[j]);
 			}
 			
 			System.out.println("\n####AlphaToa####");
