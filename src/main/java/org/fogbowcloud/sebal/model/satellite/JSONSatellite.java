@@ -1,19 +1,11 @@
 package org.fogbowcloud.sebal.model.satellite;
 
-import java.io.FileInputStream;
-
-import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 
-public class JSONSatellite implements Satellite {
+public abstract class JSONSatellite implements Satellite {
 
-	private JSONObject json;
-	private String landsatName;
-
-	public JSONSatellite(String jsonPath) throws Exception {
-		this.json = new JSONObject(IOUtils.toString(new FileInputStream(jsonPath)));
-		this.landsatName = jsonPath;
-	}
+	protected JSONObject json;
+	protected String landsatName;
 	
 	@Override
 	public String landsatName() {
@@ -31,14 +23,7 @@ public class JSONSatellite implements Satellite {
 	}
 
 	@Override
-	public double ESUN(int band) {
-		if(this.landsatName.equalsIgnoreCase("landsat5")) {
-			return json.optJSONArray("band" + band).optDouble(7);
-		} else if(this.landsatName.equalsIgnoreCase("landsat7")) {
-			return json.optJSONArray("band" + band).optDouble(9);
-		} else
-			return json.optJSONArray("band" + band).optDouble(11);
-	}
+	public abstract double ESUN(int band);
 
 	@Override
 	public double K1() {
@@ -49,5 +34,4 @@ public class JSONSatellite implements Satellite {
 	public double K2() {
 		return json.optDouble("k2");
 	}
-
 }

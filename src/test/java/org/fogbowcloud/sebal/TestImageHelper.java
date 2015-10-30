@@ -24,10 +24,10 @@ public class TestImageHelper {
 	protected static DefaultImage setProperties( boolean isExpected,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
-			Double sunElevation, Date accquiredDate, int day, double cosTheta) throws Exception {
+			Double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		
 		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
-        image.setDay(day);
+        image.setDay(accquiredDate.getDay());
         // Scanning csv image to calculate and store values in another image
 		for (ImagePixel pixelFromCSV : pixels) {
 			

@@ -25,7 +25,9 @@ import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L5JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L7JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L8JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 
 public class Wrapper {
@@ -162,11 +164,11 @@ public class Wrapper {
         
         Satellite satellite;
         if(landsatType.equalsIgnoreCase("LANDSAT_5")) {
-        	satellite = new JSONSatellite("landsat5");
+        	satellite = new L5JSONSatellite(Satellite.LANDSAT_L5);
         } else if(landsatType.equalsIgnoreCase("LANDSAT_7")) {
-        	satellite = new JSONSatellite("landsat7");
+        	satellite = new L7JSONSatellite(Satellite.LANDSAT_L7);
         } else
-        	satellite = new JSONSatellite("landsat8");
+        	satellite = new L8JSONSatellite(Satellite.LANDSAT_L8);
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
                		

@@ -15,7 +15,7 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L5JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.junit.Test;
@@ -70,16 +70,15 @@ public class TestImageLandsat5 {
         //
         //Double sunElevation = 53.52375;
         Date accquiredDate = Date.valueOf("2001-05-15");
-        int day = 15;
         
 		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
-				accquiredDate, day, cosTheta);
+				accquiredDate, cosTheta);
 		
-		satellite = new JSONSatellite("landsat5");
+		satellite = new L5JSONSatellite(Satellite.LANDSAT_L5);
 		
 		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
-				accquiredDate, day, cosTheta);
+				accquiredDate, cosTheta);
 		
 		// See if the arguments on 'for' are correct
 		for (int i = 0; i < processedPixels.size(); i++) {
@@ -139,14 +138,14 @@ public class TestImageLandsat5 {
 	}
 	
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, WeatherStation station,
-			double sunElevation, Date accquiredDate, int day, double cosTheta) throws Exception {
+			double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
 	
 		List<ImagePixel> inputPixels = TestImageHelper.readInputPixelsFromFile(testDataFilePath);
 	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
-					satellite, station, inputPixels, sunElevation, accquiredDate, day, cosTheta);
+					satellite, station, inputPixels, sunElevation, accquiredDate, cosTheta);
 				
 		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
                 satellite, boundingBoxVertices, 0, 0, false);

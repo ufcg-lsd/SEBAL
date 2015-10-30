@@ -71,10 +71,10 @@ public class SEBAL {
 
     double alphaToa(double rho1, double rho2, double rho3, double rho4,
             double rho5, double rho7, Satellite satellite) {
-    	if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
+    	if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
 	        return 0.298 * rho1 + 0.274 * rho2 + 0.233 * rho3 + 0.157
 	                * rho4 + 0.033 * rho5 + 0.011 * rho7;
-    	} else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+    	} else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
     		double alphasat7 = 0.0;
         	
         	double ESUNsum = 0.0;
@@ -121,9 +121,9 @@ public class SEBAL {
 
     double alpha(double alphaToa, double tauSW, Satellite satellite) {
         double alphaP = 0.03;
-        if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
+        if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
         	return (alphaToa - alphaP) / Math.pow(tauSW, 2);
-        } else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+        } else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
         	return (alphaToa - alphaP) / Math.pow(tauSW, 2);
         } else {
         	return (alphaToa - alphaP) / Math.pow(tauSW, 2);
@@ -190,8 +190,8 @@ public class SEBAL {
 
     // Temperatura de Superfície para landsat5 e landsat7
     double TS(Satellite satellite, double epsilonNB, double[] LLambda) {
-    	if(satellite.landsatName().equalsIgnoreCase("landsat5") || 
-    			satellite.landsatName().equalsIgnoreCase("landsat7")) {
+    	if(satellite.landsatName().equals(Satellite.LANDSAT_L5) || 
+    			satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
 	        Double ts = satellite.K2() / Math.log((epsilonNB * satellite.K1() / LLambda[5]) + 1);
 	        return ts;
     	} else {
@@ -825,7 +825,7 @@ public class SEBAL {
 	}
 	
 	protected double[] calcRho(Satellite satellite, ImagePixel imagePixel) {	
-		if(satellite.landsatName().equalsIgnoreCase("landsat5")) {
+		if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
 			double[] rho = new double[7];
 			double[] LLambda = imagePixel.L();
 				
@@ -840,7 +840,7 @@ public class SEBAL {
 				}
 			}
 			return rho;
-		} else if(satellite.landsatName().equalsIgnoreCase("landsat7")) {
+		} else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
 			double[] rho = new double[9];
 			double[] LLambda = imagePixel.L();
 			
