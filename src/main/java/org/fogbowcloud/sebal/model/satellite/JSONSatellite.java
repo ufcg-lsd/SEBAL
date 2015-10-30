@@ -8,16 +8,16 @@ import org.json.JSONObject;
 public class JSONSatellite implements Satellite {
 
 	private JSONObject json;
-	private String landsateName;
+	private String landsatName;
 
 	public JSONSatellite(String jsonPath) throws Exception {
 		this.json = new JSONObject(IOUtils.toString(new FileInputStream(jsonPath)));
-		this.landsateName = jsonPath;
+		this.landsatName = jsonPath;
 	}
 	
 	@Override
 	public String landsatName() {
-		return this.landsateName;
+		return this.landsatName;
 	}
 	
 	@Override
@@ -31,18 +31,13 @@ public class JSONSatellite implements Satellite {
 	}
 
 	@Override
-	public double ESUNsat5(int band) {
-		return json.optJSONArray("band" + band).optDouble(7);
-	}
-	
-	@Override
-	public double ESUNsat7(int band) {
-		return json.optJSONArray("band" + band).optDouble(9);
-	}
-	
-	@Override
-	public double ESUNsat8(int band) {
-		return json.optJSONArray("band" + band).optDouble(11);
+	public double ESUN(int band) {
+		if(this.landsatName.equalsIgnoreCase("landsat5")) {
+			return json.optJSONArray("band" + band).optDouble(7);
+		} else if(this.landsatName.equalsIgnoreCase("landsat7")) {
+			return json.optJSONArray("band" + band).optDouble(9);
+		} else
+			return json.optJSONArray("band" + band).optDouble(11);
 	}
 
 	@Override

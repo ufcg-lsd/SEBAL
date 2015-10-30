@@ -8,11 +8,7 @@ public interface Satellite {
 	
 	double LLambdaMax(int band);
 	
-	double ESUNsat5(int band);
-	
-	double ESUNsat7(int band);
-	
-	double ESUNsat8(int band);
+	double ESUN(int band);
 
 	double K1();
 	
