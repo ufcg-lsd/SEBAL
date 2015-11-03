@@ -15,13 +15,13 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.L5JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L7JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class TestImageLandsat5 {
+public class TestImageLandsat7 {
 	
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
 	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat5.class);
@@ -30,11 +30,11 @@ public class TestImageLandsat5 {
 	private Satellite satellite;
 	private Properties properties;
 	
-	public TestImageLandsat5() throws IOException {
+	public TestImageLandsat7() throws IOException {
 		this.properties = new Properties();
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(this.properties);
 		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-		testDataFilePath = "/local/esdras/git/SEBAL/src/test/resource/sebal-l5-test-data.csv";
+		testDataFilePath = "/local/esdras/git/SEBAL/src/test/resource/sebal-l7-test-data.csv";
 		satellite = null;
 	}
 
@@ -44,8 +44,8 @@ public class TestImageLandsat5 {
 		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
         
-        satellite = new L5JSONSatellite(Satellite.LANDSAT_L5);
-        
+        satellite = new L7JSONSatellite(Satellite.LANDSAT_L7);
+
         // Mocking WeatherStation class
         // Change the return values
         WeatherStation station = Mockito.mock(WeatherStation.class);
@@ -56,7 +56,7 @@ public class TestImageLandsat5 {
         Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
         		Mockito.any(Date.class))).thenReturn(4.388);
         Mockito.when(station.d(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(4.0 * 2/3);
+        		Mockito.anyDouble())).thenReturn(0.9841);
         Mockito.when(station.hc(Mockito.anyDouble(), 
         		Mockito.anyDouble())).thenReturn(4.0);
         
@@ -64,17 +64,18 @@ public class TestImageLandsat5 {
         List<ImagePixel> expectedPixels = TestImageHelper.readExpectedPixelsFromFile(testDataFilePath,
         		satellite);
         
-        Double sunElevation = 49.00392091;
-        double cosTheta = 0.715517;
-
-        Date accquiredDate = Date.valueOf("2001-05-15");
+        Double sunElevation = 53.52375;
+        
+        double sinTheta = 0.636631;
+        
+        Date accquiredDate = Date.valueOf("2003-01-21");
         
 		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
-				accquiredDate, cosTheta);
+				accquiredDate, sinTheta);
 		
 		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
-				accquiredDate, cosTheta);
+				accquiredDate, sinTheta);
 		
 		// See if the arguments on 'for' are correct
 		for (int i = 0; i < processedPixels.size(); i++) {
@@ -99,7 +100,7 @@ public class TestImageLandsat5 {
 			double[] expectedRho = expectedOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < expectedRho.length; j++) {
+			for(int j = 0; j < expectedRho.length; j++) {				
 				assertField(expectedRho[j], obtainedRho[j]);
 			}
 						
@@ -134,7 +135,7 @@ public class TestImageLandsat5 {
 	}
 	
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, 
-			WeatherStation station, double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
+			WeatherStation station, double sunElevation, Date accquiredDate, double sinTheta) throws Exception {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
@@ -142,7 +143,7 @@ public class TestImageLandsat5 {
 		List<ImagePixel> inputPixels = TestImageHelper.readInputPixelsFromFile(testDataFilePath,
 				satellite);
 	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
-					satellite, station, inputPixels, sunElevation, accquiredDate, cosTheta);
+					satellite, station, inputPixels, sunElevation, accquiredDate, sinTheta);
 				
 		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
                 satellite, boundingBoxVertices, 0, 0, false);

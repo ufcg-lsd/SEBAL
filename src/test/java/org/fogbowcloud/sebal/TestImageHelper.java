@@ -24,7 +24,7 @@ public class TestImageHelper {
 	protected static DefaultImage setProperties( boolean isExpected,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
-			Double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
+			Double sunElevation, Date accquiredDate, double theta) throws Exception {
 		
 		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         image.setDay(accquiredDate.getDay());
@@ -40,7 +40,10 @@ public class TestImageHelper {
 			currentPixel.setOutput(output);
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
-			currentPixel.cosTheta(cosTheta);
+			if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
+				currentPixel.cosTheta(theta);
+			} else
+				currentPixel.sinTheta(theta);
 			
 			double latitude = currentPixel.geoLoc().getLat();
 			double longitude = currentPixel.geoLoc().getLon();
@@ -75,12 +78,17 @@ public class TestImageHelper {
 		return image;
 	}
 	
-	protected static List<ImagePixel> readExpectedPixelsFromFile(String dataFilePath) throws IOException {
+	protected static List<ImagePixel> readExpectedPixelsFromFile(String dataFilePath,
+			final Satellite satellite) throws IOException {
         return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
-                imagePixel.geoLoc(getGeoLoc(fields));
+                if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
+                	imagePixel.geoLoc(getGeoLocL7(fields));
+                } else
+                	imagePixel.geoLoc(getGeoLoc(fields));
+                
                 imagePixel.setOutput(getImagePixelOutput(fields));
                 
                 double band1 = Double.valueOf(fields[10]);
@@ -96,7 +104,6 @@ public class TestImageHelper {
                 double elevation = Double.valueOf(fields[9]);
                 imagePixel.z(elevation);
 
-                
                 double[] rho = { Double.valueOf(fields[17]), Double.valueOf(fields[18]),
                 		Double.valueOf(fields[19]), Double.valueOf(fields[20]),
                 		Double.valueOf(fields[21]), 0.0, Double.valueOf(fields[23]) };
@@ -107,12 +114,17 @@ public class TestImageHelper {
         }, dataFilePath);
     }
 	
-	protected static List<ImagePixel> readInputPixelsFromFile(String dataFilePath) throws IOException {
+	protected static List<ImagePixel> readInputPixelsFromFile(String dataFilePath,
+			final Satellite satellite) throws IOException {
         return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel imagePixel = new DefaultImagePixel();
-                imagePixel.geoLoc(getGeoLoc(fields));
+                if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
+                	imagePixel.geoLoc(getGeoLocL7(fields));
+                } else
+                	imagePixel.geoLoc(getGeoLoc(fields));
+                
                 ImagePixelOutput output = new ImagePixelOutput();
                 imagePixel.setOutput(output);
                 
@@ -166,6 +178,16 @@ public class TestImageHelper {
 		}	
 		
 		return null;       
+    }
+	
+	private static GeoLoc getGeoLocL7(String[] fields) {
+        int i = 0;
+        int j = 0;
+        
+        double lat = Double.valueOf(fields[0]);
+		double lon = Double.valueOf(fields[1]);
+		GeoLoc geoloc = new GeoLoc(i,j,lat,lon);
+		return geoloc;       
     }
 	
 	private static ImagePixelOutput getImagePixelOutput(String[] fields) {

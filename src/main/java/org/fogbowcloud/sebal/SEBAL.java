@@ -92,28 +92,6 @@ public class SEBAL {
                     * rho4 + 0.114980971 * rho5 + 0.008649521 * rho7;
     	}
     }
-    
-    /*double alphaToasat7(double rho1, double rho2, double rho3, double rho4,
-            double rho5, double rho7, Satellite satellite) {
-    	double alphasat7 = 0.0;
-    	
-    	double ESUNsum = 0.0;
-    	
-    	for(int i = 0; i < 9; i++) {
-    		ESUNsum += satellite.ESUN(i + 1);
-    	}
-    	
-	    alphasat7 = ((satellite.ESUN(1)/ESUNsum) * rho1) + ((satellite.ESUN(2)/ESUNsum) * rho2)
-	    		+ ((satellite.ESUN(3)/ESUNsum) * rho3) + ((satellite.ESUN(4)/ESUNsum) * rho4) 
-	    		+ ((satellite.ESUN(5)/ESUNsum) * rho5) + ((satellite.ESUN(7)/ESUNsum) * rho7);
-        return alphasat7;
-    }
-    
-    double alphaToasat8(double rho1, double rho2, double rho3, double rho4,
-            double rho5, double rho7) {
-        return 0.19824703 * rho1 + 0.206089263 * rho2 + 0.201360858 * rho3 + 0.177142198
-                * rho4 + 0.114980971 * rho5 + 0.008649521 * rho7;
-    }*/
 
     double tauSW(double z) {
         return 0.75 + 2 * 0.00001 * z;
