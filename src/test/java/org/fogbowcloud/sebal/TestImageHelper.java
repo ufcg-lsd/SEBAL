@@ -24,7 +24,7 @@ public class TestImageHelper {
 	protected static DefaultImage setProperties( boolean isExpected,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
-			Double sunElevation, Date accquiredDate, double theta) throws Exception {
+			Double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		
 		DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         image.setDay(accquiredDate.getDay());
@@ -40,10 +40,7 @@ public class TestImageHelper {
 			currentPixel.setOutput(output);
 			
 			currentPixel.geoLoc(pixelFromCSV.geoLoc());
-			if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
-				currentPixel.cosTheta(theta);
-			} else
-				currentPixel.sinTheta(theta);
+			currentPixel.cosTheta(cosTheta);
 			
 			double latitude = currentPixel.geoLoc().getLat();
 			double longitude = currentPixel.geoLoc().getLon();
@@ -150,7 +147,6 @@ public class TestImageHelper {
         int i = 0;
         int j = 0;
         
-        // Modify this later based on John's data
         int zoneNumber = 24;
         
         int centralMeridian = -39;

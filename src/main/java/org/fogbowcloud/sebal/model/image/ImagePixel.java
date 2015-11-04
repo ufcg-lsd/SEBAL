@@ -29,9 +29,6 @@ public interface ImagePixel {
 	// Cosseno do Angulo zenital
 	double cosTheta();
 	
-	// Seno do Angulo zenital
-	double sinTheta();
-	
 	// Seno do Angulo de Elevação Solar
 	double sinThetaSunEle();
 	

@@ -60,12 +60,11 @@ public class SEBAL {
         return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
     }
     
-    double rhosat7(double LLambda, double d, double ESUN, double sinTheta) {
-        return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * sinTheta);
+    double rhosat7(double LLambda, double d, double ESUN, double cosTheta) {
+        return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
     }
     
     double rhoSat8(double aP, double mP, double LLambda, double sinThetaSunEle, double DN) {
-    	
     	return (aP + (mP * DN)) / sinThetaSunEle;
     }
 
@@ -79,13 +78,12 @@ public class SEBAL {
         	
         	double ESUNsum = 0.0;
         	
-        	for(int i = 0; i < 9; i++) {
+        	for(int i = 0; i < 7; i++) {
         		ESUNsum += satellite.ESUN(i + 1);
         	}
         	
-    	    alphasat7 = ((satellite.ESUN(1)/ESUNsum) * rho1) + ((satellite.ESUN(2)/ESUNsum) * rho2)
-    	    		+ ((satellite.ESUN(3)/ESUNsum) * rho3) + ((satellite.ESUN(4)/ESUNsum) * rho4) 
-    	    		+ ((satellite.ESUN(5)/ESUNsum) * rho5) + ((satellite.ESUN(7)/ESUNsum) * rho7);
+    	    alphasat7 = (0.298162056 * rho1) + (0.270540633 * rho2) + (0.228884542 * rho3) + (0.15512788 * rho4) 
+    	    		+ (0.034459591 * rho5) + (0.012675993 * rho7);
             return alphasat7;
     	} else {
     		return 0.19824703 * rho1 + 0.206089263 * rho2 + 0.201360858 * rho3 + 0.177142198
@@ -819,7 +817,7 @@ public class SEBAL {
 			}
 			return rho;
 		} else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
-			double[] rho = new double[9];
+			double[] rho = new double[7];
 			double[] LLambda = imagePixel.L();
 			
 			for (int i = 0; i < rho.length; i++) {
@@ -828,7 +826,7 @@ public class SEBAL {
 				} else {
 		            double rhoI = rhosat7(LLambda[i],
 		                    earthSunDistance.get(imagePixel.image().getDay()),
-		                    satellite.ESUN(i + 1), imagePixel.sinTheta());
+		                    satellite.ESUN(i + 1), imagePixel.cosTheta());
 		            rho[i] = rhoI;
 				}
 	        }

@@ -14,7 +14,8 @@ public class L7JSONSatellite extends JSONSatellite {
 
 	@Override
 	public double ESUN(int band) {
-		return json.optJSONArray("band" + band).optDouble(9);
+		// 9 instead of 7
+		return json.optJSONArray("band" + band).optDouble(7);
 	}
 	
 }

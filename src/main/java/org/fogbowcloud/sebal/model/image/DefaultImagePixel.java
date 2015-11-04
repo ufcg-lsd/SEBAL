@@ -96,11 +96,6 @@ public class DefaultImagePixel implements ImagePixel {
 	}
 	
 	@Override
-	public double sinTheta() {
-		return sinTheta;
-	}
-	
-	@Override
 	public double sinThetaSunEle() {
 		return sinThetaSunEle;
 	}

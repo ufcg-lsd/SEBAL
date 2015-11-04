@@ -34,7 +34,7 @@ public class TestImageLandsat7 {
 		this.properties = new Properties();
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(this.properties);
 		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-		testDataFilePath = "/local/esdras/git/SEBAL/src/test/resource/sebal-l7-test-data.csv";
+		testDataFilePath = "src/test/resource/sebal-l7-test-data.csv";
 		satellite = null;
 	}
 
@@ -56,7 +56,7 @@ public class TestImageLandsat7 {
         Mockito.when(station.ux(Mockito.anyDouble(), Mockito.anyDouble(),
         		Mockito.any(Date.class))).thenReturn(4.388);
         Mockito.when(station.d(Mockito.anyDouble(), 
-        		Mockito.anyDouble())).thenReturn(0.9841);
+        		Mockito.anyDouble())).thenReturn(4.0 * 2/3);
         Mockito.when(station.hc(Mockito.anyDouble(), 
         		Mockito.anyDouble())).thenReturn(4.0);
         
@@ -66,24 +66,21 @@ public class TestImageLandsat7 {
         
         Double sunElevation = 53.52375;
         
-        double sinTheta = 0.636631;
+        double cosTheta = Math.sin((sunElevation*Math.PI)/180);
         
         Date accquiredDate = Date.valueOf("2003-01-21");
         
 		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
-				accquiredDate, sinTheta);
+				accquiredDate, cosTheta);
 		
 		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
-				accquiredDate, sinTheta);
+				accquiredDate, cosTheta);
 		
-		// See if the arguments on 'for' are correct
-		for (int i = 0; i < processedPixels.size(); i++) {
-			//System.out.println(i);			
+		for (int i = 0; i < processedPixels.size(); i++) {	
 			GeoLoc expectedGeoLoc = expectedPixels.get(i).geoLoc();
 			ImagePixelOutput expectedOutput = expectedPixels.get(i).output();
 
-			// Verify how to fix this
 			GeoLoc obtainedGeoLoc = processedPixels.get(i).geoLoc();
 			ImagePixelOutput obtainedOutput = processedPixels.get(i).output();
 
@@ -91,7 +88,7 @@ public class TestImageLandsat7 {
 			assertEquals(obtainedGeoLoc.getJ(), expectedGeoLoc.getJ());
 			
 			double[] expectedL = expectedPixels.get(i).L();
-			double[] obtainedL = processedPixels.get(i).L();			
+			double[] obtainedL = processedPixels.get(i).L();
 			
 			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
 				assertField(expectedL[j], obtainedL[j]);
@@ -100,32 +97,32 @@ public class TestImageLandsat7 {
 			double[] expectedRho = expectedOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < expectedRho.length; j++) {				
+			for(int j = 0; j < expectedRho.length; j++) {	
 				assertField(expectedRho[j], obtainedRho[j]);
 			}
-						
+
 			assertField(expectedOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
-						
+
 			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());			
-						
+
 			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());			
-			
+
 			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
-					
+
 			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());			
-			
+
 			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
-			
+
 			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
-						
+
 			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());	
-			
+
 			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());		
-			
+
 			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
-			
+
 			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
-			
+
 			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
 			
 			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());

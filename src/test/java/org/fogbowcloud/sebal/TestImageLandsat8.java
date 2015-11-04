@@ -15,13 +15,13 @@ import org.fogbowcloud.sebal.model.image.GeoLoc;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.L5JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L8JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class TestImageLandsat5 {
+public class TestImageLandsat8 {
 	
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
 	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat5.class);
@@ -30,11 +30,11 @@ public class TestImageLandsat5 {
 	private Satellite satellite;
 	private Properties properties;
 	
-	public TestImageLandsat5() throws IOException {
+	public TestImageLandsat8() throws IOException {
 		this.properties = new Properties();
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(this.properties);
 		boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
-		testDataFilePath = "src/test/resource/sebal-l5-test-data.csv";
+		testDataFilePath = "src/test/resource/sebal-l8-test-data.csv";
 		satellite = null;
 	}
 
@@ -44,8 +44,8 @@ public class TestImageLandsat5 {
 		// Initializing image variables
         Locale.setDefault(Locale.ROOT);
         
-        satellite = new L5JSONSatellite(Satellite.LANDSAT_L5);
-        
+        satellite = new L8JSONSatellite(Satellite.LANDSAT_L8);
+
         // Mocking WeatherStation class
         // Change the return values
         WeatherStation station = Mockito.mock(WeatherStation.class);
@@ -64,10 +64,11 @@ public class TestImageLandsat5 {
         List<ImagePixel> expectedPixels = TestImageHelper.readExpectedPixelsFromFile(testDataFilePath,
         		satellite);
         
-        Double sunElevation = 49.00392091;
-        double cosTheta = 0.715517;
-
-        Date accquiredDate = Date.valueOf("2001-05-15");
+        Double sunElevation = 0.0;
+        
+        double cosTheta = 0.0;
+        
+        Date accquiredDate = Date.valueOf("insert date");
         
 		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
@@ -75,8 +76,8 @@ public class TestImageLandsat5 {
 		
 		List<ImagePixel> processedPixels = F1(this.pixelQuenteFrioChooser, satellite, station, sunElevation, 
 				accquiredDate, cosTheta);
-		
-		for (int i = 0; i < processedPixels.size(); i++) {		
+
+		for (int i = 0; i < processedPixels.size(); i++) {	
 			GeoLoc expectedGeoLoc = expectedPixels.get(i).geoLoc();
 			ImagePixelOutput expectedOutput = expectedPixels.get(i).output();
 
@@ -87,7 +88,7 @@ public class TestImageLandsat5 {
 			assertEquals(obtainedGeoLoc.getJ(), expectedGeoLoc.getJ());
 			
 			double[] expectedL = expectedPixels.get(i).L();
-			double[] obtainedL = processedPixels.get(i).L();			
+			double[] obtainedL = processedPixels.get(i).L();
 			
 			for(int j = 0; j < expectedPixels.get(i).L().length; j++) {
 				assertField(expectedL[j], obtainedL[j]);
@@ -96,32 +97,32 @@ public class TestImageLandsat5 {
 			double[] expectedRho = expectedOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < expectedRho.length; j++) {
+			for(int j = 0; j < expectedRho.length; j++) {	
 				assertField(expectedRho[j], obtainedRho[j]);
 			}
-						
+
 			assertField(expectedOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
-						
+
 			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());			
-						
+
 			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());			
-			
+
 			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
-					
+
 			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());			
-			
+
 			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
-			
+
 			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
-						
+
 			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());	
-			
+
 			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());		
-			
+
 			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
-			
+
 			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
-			
+
 			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
 			
 			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());
@@ -131,7 +132,7 @@ public class TestImageLandsat5 {
 	}
 	
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, 
-			WeatherStation station, double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
+			WeatherStation station, double sunElevation, Date accquiredDate, double sinTheta) throws Exception {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
@@ -139,7 +140,7 @@ public class TestImageLandsat5 {
 		List<ImagePixel> inputPixels = TestImageHelper.readInputPixelsFromFile(testDataFilePath,
 				satellite);
 	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
-					satellite, station, inputPixels, sunElevation, accquiredDate, cosTheta);
+					satellite, station, inputPixels, sunElevation, accquiredDate, sinTheta);
 				
 		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
                 satellite, boundingBoxVertices, 0, 0, false);
