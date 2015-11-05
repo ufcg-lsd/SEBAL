@@ -178,7 +178,7 @@ public class Wrapper {
 				+ " frio candidates in file " + fileName);
 		
 		List<ImagePixel> pixelFrioCandidates = updatedImage.pixelFrioCandidates();
-
+		long now = System.currentTimeMillis();
 		//TODO LOg here
         File outputFile = new File(fileName);
         try {
@@ -189,13 +189,14 @@ public class Wrapper {
             }
         } catch (IOException e) {
             LOGGER.error("Error while saving file.", e);
-        }    	
+        }  
+        LOGGER.debug("Saving pixel frio candidates time=" + (System.currentTimeMillis() - now));
 	}
 
 	private void savePixelQuenteCandidates(Image updatedImage, String fileName) {
 		LOGGER.debug("Saving pixel " + updatedImage.pixelQuenteCandidates().size()
 				+ " quente candidates in file " + fileName);
-
+    	long now = System.currentTimeMillis();
         List<ImagePixel> pixelQuenteCandidates = updatedImage.pixelQuenteCandidates();
         
         //TODO lOG here
@@ -209,6 +210,7 @@ public class Wrapper {
         } catch (IOException e) {
             LOGGER.error("Error while saving file.", e);
         }
+        LOGGER.debug("Saving pixel quente candidates time=" + (System.currentTimeMillis() - now));
 	}
 
 	private void savePixelFrio(Image updatedImage, String fileName) {
@@ -312,6 +314,7 @@ public class Wrapper {
     }
 
     private void saveProcessOutput(Image updatedImage) {
+    	long now = System.currentTimeMillis();
         List<ImagePixel> pixels = updatedImage.pixels();
         String allPixelsFileName = getAllPixelsFileName();
 
@@ -325,6 +328,7 @@ public class Wrapper {
         } catch (IOException e) {
             e.printStackTrace();
         }
+		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
     }
 
     private String getAllPixelsFileName() {

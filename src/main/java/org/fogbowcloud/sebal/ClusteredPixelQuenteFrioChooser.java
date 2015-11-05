@@ -87,7 +87,10 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		LOGGER.debug("image is null? " + (image == null));
 		long now = System.currentTimeMillis();
 		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
-		pixelFrioCandidates.add(pixelFrioInTheWater);
+		if (pixelFrioInTheWater != null) {
+			LOGGER.debug("Pixel frio in the water is null.");
+			pixelFrioCandidates.add(pixelFrioInTheWater);
+		}
 		
 		LOGGER.debug("PixelFrioInTheWater execution time=" + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
@@ -135,6 +138,7 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 
 		if (CVForNDVI < maxCVForNDVI) {
 			List<ImagePixel> validPixels = removeCloud(cluster);
+			LOGGER.debug("Adding " + validPixels.size() + " valid pixels in quente/frio candidates.");
 			pixelFrioCandidates.addAll(validPixels);
 			pixelQuenteCandidates.addAll(validPixels);
 		}

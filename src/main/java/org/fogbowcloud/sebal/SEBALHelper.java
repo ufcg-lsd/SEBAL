@@ -312,8 +312,17 @@ public class SEBALHelper {
 //        image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
 //        image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
         
-        image.width(Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX));
-        image.height(Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY));
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, offSetX + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, offSetX);
+		
+		image.width(Math.max(widthMax - widthMin, 0));
+		
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, offSetY + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, offSetY);
+		
+		image.height(Math.max(heightMax - heightMin, 0));
         
         LOGGER.debug("Image width is " + image.width());
         LOGGER.debug("Image height is " + image.height());
@@ -334,20 +343,26 @@ public class SEBALHelper {
         int centralMeridian = findCentralMeridian(zoneNumber);
         
         double[] fmask = null;
-        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty()){
+        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty() && image.width() > 0 && image.height() > 0){
         	LOGGER.debug("Fmask file is " + fmaskFilePath);
-        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
-        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
-        			Math.min(jFinal, offSetY + boundingBox.getH()));        	
+//        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
+//        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
+//        			Math.min(jFinal, offSetY + boundingBox.getH()));
+        	
+			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin, heightMax);   
+			LOGGER.debug("fmask size=" + fmask.length);
         }
 		
 		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
 
 		int fmaskI = 0;
-        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+//        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+//        	int fmaskJ = 0;
+//            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
+		for (int i = widthMin; i < widthMax; i++) {
         	int fmaskJ = 0;
-            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
-            	LOGGER.debug(i + " " + j);
+            for (int j = heightMin; j < heightMax; j++) {
+//            	LOGGER.debug(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
 
