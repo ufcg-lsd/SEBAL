@@ -353,7 +353,7 @@ public class SEBALHelper {
                     LArray[k] = L;
                 }
                 imagePixel.L(LArray);
-  
+                  
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
                 
                 double easting = i * 30 + ULx;

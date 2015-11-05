@@ -21,8 +21,7 @@ public class TestImageHelper {
 	
 	private static final Logger LOGGER = Logger.getLogger(TestImageHelper.class);
 
-	protected static DefaultImage setProperties( boolean isExpected,
-			PixelQuenteFrioChooser pixelQuenteFrioChooser,
+	protected static DefaultImage setProperties( PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			Satellite satellite, WeatherStation station, List<ImagePixel> pixels,
 			Double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		

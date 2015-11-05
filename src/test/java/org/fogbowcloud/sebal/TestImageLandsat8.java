@@ -24,7 +24,7 @@ import org.mockito.Mockito;
 public class TestImageLandsat8 {
 	
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
-	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat5.class);
+	private static final Logger LOGGER = Logger.getLogger(TestImageLandsat8.class);
 	private List<BoundingBoxVertice> boundingBoxVertices;
 	private String testDataFilePath;
 	private Satellite satellite;
@@ -70,7 +70,7 @@ public class TestImageLandsat8 {
         
         Date accquiredDate = Date.valueOf("insert date");
         
-		TestImageHelper.setProperties(true, pixelQuenteFrioChooser,
+		TestImageHelper.setProperties(pixelQuenteFrioChooser,
 				satellite, station, expectedPixels, sunElevation,
 				accquiredDate, cosTheta);
 		
@@ -102,31 +102,18 @@ public class TestImageLandsat8 {
 			}
 
 			assertField(expectedOutput.getAlphaToa(), obtainedOutput.getAlphaToa());
-
 			assertField(expectedOutput.getTauSW(), obtainedOutput.getTauSW());			
-
 			assertField(expectedOutput.getAlpha(), obtainedOutput.getAlpha());			
-
 			assertField(expectedOutput.getRSDown(), obtainedOutput.getRSDown());
-
 			assertField(expectedOutput.getNDVI(), obtainedOutput.getNDVI());			
-
 			assertField(expectedOutput.SAVI(), obtainedOutput.SAVI());
-
 			assertField(expectedOutput.getIAF(), obtainedOutput.getIAF());
-
 			assertField(expectedOutput.getEpsilonNB(), obtainedOutput.getEpsilonNB());	
-
 			assertField(expectedOutput.getEpsilonZero(), obtainedOutput.getEpsilonZero());		
-
 			assertField(expectedOutput.getTs(), obtainedOutput.getTs());
-
 			assertField(expectedOutput.getRLUp(), obtainedOutput.getRLUp());
-
-			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());
-			
+			assertField(expectedOutput.getEpsilonA(), obtainedOutput.getEpsilonA());		
 			assertField(expectedOutput.getRLDown(), obtainedOutput.getRLDown());
-
 			assertField(expectedOutput.Rn(), obtainedOutput.Rn());
 		}
 	}
@@ -134,20 +121,17 @@ public class TestImageLandsat8 {
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, 
 			WeatherStation station, double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		
-		LOGGER.info("Executing F1 phase...");
-		long now = System.currentTimeMillis();
+		LOGGER.debug("Executing F1 phase...");
 	
 		List<ImagePixel> inputPixels = TestImageHelper.readInputPixelsFromFile(testDataFilePath,
 				satellite);
-	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
+	    DefaultImage inputImage = TestImageHelper.setProperties(pixelQuenteFrioChooser,
 					satellite, station, inputPixels, sunElevation, accquiredDate, cosTheta);
 				
 		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
                 satellite, boundingBoxVertices, 0, 0, false);
 		
 		List<ImagePixel> processedPixels = processedImage.pixels();
-
-        LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
 		
         return processedPixels;
 	}
