@@ -275,12 +275,12 @@ public class RenderHelper {
 				initialJ, drivers);
 		List<BandVariable> vars = new LinkedList<BandVariable>();
 		vars.add(bandVariableBuilder.build("ndvi", 7));
-		vars.add(bandVariableBuilder.build("evi", 24));
-		vars.add(bandVariableBuilder.build("iaf", 23));
-		vars.add(bandVariableBuilder.build("ts", 6));
-		vars.add(bandVariableBuilder.build("alpha", 9));
-		vars.add(bandVariableBuilder.build("rn", 5));
-		vars.add(bandVariableBuilder.build("g", 4));
+//		vars.add(bandVariableBuilder.build("evi", 24));
+//		vars.add(bandVariableBuilder.build("iaf", 23));
+//		vars.add(bandVariableBuilder.build("ts", 6));
+//		vars.add(bandVariableBuilder.build("alpha", 9));
+//		vars.add(bandVariableBuilder.build("rn", 5));
+//		vars.add(bandVariableBuilder.build("g", 4));
 
 		lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 
