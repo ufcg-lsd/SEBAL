@@ -56,8 +56,7 @@ public class SEBAL {
         return L; 
     }
 
-    double rho(ImagePixel imagePixel, Satellite satellite, int counter, 
-    		EarthSunDistance earthSunDistance) {
+    double rho(ImagePixel imagePixel, Satellite satellite, EarthSunDistance earthSunDistance, int counter) {
     	
     	double[] LLambda = imagePixel.L();
     	
@@ -66,9 +65,9 @@ public class SEBAL {
 	        return (Math.PI * LLambda[counter] * Math.pow(earthSunDistance.get(imagePixel.image().getDay()), 2)) / 
 	        		(satellite.ESUN(counter + 1) * imagePixel.cosTheta());
     	} else {
+    		int[] DN = imagePixel.DN();
     		double[] aP = imagePixel.Ap();
     		double[] mP = imagePixel.Mp();
-    		int[] DN = imagePixel.DN();
     		
     		return (aP[counter] + (mP[counter] * DN[counter])) / imagePixel.sinThetaSunEle();
     	}
@@ -807,43 +806,17 @@ public class SEBAL {
 	}
 	
 	protected double[] calcRho(Satellite satellite, ImagePixel imagePixel) {	
-		if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
-			double[] rho = new double[7];
+		double[] rho = new double[7];
 				
-			for (int i = 0; i < rho.length; i++) {
-				if(i == 5) {
-					rho[i] = 0.0;
-				} else {
-			        double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
-			        rho[i] = rhoI;     
-				}
+		for (int i = 0; i < rho.length; i++) {
+			if(i == 5) {
+				rho[i] = 0.0;
+			} else {
+			       double rhoI = rho(imagePixel, satellite, earthSunDistance, i);
+			       rho[i] = rhoI;     
 			}
-			return rho;
-		} else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
-			double[] rho = new double[7];
-			
-			for (int i = 0; i < rho.length; i++) {
-				if(i == 5) {
-					rho[i] = 0.0;
-				} else {
-		            double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
-		            rho[i] = rhoI;
-				}
-	        }
-			return rho;
-		} else {
-			double[] rho = new double[11];
-			
-			for (int i = 0; i < rho.length; i++) {
-				if(i == 5) {
-					rho[i] = 0.0;
-				} else {
-		            double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
-		            rho[i] = rhoI;
-				}
-			}
-			return rho;
-		}	
+		}
+		return rho;
 	}
 	
     private boolean cloudDetectionWaterTest(double NDVI, double rho4) {
