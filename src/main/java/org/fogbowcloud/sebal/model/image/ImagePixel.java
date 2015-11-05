@@ -8,11 +8,29 @@ public interface ImagePixel {
 	void setOutput(ImagePixelOutput output);
 	
 	GeoLoc geoLoc();
+	// Número Digital
+	int[] DN();
+	
 	// Radiancia
 	double[] L();
 	
-	// Angulo zenital
+	// Coeficiente de Radiância
+	double[] Al();
+	
+	// Coeficiente de Radiância
+	double[] Ml();
+	
+	// Coeficiente de Reflectância
+	double[] Ap();
+	
+	// Coeficiente de Reflectância
+	double[] Mp();
+	
+	// Cosseno do Angulo zenital
 	double cosTheta();
+	
+	// Seno do Angulo de Elevação Solar
+	double sinThetaSunEle();
 	
 	// Altitude (elevacao)
 	double z();

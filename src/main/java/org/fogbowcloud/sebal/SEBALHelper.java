@@ -226,7 +226,7 @@ public class SEBALHelper {
 		return new UTMCoordinate(easting, northing);
     }
 	
-	private static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
+	public static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
 			double utmZoneCenterLongitude) throws FactoryException, TransformException {
 	
 		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
@@ -372,7 +372,7 @@ public class SEBALHelper {
                     LArray[k] = L;
                 }
                 imagePixel.L(LArray);
-  
+                  
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
                 
 //                double easting = i * 30 + ULx;
