@@ -146,10 +146,8 @@ public class TestImageHelper {
         int i = 0;
         int j = 0;
         
-        int zoneNumber = 24;
-        
-        int centralMeridian = -39;
-        
+        int zoneNumber = 24;        
+        int centralMeridian = -39;       
         
         // Converting UTM to latitude and longitude
 		LatLonCoordinate latLonCoordinate;
