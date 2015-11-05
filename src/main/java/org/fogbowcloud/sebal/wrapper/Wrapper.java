@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
@@ -24,7 +25,9 @@ import org.fogbowcloud.sebal.model.image.HOutput;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.satellite.JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L5JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L7JSONSatellite;
+import org.fogbowcloud.sebal.model.satellite.L8JSONSatellite;
 import org.fogbowcloud.sebal.model.satellite.Satellite;
 
 public class Wrapper {
@@ -152,7 +155,19 @@ public class Wrapper {
                 
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
-        Satellite satellite = new JSONSatellite("landsat5");
+        
+        MetadataElement metadataRoot = product.getMetadataRoot();
+        String landsatType = metadataRoot.getElement("L1_METADATA_FILE")
+                .getElement("PRODUCT_METADATA").getAttribute("SPACECRAFT_ID")
+                .getData().getElemString();
+        
+        Satellite satellite;
+        if(landsatType.equalsIgnoreCase("LANDSAT_5")) {
+        	satellite = new L5JSONSatellite(Satellite.LANDSAT_L5);
+        } else if(landsatType.equalsIgnoreCase("LANDSAT_7")) {
+        	satellite = new L7JSONSatellite(Satellite.LANDSAT_L7);
+        } else
+        	satellite = new L8JSONSatellite(Satellite.LANDSAT_L8);
         
         LOGGER.debug("F1 phase time read = " + (System.currentTimeMillis() - now));
                		
@@ -583,7 +598,7 @@ public class Wrapper {
         }, filePath);
     }
 
-    interface PixelParser {
+    public interface PixelParser {
         ImagePixel parseLine(String[] line);
     }
 

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class DeployBulkMain {
@@ -22,6 +21,7 @@ public class DeployBulkMain {
 		int lowerY = Integer.parseInt(args[5]);
 
 		String phase = args[6];
+		String landsat = null;
 		
 		int numberOfPartitions = Integer.parseInt(args[7]);
 		int partitionIndex = Integer.parseInt(args[8]);
