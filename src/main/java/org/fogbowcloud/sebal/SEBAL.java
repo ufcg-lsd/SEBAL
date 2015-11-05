@@ -56,16 +56,22 @@ public class SEBAL {
         return L; 
     }
 
-    double rhosat5(double LLambda, double d, double ESUN, double cosTheta) {
-        return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
-    }
-    
-    double rhosat7(double LLambda, double d, double ESUN, double cosTheta) {
-        return (Math.PI * LLambda * Math.pow(d, 2)) / (ESUN * cosTheta);
-    }
-    
-    double rhoSat8(double aP, double mP, double LLambda, double sinThetaSunEle, double DN) {
-    	return (aP + (mP * DN)) / sinThetaSunEle;
+    double rho(ImagePixel imagePixel, Satellite satellite, int counter, 
+    		EarthSunDistance earthSunDistance) {
+    	
+    	double[] LLambda = imagePixel.L();
+    	
+    	if(satellite.landsatName().equals(Satellite.LANDSAT_L5) || 
+    			satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
+	        return (Math.PI * LLambda[counter] * Math.pow(earthSunDistance.get(imagePixel.image().getDay()), 2)) / 
+	        		(satellite.ESUN(counter + 1) * imagePixel.cosTheta());
+    	} else {
+    		double[] aP = imagePixel.Ap();
+    		double[] mP = imagePixel.Mp();
+    		int[] DN = imagePixel.DN();
+    		
+    		return (aP[counter] + (mP[counter] * DN[counter])) / imagePixel.sinThetaSunEle();
+    	}
     }
 
     double alphaToa(double rho1, double rho2, double rho3, double rho4,
@@ -803,46 +809,36 @@ public class SEBAL {
 	protected double[] calcRho(Satellite satellite, ImagePixel imagePixel) {	
 		if(satellite.landsatName().equals(Satellite.LANDSAT_L5)) {
 			double[] rho = new double[7];
-			double[] LLambda = imagePixel.L();
 				
 			for (int i = 0; i < rho.length; i++) {
 				if(i == 5) {
 					rho[i] = 0.0;
 				} else {
-			        double rhoI = rhosat5(LLambda[i],
-			                earthSunDistance.get(imagePixel.image().getDay()),
-			                satellite.ESUN(i + 1), imagePixel.cosTheta());
+			        double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
 			        rho[i] = rhoI;     
 				}
 			}
 			return rho;
 		} else if(satellite.landsatName().equals(Satellite.LANDSAT_L7)) {
 			double[] rho = new double[7];
-			double[] LLambda = imagePixel.L();
 			
 			for (int i = 0; i < rho.length; i++) {
 				if(i == 5) {
 					rho[i] = 0.0;
 				} else {
-		            double rhoI = rhosat7(LLambda[i],
-		                    earthSunDistance.get(imagePixel.image().getDay()),
-		                    satellite.ESUN(i + 1), imagePixel.cosTheta());
+		            double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
 		            rho[i] = rhoI;
 				}
 	        }
 			return rho;
 		} else {
-			int[] DN = imagePixel.DN();
 			double[] rho = new double[11];
-			double[] aP = imagePixel.Ap();
-			double[] mP = imagePixel.Mp();
-			double[] LLambda = imagePixel.L();
 			
 			for (int i = 0; i < rho.length; i++) {
 				if(i == 5) {
 					rho[i] = 0.0;
 				} else {
-		            double rhoI = rhoSat8(aP[i], mP[i], LLambda[i], imagePixel.sinThetaSunEle(), DN[i]);
+		            double rhoI = rho(imagePixel, satellite, i, earthSunDistance);
 		            rho[i] = rhoI;
 				}
 			}

@@ -97,7 +97,7 @@ public class TestImageLandsat7 {
 			double[] expectedRho = expectedOutput.getRho();
 			double[] obtainedRho = obtainedOutput.getRho();
 			
-			for(int j = 0; j < expectedRho.length; j++) {	
+			for(int j = 0; j < expectedRho.length; j++) {
 				assertField(expectedRho[j], obtainedRho[j]);
 			}
 
@@ -132,7 +132,7 @@ public class TestImageLandsat7 {
 	}
 	
 	public List<ImagePixel> F1(PixelQuenteFrioChooser pixelQuenteFrioChooser, Satellite satellite, 
-			WeatherStation station, double sunElevation, Date accquiredDate, double sinTheta) throws Exception {
+			WeatherStation station, double sunElevation, Date accquiredDate, double cosTheta) throws Exception {
 		
 		LOGGER.info("Executing F1 phase...");
 		long now = System.currentTimeMillis();
@@ -140,7 +140,7 @@ public class TestImageLandsat7 {
 		List<ImagePixel> inputPixels = TestImageHelper.readInputPixelsFromFile(testDataFilePath,
 				satellite);
 	    DefaultImage inputImage = TestImageHelper.setProperties(false, pixelQuenteFrioChooser,
-					satellite, station, inputPixels, sunElevation, accquiredDate, sinTheta);
+					satellite, station, inputPixels, sunElevation, accquiredDate, cosTheta);
 				
 		Image processedImage = new SEBAL().processPixelQuentePixelFrio(inputImage,
                 satellite, boundingBoxVertices, 0, 0, false);
