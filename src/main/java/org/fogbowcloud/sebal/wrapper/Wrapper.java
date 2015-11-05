@@ -152,8 +152,7 @@ public class Wrapper {
         	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
         	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         }
-        
-        
+                
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         
@@ -182,12 +181,54 @@ public class Wrapper {
                 satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
         
         saveProcessOutput(updatedImage);
-        savePixelQuente(updatedImage, getPixelQuenteFileName());
-        savePixelFrio(updatedImage, getPixelFrioFileName());
+//        savePixelQuente(updatedImage, getPixelQuenteFileName());
+//        savePixelFrio(updatedImage, getPixelFrioFileName());
+        savePixelQuenteCandidates(updatedImage, getPixelQuenteCandidatesFileName());
+        savePixelFrioCandidates(updatedImage, getPixelFrioCandidatesFileName());
         LOGGER.info("F1 phase execution time is " + (System.currentTimeMillis() - now));
     }
 
-    private void savePixelFrio(Image updatedImage, String fileName) {
+    private void savePixelFrioCandidates(Image updatedImage, String fileName) {
+		LOGGER.debug("Saving pixel " + updatedImage.pixelFrioCandidates().size()
+				+ " frio candidates in file " + fileName);
+		
+		List<ImagePixel> pixelFrioCandidates = updatedImage.pixelFrioCandidates();
+		long now = System.currentTimeMillis();
+		//TODO LOg here
+        File outputFile = new File(fileName);
+        try {
+            FileUtils.write(outputFile, "");
+            for (ImagePixel imagePixel : pixelFrioCandidates) {
+                String resultLine = generatePixelFrioResultLine(imagePixel);
+                FileUtils.write(outputFile, resultLine, true);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error while saving file.", e);
+        }  
+        LOGGER.debug("Saving pixel frio candidates time=" + (System.currentTimeMillis() - now));
+	}
+
+	private void savePixelQuenteCandidates(Image updatedImage, String fileName) {
+		LOGGER.debug("Saving pixel " + updatedImage.pixelQuenteCandidates().size()
+				+ " quente candidates in file " + fileName);
+    	long now = System.currentTimeMillis();
+        List<ImagePixel> pixelQuenteCandidates = updatedImage.pixelQuenteCandidates();
+        
+        //TODO lOG here
+        File outputFile = new File(fileName);
+        try {
+            FileUtils.write(outputFile, "");
+            for (ImagePixel imagePixel : pixelQuenteCandidates) {
+                String resultLine = generatePixelQuenteResultLine(imagePixel);
+                FileUtils.write(outputFile, resultLine, true);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error while saving file.", e);
+        }
+        LOGGER.debug("Saving pixel quente candidates time=" + (System.currentTimeMillis() - now));
+	}
+
+	private void savePixelFrio(Image updatedImage, String fileName) {
         StringBuilder stringBuilder = new StringBuilder();
 
         ImagePixel pixelFrio = updatedImage.pixelFrio();
@@ -199,7 +240,7 @@ public class Wrapper {
         createResultsFile(fileName, stringBuilder);
     }
 
-    private String getPixelFrioFileName() {
+    private String getPixelFrioCandidatesFileName() {
         return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".frio.csv";
     }
@@ -210,9 +251,11 @@ public class Wrapper {
 
     private String generatePixelFrioResultLine(ImagePixel pixelFrio) {
 		ImagePixelOutput outputFrio = getPixelOutput(pixelFrio);
-		String pixelFrioOutput = String.valueOf(outputFrio.getTs()) + ","
-				+ pixelFrio.geoLoc().getLat() + "," + pixelFrio.geoLoc().getLon();
-        return pixelFrioOutput;
+//		String pixelFrioOutput = String.valueOf(outputFrio.getTs()) + ","
+//				+ pixelFrio.geoLoc().getLat() + "," + pixelFrio.geoLoc().getLon();		
+		String line = getRow(String.valueOf(outputFrio.getTs()), String.valueOf(outputFrio.getNDVI()), pixelFrio
+				.geoLoc().getLat(), pixelFrio.geoLoc().getLon());
+        return line;
     }
 
     private void savePixelQuente(Image updatedImage, String fileName) {
@@ -227,41 +270,41 @@ public class Wrapper {
         createResultsFile(fileName, stringBuilder);
     }
 
-    private List<ImagePixel> getAllPixelsQuente() throws IOException {
+    private List<ImagePixel> getAllPixelQuenteCandidates() throws IOException {
         File folder = new File(outputDir);
         File[] listOfFiles = folder.listFiles();
-        List<ImagePixel> pixelsQuente = new ArrayList<ImagePixel>();
+        List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
 
         for (File file : listOfFiles) {
             if (file.isFile() && file.getName().contains("quente.csv")) {
-                ImagePixel pixelQuente = processPixelQuenteFromFile(file
+                List<ImagePixel> pixelsQuente = processPixelQuenteCandidatesFromFile(file
                         .getAbsolutePath());
-                if (pixelQuente != null) {
-                    pixelsQuente.add(pixelQuente);
+                if (pixelsQuente != null) {
+                    pixelQuenteCandidates.addAll(pixelsQuente);
                 }
             }
         }
-        return pixelsQuente;
+        return pixelQuenteCandidates;
     }
 
-    private List<ImagePixel> getAllPixelsFrio() throws IOException {
+    private List<ImagePixel> getAllPixelFrioCandidates() throws IOException {
         File folder = new File(outputDir);
         File[] listOfFiles = folder.listFiles();
-        List<ImagePixel> pixelsFrio = new ArrayList<ImagePixel>();
+        List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();
 
         for (File file : listOfFiles) {
             if (file.isFile() && file.getName().contains("frio.csv")) {
-                ImagePixel pixelFrio = processPixelFrioFromFile(file
+                List<ImagePixel> pixelsFrio = processPixelFrioFromFile(file
                         .getAbsolutePath());
-                if (pixelFrio != null) {
-                    pixelsFrio.add(pixelFrio);
+                if (pixelsFrio != null) {
+                    pixelFrioCandidates.addAll(pixelsFrio);
                 }
             }
         }
-        return pixelsFrio;
+        return pixelFrioCandidates;
     }
 
-    private String getPixelQuenteFileName() {
+    private String getPixelQuenteCandidatesFileName() {
         return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin
                 + "." + jFinal + ".quente.csv";
     }
@@ -272,14 +315,21 @@ public class Wrapper {
 
     private String generatePixelQuenteResultLine(ImagePixel pixelQuente) {
         ImagePixelOutput outputQuente = getPixelOutput(pixelQuente);
-		String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx() + ","
-				+ pixelQuente.hc() + "," + pixelQuente.d() + "," + outputQuente.G() + ","
-				+ outputQuente.Rn() + "," + outputQuente.SAVI() + "," + outputQuente.getTs() + ","
-				+ pixelQuente.geoLoc().getLat() + "," + pixelQuente.geoLoc().getLon();
-        return pixelQuenteOutput;
+//		String pixelQuenteOutput = pixelQuente.ux() + "," + pixelQuente.zx() + ","
+//				+ pixelQuente.hc() + "," + pixelQuente.d() + "," + outputQuente.G() + ","
+//				+ outputQuente.Rn() + "," + outputQuente.SAVI() + "," + outputQuente.getTs() + ","
+//				+ pixelQuente.geoLoc().getLat() + "," + pixelQuente.geoLoc().getLon();
+		
+		String line = getRow(pixelQuente.ux(), pixelQuente.zx(), pixelQuente.hc(), pixelQuente.d(),
+				outputQuente.G(), outputQuente.Rn(), outputQuente.SAVI(), outputQuente.getTs(),
+				outputQuente.getNDVI(), pixelQuente.geoLoc().getLat(), pixelQuente.geoLoc()
+						.getLon());
+		
+        return line;
     }
 
     private void saveProcessOutput(Image updatedImage) {
+    	long now = System.currentTimeMillis();
         List<ImagePixel> pixels = updatedImage.pixels();
         String allPixelsFileName = getAllPixelsFileName();
 
@@ -293,6 +343,7 @@ public class Wrapper {
         } catch (IOException e) {
             e.printStackTrace();
         }
+		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
     }
 
     private String getAllPixelsFileName() {
@@ -341,20 +392,27 @@ public class Wrapper {
 
     public void F2(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
-    	LOGGER.info("Executing F2 phase...");
-    	long now = System.currentTimeMillis();
-        ImagePixel pixelQuente = processPixelQuenteFromFile(getFinalPixelQuenteFileName());
-        ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName());
-        List<ImagePixel> pixels = processPixelsFromFile();
-        LOGGER.debug("Number of pixels is " + pixels.size());
-        Image image = SEBALHelper.readPixels(pixels, pixelQuente, pixelFrio,
-                pixelQuenteFrioChooser);
-        LOGGER.debug("Image width is " + image.width());
-        LOGGER.debug("Image height is " + image.height());
-        image = new SEBAL().pixelHProcess(pixels, pixelQuente,
-                getPixelOutput(pixelQuente), getPixelOutput(pixelFrio), image);
-        saveFinalProcessOutput(image);
-        LOGGER.info("F2 phase execution time is "+ (System.currentTimeMillis() - now));
+		LOGGER.info("Executing F2 phase...");
+		long now = System.currentTimeMillis();
+		if (processPixelQuenteCandidatesFromFile(getFinalPixelQuenteFileName()) == null
+				|| processPixelQuenteCandidatesFromFile(getFinalPixelQuenteFileName()).isEmpty()
+				|| processPixelFrioFromFile(getPixelFrioFinalFileName()) == null
+				|| processPixelFrioFromFile(getPixelFrioFinalFileName()).isEmpty()) {
+			LOGGER.error("There is not pixel quente and/or frio choosen.");
+			return;
+		}
+		
+		ImagePixel pixelQuente = processPixelQuenteCandidatesFromFile(getFinalPixelQuenteFileName())
+				.get(0);
+		ImagePixel pixelFrio = processPixelFrioFromFile(getPixelFrioFinalFileName()).get(0);
+		List<ImagePixel> pixels = processPixelsFromFile();
+		LOGGER.debug("Number of pixels is " + pixels.size());
+		Image image = SEBALHelper
+				.readPixels(pixels, pixelQuente, pixelFrio, pixelQuenteFrioChooser);
+		image = new SEBAL().pixelHProcess(pixels, pixelQuente, getPixelOutput(pixelQuente),
+				getPixelOutput(pixelFrio), image);
+		saveFinalProcessOutput(image);
+		LOGGER.info("F2 phase execution time is " + (System.currentTimeMillis() - now));
     }
 
     private ImagePixelOutput getPixelOutput(ImagePixel pixel) {
@@ -369,8 +427,9 @@ public class Wrapper {
 
         try {
         	long now = System.currentTimeMillis();
-            Image image = SEBALHelper.readPixels(getAllPixelsQuente(),
-                    getAllPixelsFrio(), pixelQuenteFrioChooser);
+        	
+            Image image = SEBALHelper.readPixels(getAllPixelQuenteCandidates(),
+                    getAllPixelFrioCandidates(), pixelQuenteFrioChooser);
             image.choosePixelsQuenteFrio();
             savePixelFrio(image, outputDir + "/" + "frio.csv");
             savePixelQuente(image, outputDir + "/" + "quente.csv");
@@ -516,24 +575,25 @@ public class Wrapper {
         return geoloc;
     }
 
-    private ImagePixel processPixelFrioFromFile(String filePath)
+    private List<ImagePixel> processPixelFrioFromFile(String filePath)
             throws IOException {
-        return processSinglePixelFile(new PixelParser() {
+        return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
-                DefaultImagePixel pixelFrio = new DefaultImagePixel();
+                DefaultImagePixel pixelFrioCandidate = new DefaultImagePixel();
                 ImagePixelOutput outputFrio = new ImagePixelOutput();
                 outputFrio.setTs(Double.valueOf(fields[0]));
-                pixelFrio.setOutput(outputFrio);
+                outputFrio.setNDVI(Double.valueOf(fields[1]));
+                pixelFrioCandidate.setOutput(outputFrio);
 
-                double latitude = Double.valueOf(fields[1]);
-                double longitude = Double.valueOf(fields[2]);
+                double latitude = Double.valueOf(fields[2]);
+                double longitude = Double.valueOf(fields[3]);
                 GeoLoc geoLoc = new GeoLoc();
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);
-                pixelFrio.geoLoc(geoLoc);
+                pixelFrioCandidate.geoLoc(geoLoc);
                 
-                return pixelFrio;
+                return pixelFrioCandidate;
             }
         }, filePath);
     }
@@ -556,15 +616,9 @@ public class Wrapper {
         return pixels;
     }
 
-    private ImagePixel processSinglePixelFile(PixelParser pixelParser,
-            String file) throws IOException {
-        List<ImagePixel> allPixels = processPixelsFile(pixelParser, file);
-        return allPixels.isEmpty() ? null : allPixels.get(0);
-    }
-
-    private ImagePixel processPixelQuenteFromFile(String fileName)
+    private List<ImagePixel> processPixelQuenteCandidatesFromFile(String fileName)
             throws IOException {
-        return processSinglePixelFile(new PixelParser() {
+        return processPixelsFile(new PixelParser() {
             @Override
             public ImagePixel parseLine(String[] fields) {
                 DefaultImagePixel pixelQuente = new DefaultImagePixel();
@@ -578,10 +632,11 @@ public class Wrapper {
                 outputQuente.setRn(Double.valueOf(fields[5]));
                 outputQuente.setSAVI(Double.valueOf(fields[6]));
                 outputQuente.setTs(Double.valueOf(fields[7]));
+                outputQuente.setNDVI(Double.valueOf(fields[8]));
                 pixelQuente.setOutput(outputQuente);
                 
-                double latitude = Double.valueOf(fields[8]);
-                double longitude = Double.valueOf(fields[9]);
+                double latitude = Double.valueOf(fields[9]);
+                double longitude = Double.valueOf(fields[10]);
                 GeoLoc geoLoc = new GeoLoc();
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);

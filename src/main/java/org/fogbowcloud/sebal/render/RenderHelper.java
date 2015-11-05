@@ -29,7 +29,11 @@ import ucar.ma2.InvalidRangeException;
 
 public class RenderHelper {
 
-	private static double PIXEL_SIZE = 0.00027;
+//	private static double PIXEL_SIZE = 0.00027;
+//	private static double PIXEL_SIZE = 0.0002727464;
+	private static double PIXEL_SIZE_X = 0.0002702704;
+	private static double PIXEL_SIZE_Y = 0.0002718243;
+	
 
 	public static final String TIFF = "tiff";
 	public static final String BMP = "bmp";
@@ -81,7 +85,7 @@ public class RenderHelper {
 //				RenderHelper.NET_CDF);
 		
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, RenderHelper.TIFF);
+				maskHeight, daysSince1970, args[9]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -156,7 +160,7 @@ public class RenderHelper {
 			for (String driver : drivers) {
 				if (driver.equals(TIFF)) {
 					Driver tiffDriver = gdal.GetDriverByName("GTiff");
-					String tiffFile = new File(outputPath, imgPrefix + "_" + varName + ".tiff")
+					String tiffFile = new File(outputPath, imgPrefix + "_new_" + varName + ".tiff")
 							.getAbsolutePath();
 					Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
@@ -164,7 +168,7 @@ public class RenderHelper {
 					this.rasterTiff = new double[maskHeight * maskWidth];
 				} else if (driver.equals(BMP)) {
 					Driver bmpDriver = gdal.GetDriverByName("BMP");
-					String bmpFile = new File(outputPath, imgPrefix + "_" + varName + ".bmp")
+					String bmpFile = new File(outputPath, imgPrefix + "_new_" + varName + ".bmp")
 							.getAbsolutePath();
 					Dataset dstBmp = bmpDriver.Create(bmpFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Byte);
@@ -172,7 +176,7 @@ public class RenderHelper {
 					this.rasterBmp = new double[maskHeight * maskWidth];
 				} else if (driver.equals(NET_CDF)) {
 					Driver netCDFDriver = gdal.GetDriverByName("NetCDF");
-					this.netCDFFile = new File(outputPath, imgPrefix + "_" + varName + ".nc")
+					this.netCDFFile = new File(outputPath, imgPrefix + "_new_" + varName + ".nc")
 							.getAbsolutePath();
 					Dataset dstNetCDF = netCDFDriver.Create(netCDFFile, maskWidth, maskHeight, 1,
 							gdalconstConstants.GDT_Float64);
@@ -208,7 +212,7 @@ public class RenderHelper {
 					bmpBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
 					bmpBand.FlushCache();
 				} else if (format.equals(NET_CDF)) {
-					netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterBmp);
+					netCDFBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterNetCDF);
 					netCDFBand.FlushCache();
 
 					try {
@@ -221,10 +225,18 @@ public class RenderHelper {
 		}
 
 		private static Band createBand(Dataset dstNdviTiff, Double ulLon, Double ulLat) {
-			System.out.println("uLon="+ ulLon);
-			System.out.println("uLat="+ ulLat);
+//			double[] geoTransform = dstNdviTiff.GetGeoTransform();
+//			for (double d : geoTransform) {
+//				System.out.println(d);
+//			}
+			/*
+			 * In case of north up images, the GT(2) and GT(4) coefficients are
+			 * zero, and the GT(1) is pixel width, and GT(5) is pixel height.
+			 * The (GT(0),GT(3)) position is the top left corner of the top left
+			 * pixel of the raster.
+			 */
 			dstNdviTiff
-					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE, 0, ulLat, 0, -PIXEL_SIZE });
+					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE_X, 0, ulLat, 0, -PIXEL_SIZE_Y });
 			SpatialReference srs = new SpatialReference();
 			srs.SetWellKnownGeogCS("WGS84");
 			dstNdviTiff.SetProjection(srs.ExportToWkt());
@@ -263,8 +275,8 @@ public class RenderHelper {
 				initialJ, drivers);
 		List<BandVariable> vars = new LinkedList<BandVariable>();
 		vars.add(bandVariableBuilder.build("ndvi", 7));
-		vars.add(bandVariableBuilder.build("evi", 18));
-		vars.add(bandVariableBuilder.build("iaf", 17));
+		vars.add(bandVariableBuilder.build("evi", 24));
+		vars.add(bandVariableBuilder.build("iaf", 23));
 		vars.add(bandVariableBuilder.build("ts", 6));
 		vars.add(bandVariableBuilder.build("alpha", 9));
 		vars.add(bandVariableBuilder.build("rn", 5));

@@ -11,6 +11,8 @@ public class DefaultImage implements Image {
 	private int day;
 	private int width;
 	private int height;
+	private List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
+	private List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();
 	private ImagePixel pixelQuente;
 	private ImagePixel pixelFrio;
 	private PixelQuenteFrioChooser pixelQuenteFrioChooser;
@@ -34,8 +36,9 @@ public class DefaultImage implements Image {
 	}
 
 	@Override
-	public void choosePixelsQuenteFrio() {
-	   pixelQuenteFrioChooser.choosePixelsQuenteFrio(this);
+	public void choosePixelsQuenteFrio() {		
+//	   pixelQuenteFrioChooser.selectPixelsQuenteFrioCandidates(this);
+	   pixelQuenteFrioChooser.choosePixelsQuenteFrio();
 	   this.pixelFrio = pixelQuenteFrioChooser.getPixelFrio();
        this.pixelQuente = pixelQuenteFrioChooser.getPixelQuente();
 	}
@@ -84,4 +87,23 @@ public class DefaultImage implements Image {
 	public int height() {
 		return height;		
 	}
+
+	@Override
+	public void selectPixelsQuenteFrioCandidates() {
+		pixelQuenteFrioChooser.selectPixelsQuenteFrioCandidates(this);
+		this.pixelFrioCandidates = pixelQuenteFrioChooser.getPixelFrioCandidates();
+		this.pixelQuenteCandidates = pixelQuenteFrioChooser.getPixelQuenteCandidates();
+	}
+
+	@Override
+	public List<ImagePixel> pixelQuenteCandidates() {
+		return pixelQuenteCandidates;
+	}
+
+	@Override
+	public List<ImagePixel> pixelFrioCandidates() {
+		return pixelFrioCandidates;
+	}
+	
+	
 }

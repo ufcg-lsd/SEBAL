@@ -378,9 +378,9 @@ public class SEBAL {
 					landPixelsTS.add(output.getTs());
 				}
 			} else {
-				LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
-						+ imagePixel.geoLoc().getLat()
-						+ ") is out of the bounding box or is a invalid pixel.");
+//				LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
+//						+ imagePixel.geoLoc().getLat()
+//						+ ") is out of the bounding box or is a invalid pixel.");
 				imagePixel.setOutput(new ImagePixelOutput());
 			}
 		}
@@ -389,7 +389,8 @@ public class SEBAL {
 		now = System.currentTimeMillis();
 		
 		if (!cloudDetection || (waterPixelsTS.isEmpty() && landPixelsTS.isEmpty())) {
-			image.choosePixelsQuenteFrio();
+//			image.choosePixelsQuenteFrio();
+			image.selectPixelsQuenteFrioCandidates();
 			return image;
 		}
 		
@@ -440,8 +441,8 @@ public class SEBAL {
 			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)) {
 				if (isCloudPixel(imagePixel, clearSkyLandCloudProbPercentil, lowLandPercentil)
 						|| isSnowPixel(satellite, imagePixel)) {
-					LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
-							+ imagePixel.geoLoc().getLat() + ") is a cloud or snow pixel.");
+//					LOGGER.debug("(" + imagePixel.geoLoc().getLon() + ", "
+//							+ imagePixel.geoLoc().getLat() + ") is a cloud or snow pixel.");
 					ImagePixelOutput output = new ImagePixelOutput();
 					output.setIsCloud(true);					
 					imagePixel.setOutput(output);
@@ -453,7 +454,8 @@ public class SEBAL {
 		LOGGER.debug("Cloud detection execution time = " + (System.currentTimeMillis() - now));
 		LOGGER.debug("Number of cloud pixels = " + numberOfCloudPixels);
 		
-		image.choosePixelsQuenteFrio();
+//		image.choosePixelsQuenteFrio();
+		image.selectPixelsQuenteFrioCandidates();
 		return image;
 	}
 

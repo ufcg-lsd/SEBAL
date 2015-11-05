@@ -181,7 +181,19 @@ public class WeatherStation {
 			dataArray.put(jsonObject);
 		}
 		
-		return dataArray;
+		for (int i = 0; i < dataArray.length(); i++) {
+			JSONObject stationDataRecord = dataArray.optJSONObject(i);
+			String temp = stationDataRecord.optString("TempBulboSeco");
+			String vel = stationDataRecord.optString("VelocidadeVento");
+			
+			if (!temp.isEmpty() && !vel.isEmpty()) {
+				return dataArray;
+			}
+		}
+		
+		cache.put(url, "FAILED");
+		throw new Exception();
+//		return dataArray;
 	}
 
 	private JSONObject findClosestRecord(Date date, List<JSONObject> stations) {
@@ -200,12 +212,15 @@ public class WeatherStation {
 					String dateValue = stationDataRecord.optString("Data");
 					String timeValue = stationDataRecord.optString("Hora");
 					
-					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";" + timeValue);
-					long diff = Math.abs(recordDate.getTime() - date.getTime());
-					if (diff < smallestDiff) {
-						smallestDiff = diff;
-						closestRecord = stationDataRecord;
+					if (!stationDataRecord.optString("TempBulboSeco").isEmpty() && !stationDataRecord.optString("VelocidadeVento").isEmpty()) {
+						Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";" + timeValue);
+						long diff = Math.abs(recordDate.getTime() - date.getTime());
+						if (diff < smallestDiff) {
+							smallestDiff = diff;
+							closestRecord = stationDataRecord;
+						}						
 					}
+					
 				}
 				
 				return closestRecord;
@@ -223,6 +238,7 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
+//		System.out.println("record: " + record);
 		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
 //		return 32.23;

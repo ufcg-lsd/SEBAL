@@ -13,7 +13,6 @@ public class Main {
 		properties.load(input);
 
 		Wrapper wrapper = new Wrapper(properties);
-		//The LandSat model names are: landsat5, landsat7 and landsat8
-        wrapper.doTask(properties.getProperty("task_type"));
+        wrapper.doTask(args[1]);
     }
 }
