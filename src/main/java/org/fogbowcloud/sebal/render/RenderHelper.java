@@ -84,8 +84,38 @@ public class RenderHelper {
 //				maskHeight, daysSince1970, RenderHelper.TIFF, RenderHelper.BMP,
 //				RenderHelper.NET_CDF);
 		
+//		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, args[9]);
+		
+		
+//		vars.add(bandVariableBuilder.build("ndvi", 7));
+//		vars.add(bandVariableBuilder.build("evi", 24));
+//		vars.add(bandVariableBuilder.build("iaf", 23));
+//		vars.add(bandVariableBuilder.build("ts", 6));
+//		vars.add(bandVariableBuilder.build("alpha", 9));
+//		vars.add(bandVariableBuilder.build("rn", 5));
+//		vars.add(bandVariableBuilder.build("g", 4))
+		
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, args[9]);
+				maskHeight, daysSince1970, "ndvi", 7, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "evi", 24, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "iaf", 23, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "ts", 6, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "alpha", 9, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "rn", 5, args[9]);
+		
+		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "g", 4, args[9]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -245,9 +275,13 @@ public class RenderHelper {
 		}
 	}
 
+//	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
+//			int maskHeight, double daysSince1970, String... drivers) throws IOException,
+//			FileNotFoundException {
+		
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
-			int maskHeight, double daysSince1970, String... drivers) throws IOException,
-			FileNotFoundException {
+			int maskHeight, double daysSince1970, String varName, int col, String... drivers)
+			throws IOException, FileNotFoundException {
 		gdal.AllRegister();
 		
 		Double latMax = -360.;
@@ -274,7 +308,8 @@ public class RenderHelper {
 				new File(csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI,
 				initialJ, drivers);
 		List<BandVariable> vars = new LinkedList<BandVariable>();
-		vars.add(bandVariableBuilder.build("ndvi", 7));
+		vars.add(bandVariableBuilder.build(varName, col));
+//		vars.add(bandVariableBuilder.build("ndvi", 7));
 //		vars.add(bandVariableBuilder.build("evi", 24));
 //		vars.add(bandVariableBuilder.build("iaf", 23));
 //		vars.add(bandVariableBuilder.build("ts", 6));
