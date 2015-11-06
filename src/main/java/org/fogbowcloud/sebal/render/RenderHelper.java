@@ -12,6 +12,7 @@ import java.util.List;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.BulkHelper;
@@ -85,7 +86,7 @@ public class RenderHelper {
 //				RenderHelper.NET_CDF);
 		
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, args[9]);
+				maskHeight, daysSince1970, product, args[9]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -244,9 +245,58 @@ public class RenderHelper {
 			return bandNdvi;
 		}
 	}
+	
+	private static void calculateLatLon(Product product, Integer initialI, Integer initialJ) {
+		
+		MetadataElement metadataRoot = product.getMetadataRoot();
+		
+		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LAT_PRODUCT").getData()
+				.getElemInt();
+		double urLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LAT_PRODUCT").getData()
+				.getElemInt();
+		double llLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LAT_PRODUCT").getData()
+				.getElemInt();
+		double lrLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LAT_PRODUCT").getData()
+				.getElemInt();
+		double ulLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LON_PRODUCT").getData()
+				.getElemInt();
+		double urLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LON_PRODUCT").getData()
+				.getElemInt();
+		double llLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LON_PRODUCT").getData()
+				.getElemInt();
+		double lrLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
+				.getElemInt();
+		
+		double angle1 = Math.atan2(ulLon-urLon, ulLat-urLat);
+		double angle2 = Math.atan2(ulLon, ulLat-urLat);
+		double angleRes = angle1-angle2;
+		
+		double uB = ulLat - urLat;
+		double uC = Math.tan(angleRes)/uB;
+		double uA = Math.sqrt(Math.pow(uB, 2) + Math.pow(uC, 2));
+		
+		angle1 = Math.atan2(llLon-lrLon, lrLat-llLat);
+		angle2 = Math.atan2(lrLon, lrLat-llLat);
+		angleRes = angle1-angle2;
+		
+		double lB = llLat - lrLat;
+		double lC = Math.tan(angleRes)/lB;
+		double lA = Math.sqrt(Math.pow(lB, 2) + Math.pow(lC, 2));
+		
+		PIXEL_SIZE_X = (uA-lA)/initialJ;
+		PIXEL_SIZE_Y = ((ulLat-llLat)-(urLat-lrLat))/initialI;
+	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
-			int maskHeight, double daysSince1970, String... drivers) throws IOException,
+			int maskHeight, double daysSince1970, Product product, String... drivers) throws IOException,
 			FileNotFoundException {
 		gdal.AllRegister();
 		
@@ -270,6 +320,8 @@ public class RenderHelper {
 			lonMin = Math.min(lon, lonMin);
 		}
 
+		calculateLatLon(product, initialI, initialJ);
+		
 		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(outputFilePrefix,
 				new File(csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI,
 				initialJ, drivers);
