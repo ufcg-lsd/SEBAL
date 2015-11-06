@@ -252,39 +252,39 @@ public class RenderHelper {
 		
 		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LAT_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double urLat = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LAT_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double llLat = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LAT_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double lrLat = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LAT_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double ulLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LON_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double urLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LON_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double llLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LON_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		double lrLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
-				.getElemInt();
+				.getElemDouble();
 		
-		double angle1 = Math.atan2(ulLon-urLon, ulLat-urLat);
-		double angle2 = Math.atan2(ulLon, ulLat-urLat);
+		double angle1 = Math.atan2(Math.toDegrees(ulLon-urLon), Math.toDegrees(ulLat-urLat));
+		double angle2 = Math.atan2(Math.toDegrees(ulLon), Math.toDegrees(ulLat-urLat));
 		double angleRes = angle1-angle2;
 		
 		double uB = ulLat - urLat;
 		double uC = Math.tan(angleRes)/uB;
 		double uA = Math.sqrt(Math.pow(uB, 2) + Math.pow(uC, 2));
 		
-		angle1 = Math.atan2(llLon-lrLon, lrLat-llLat);
-		angle2 = Math.atan2(lrLon, lrLat-llLat);
+		angle1 = Math.atan2(Math.toDegrees(llLon-lrLon), Math.toDegrees(lrLat-llLat));
+		angle2 = Math.atan2(Math.toDegrees(lrLon), Math.toDegrees(lrLat-llLat));
 		angleRes = angle1-angle2;
 		
 		double lB = llLat - lrLat;
@@ -292,7 +292,7 @@ public class RenderHelper {
 		double lA = Math.sqrt(Math.pow(lB, 2) + Math.pow(lC, 2));
 		
 		PIXEL_SIZE_X = (uA-lA)/initialJ;
-		PIXEL_SIZE_Y = ((ulLat-llLat)-(urLat-lrLat))/initialI;
+		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/initialI;
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
