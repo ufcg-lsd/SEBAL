@@ -275,20 +275,12 @@ public class RenderHelper {
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
 				.getElemDouble();
 		
-		double angle1 = Math.atan2(Math.toDegrees(ulLon), Math.toDegrees(urLat-ulLat));
-		double angle2 = Math.atan2(Math.toDegrees(urLon-ulLon), Math.toDegrees(urLat-ulLat));
-		double theta = Math.abs(angle1)-Math.abs(angle2);
-		
 		double uA = ulLat - urLat;
-		double uB = Math.tan(theta)/uA;
+		double uB = ulLon - urLon;
 		double uH = Math.sqrt(Math.pow(uA, 2) + Math.pow(uB, 2));
 		
-		angle1 = Math.atan2(Math.toDegrees(llLon), Math.toDegrees(lrLat-llLat));
-		angle2 = Math.atan2(Math.toDegrees(lrLon-llLon), Math.toDegrees(lrLat-llLat));
-		theta = Math.abs(angle1)-Math.abs(angle2);
-		
 		double lA = llLat - lrLat;
-		double lB = Math.tan(theta)/lA;
+		double lB = llLon - lrLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
 		PIXEL_SIZE_X = (uH-lH)/initialJ;
