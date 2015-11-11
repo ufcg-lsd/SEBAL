@@ -246,7 +246,7 @@ public class RenderHelper {
 		}
 	}
 	
-	private static void calculateLatLon(Product product, Integer initialI, Integer initialJ) {
+	public static void calculateLatLon(Product product, Integer initialI, Integer initialJ) {
 		
 		MetadataElement metadataRoot = product.getMetadataRoot();
 		
@@ -285,6 +285,8 @@ public class RenderHelper {
 		
 		PIXEL_SIZE_X = (uH-lH)/initialJ;
 		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/initialI;
+		
+		System.out.println( PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
