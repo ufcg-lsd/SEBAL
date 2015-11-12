@@ -71,7 +71,7 @@ public class RenderHelper {
 			
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
-		calculateLatLon(product, imagePartition.getIFinal(), upperY);
+		calculateLatLon(product);
 		
 		BoundingBox boundingBox = null;
 		if (boundingBoxVertices.size() > 3) {
@@ -248,8 +248,7 @@ public class RenderHelper {
 		}
 	}
 	
-	public static void calculateLatLon(Product product, int iFinal, int jFinal) {
-		
+	public static void calculateLatLon(Product product) {
 		MetadataElement metadataRoot = product.getMetadataRoot();
 		
 		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
@@ -276,6 +275,12 @@ public class RenderHelper {
 		double lrLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
 				.getElemDouble();
+		double numLines = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_LINES").getData()
+				.getElemDouble();
+		double numColumns = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
+				.getElemDouble();
 		
 		double uA = ulLat - urLat;
 		double uB = ulLon - urLon;
@@ -285,8 +290,10 @@ public class RenderHelper {
 		double lB = llLon - lrLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
-		PIXEL_SIZE_X = (uH-lH)/(jFinal);
-		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/(iFinal);
+		PIXEL_SIZE_X = (lH-uH)/numColumns;
+		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/numLines;
+		
+		System.out.println(PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
