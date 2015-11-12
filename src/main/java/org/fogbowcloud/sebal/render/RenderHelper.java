@@ -71,6 +71,8 @@ public class RenderHelper {
 			
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
+		calculateLatLon(product, imagePartition.getIFinal(), upperY);
+		
 		BoundingBox boundingBox = null;
 		if (boundingBoxVertices.size() > 3) {
 			boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
@@ -86,7 +88,7 @@ public class RenderHelper {
 //				RenderHelper.NET_CDF);
 		
 		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, product, args[9]);
+				maskHeight, daysSince1970, args[9]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -246,7 +248,7 @@ public class RenderHelper {
 		}
 	}
 	
-	public static void calculateLatLon(Product product, Integer initialI, Integer initialJ) {
+	public static void calculateLatLon(Product product, int iFinal, int jFinal) {
 		
 		MetadataElement metadataRoot = product.getMetadataRoot();
 		
@@ -283,14 +285,12 @@ public class RenderHelper {
 		double lB = llLon - lrLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
-		PIXEL_SIZE_X = (uH-lH)/initialJ;
-		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/initialI;
-		
-		System.out.println( PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
+		PIXEL_SIZE_X = (uH-lH)/(jFinal);
+		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/(iFinal);
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
-			int maskHeight, double daysSince1970, Product product, String... drivers) throws IOException,
+			int maskHeight, double daysSince1970, String... drivers) throws IOException,
 			FileNotFoundException {
 		gdal.AllRegister();
 		
@@ -313,8 +313,6 @@ public class RenderHelper {
 			latMax = Math.max(lat, latMax);
 			lonMin = Math.min(lon, lonMin);
 		}
-
-		calculateLatLon(product, initialI, initialJ);
 		
 		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(outputFilePrefix,
 				new File(csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI,
