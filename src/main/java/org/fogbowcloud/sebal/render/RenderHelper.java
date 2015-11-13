@@ -290,8 +290,8 @@ public class RenderHelper {
 		double lB = llLon - lrLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
-		PIXEL_SIZE_X = (lH-uH)/numColumns;
-		PIXEL_SIZE_Y = ((ulLon-llLon)-(urLon-lrLon))/numLines;
+		PIXEL_SIZE_X = lH/numColumns;
+		PIXEL_SIZE_Y = Math.abs(lB)/numLines;
 		
 		System.out.println(PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
 	}
