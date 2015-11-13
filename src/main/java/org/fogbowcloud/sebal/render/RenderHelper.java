@@ -282,16 +282,16 @@ public class RenderHelper {
 				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
 				.getElemDouble();
 		
-		double uA = ulLat - urLat;
-		double uB = ulLon - urLon;
+		double uA = urLat - ulLat;
+		double uB = urLon - ulLon;
 		double uH = Math.sqrt(Math.pow(uA, 2) + Math.pow(uB, 2));
 		
-		double lA = llLat - lrLat;
-		double lB = llLon - lrLon;
+		double lA = lrLat - llLat;
+		double lB = lrLon - llLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
-		PIXEL_SIZE_X = lH/numColumns;
-		PIXEL_SIZE_Y = Math.abs(lB)/numLines;
+		PIXEL_SIZE_X = ((uH+lH)/2)/numColumns;
+		PIXEL_SIZE_Y = Math.abs(((ulLon-llLon)+(urLon-ulLon))/2)/numLines;
 		
 		System.out.println(PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
 	}
