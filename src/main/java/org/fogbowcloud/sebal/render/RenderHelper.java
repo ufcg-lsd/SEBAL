@@ -275,6 +275,7 @@ public class RenderHelper {
 		double lrLon = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
 				.getElemDouble();
+		
 		double numLines = metadataRoot.getElement("L1_METADATA_FILE")
 				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_LINES").getData()
 				.getElemDouble();
@@ -290,7 +291,7 @@ public class RenderHelper {
 		double lB = lrLon - llLon;
 		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
 		
-		PIXEL_SIZE_X = ((uH+lH)/2)/numColumns;
+		PIXEL_SIZE_X = Math.abs((uH+lH)/2)/numColumns;
 		PIXEL_SIZE_Y = Math.abs(((ulLon-llLon)+(urLon-ulLon))/2)/numLines;
 		
 		System.out.println(PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
