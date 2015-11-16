@@ -71,7 +71,7 @@ public class RenderHelper {
 			
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
-		calculateLatLon(product);
+		calculatePixelSize(product);
 		
 		BoundingBox boundingBox = null;
 		if (boundingBoxVertices.size() > 3) {
@@ -248,7 +248,7 @@ public class RenderHelper {
 		}
 	}
 	
-	public static void calculateLatLon(Product product) {
+	public static void calculatePixelSize(Product product) {
 		MetadataElement metadataRoot = product.getMetadataRoot();
 		
 		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")

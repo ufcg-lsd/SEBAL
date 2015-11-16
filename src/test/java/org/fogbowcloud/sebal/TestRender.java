@@ -22,7 +22,7 @@ public class TestRender {
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
 		new RenderHelper();
-		RenderHelper.calculateLatLon(product);
+		RenderHelper.calculatePixelSize(product);
 	}
 
 }
