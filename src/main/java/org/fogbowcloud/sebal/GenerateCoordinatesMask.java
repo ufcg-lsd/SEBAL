@@ -7,12 +7,16 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
 
+
 public class GenerateCoordinatesMask {
+
+	private static final Logger LOGGER = Logger.getLogger(GenerateCoordinatesMask.class);
 
 	public static void main(String[] args) throws Exception {
 
@@ -26,7 +30,7 @@ public class GenerateCoordinatesMask {
 		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 		if (args[6] != null) {
 			String boundingboxFilePath = args[6];
-			System.out.println("boundingBOx = " + boundingboxFilePath);
+			LOGGER.debug("bounding box fiel path = " + boundingboxFilePath);
 			boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingboxFilePath);
 		}
 		Locale.setDefault(Locale.ROOT);
@@ -59,6 +63,8 @@ public class GenerateCoordinatesMask {
 		int centralMeridian = SEBALHelper.findCentralMeridian(zoneNumber);
 
 		List<Coordinates> coordinates = new ArrayList<Coordinates>();
+		LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
+		LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
 		for (int i = widthMin; i < widthMax; i++) {
 			for (int j = heightMin; j < heightMax; j++) {
 
@@ -76,7 +82,7 @@ public class GenerateCoordinatesMask {
 			}
 		}
 
-		System.out.println("coordinates size: " + coordinates.size());
+		LOGGER.debug("coordinates size: " + coordinates.size());
 		
     	saveCoordinatesInFile(outputFileMaskPath, coordinates);
 	}

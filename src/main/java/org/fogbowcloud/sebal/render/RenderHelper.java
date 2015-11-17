@@ -348,7 +348,7 @@ public class RenderHelper {
 		Integer initialJ = null;
 		
 		LineIterator lineIterator;
-		if (coordinateMaskFile != null) {
+		if (coordinateMaskFile != null && new File(coordinateMaskFile).exists()) {
 			lineIterator = IOUtils.lineIterator(new FileInputStream(coordinateMaskFile), Charsets.UTF_8);
 		} else {
 			lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
