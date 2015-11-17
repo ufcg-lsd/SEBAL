@@ -30,12 +30,9 @@ import ucar.ma2.InvalidRangeException;
 
 public class RenderHelper {
 
-//	private static double PIXEL_SIZE = 0.00027;
-//	private static double PIXEL_SIZE = 0.0002727464;
-	private static double PIXEL_SIZE_X = 0.0002702704;
-	private static double PIXEL_SIZE_Y = 0.0002718243;
+	protected static double PIXEL_SIZE_X = - 1;
+	protected static double PIXEL_SIZE_Y = -1;
 	
-
 	public static final String TIFF = "tiff";
 	public static final String BMP = "bmp";
 	public static final String NET_CDF = "netcdf";
@@ -71,7 +68,34 @@ public class RenderHelper {
 			
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		
-		calculatePixelSize(product);
+		MetadataElement metadataRoot = product.getMetadataRoot();
+		
+		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double urLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double llLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double ulLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LON_PRODUCT").getData()
+				.getElemDouble();
+		double urLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LON_PRODUCT").getData()
+				.getElemDouble();
+		double llLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LON_PRODUCT").getData()
+				.getElemDouble();
+		double lines = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_LINES").getData()
+				.getElemDouble();
+		double columns = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
+				.getElemDouble();
+		
+		calculatePixelSize(ulLon, ulLat, urLon, urLat, llLon, llLat, columns, lines);
 		
 		BoundingBox boundingBox = null;
 		if (boundingBoxVertices.size() > 3) {
@@ -93,6 +117,21 @@ public class RenderHelper {
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
 //				daysSince1970, RenderHelper.TIFF);
+	}
+
+	protected static void calculatePixelSize(double ulLon, double ulLat,
+			double urLon, double urLat, double llLon, double llLat,
+			double columns, double lines) {
+		double a = Math.abs(urLon) - Math.abs(ulLon);
+		double b = Math.abs(ulLat) - Math.abs(urLat);
+		double width = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+		
+		a = Math.abs(ulLat) - Math.abs(llLat);
+		b = Math.abs(llLon) - Math.abs(ulLon);
+		double heidth = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+		
+		PIXEL_SIZE_X = width/columns;
+		PIXEL_SIZE_Y = heidth/lines;		
 	}
 
 	private static class BandVariableBuilder {
@@ -238,6 +277,11 @@ public class RenderHelper {
 			 * The (GT(0),GT(3)) position is the top left corner of the top left
 			 * pixel of the raster.
 			 */
+			
+			if (PIXEL_SIZE_X == -1 || PIXEL_SIZE_Y == -1) {
+				throw new RuntimeException("Pixel size was not calculated propertly.");
+			}
+			
 			dstNdviTiff
 					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE_X, 0, ulLat, 0, -PIXEL_SIZE_Y });
 			SpatialReference srs = new SpatialReference();
@@ -246,55 +290,6 @@ public class RenderHelper {
 			Band bandNdvi = dstNdviTiff.GetRasterBand(1);
 			return bandNdvi;
 		}
-	}
-	
-	public static void calculatePixelSize(Product product) {
-		MetadataElement metadataRoot = product.getMetadataRoot();
-		
-		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LAT_PRODUCT").getData()
-				.getElemDouble();
-		double urLat = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LAT_PRODUCT").getData()
-				.getElemDouble();
-		double llLat = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LAT_PRODUCT").getData()
-				.getElemDouble();
-		double lrLat = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LAT_PRODUCT").getData()
-				.getElemDouble();
-		double ulLon = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LON_PRODUCT").getData()
-				.getElemDouble();
-		double urLon = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LON_PRODUCT").getData()
-				.getElemDouble();
-		double llLon = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LON_PRODUCT").getData()
-				.getElemDouble();
-		double lrLon = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LR_LON_PRODUCT").getData()
-				.getElemDouble();
-		
-		double numLines = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_LINES").getData()
-				.getElemDouble();
-		double numColumns = metadataRoot.getElement("L1_METADATA_FILE")
-				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
-				.getElemDouble();
-		
-		double uA = urLat - ulLat;
-		double uB = urLon - ulLon;
-		double uH = Math.sqrt(Math.pow(uA, 2) + Math.pow(uB, 2));
-		
-		double lA = lrLat - llLat;
-		double lB = lrLon - llLon;
-		double lH = Math.sqrt(Math.pow(lA, 2) + Math.pow(lB, 2));
-		
-		PIXEL_SIZE_X = Math.abs((uH+lH)/2)/numColumns;
-		PIXEL_SIZE_Y = Math.abs(((ulLon-llLon)+(urLon-ulLon))/2)/numLines;
-		
-		System.out.println(PIXEL_SIZE_X + " - " + PIXEL_SIZE_Y);
 	}
 
 	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
@@ -348,5 +343,4 @@ public class RenderHelper {
 			var.render(daysSince1970);
 		}
 	}
-
 }
