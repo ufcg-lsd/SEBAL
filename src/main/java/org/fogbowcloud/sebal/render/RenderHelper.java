@@ -28,6 +28,8 @@ import org.gdal.osr.SpatialReference;
 
 import ucar.ma2.InvalidRangeException;
 
+import org.apache.log4j.Logger;
+
 public class RenderHelper {
 
 	protected static double PIXEL_SIZE_X = - 1;
@@ -36,6 +38,8 @@ public class RenderHelper {
 	public static final String TIFF = "tiff";
 	public static final String BMP = "bmp";
 	public static final String NET_CDF = "netcdf";
+	
+	private static final Logger LOGGER = Logger.getLogger(RenderHelper.class);
 	
 	public static void main(String[] args) throws ParseException, Exception {
 		String mtlFilePath = args[0];
@@ -54,7 +58,14 @@ public class RenderHelper {
 		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 		if (args[8] != null) {
 			String boundingboxFilePath = args[8];
+			LOGGER.info("Bounding box file path is " + boundingboxFilePath);
 			boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingboxFilePath );			
+		}
+		
+		String coordinatesMaskFilePath = null;
+		if (args[9] != null) {
+			coordinatesMaskFilePath = args[9];
+			LOGGER.info("Coordinates mask file path is " + coordinatesMaskFilePath);
 		}
 		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
@@ -123,26 +134,26 @@ public class RenderHelper {
 //		vars.add(bandVariableBuilder.build("rn", 5));
 //		vars.add(bandVariableBuilder.build("g", 4))
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "ndvi", 7, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "ndvi", 7, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "evi", 24, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "evi", 24, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "iaf", 23, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "iaf", 23, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "ts", 6, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "ts", 6, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "alpha", 9, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "alpha", 9, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "rn", 5, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "rn", 5, args[10]);
 		
-		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "g", 4, args[9]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "g", 4, args[10]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -326,7 +337,7 @@ public class RenderHelper {
 //			int maskHeight, double daysSince1970, String... drivers) throws IOException,
 //			FileNotFoundException {
 		
-	public static void render(String csvFile, String outputFilePrefix, int maskWidth,
+	public static void render(String coordinateMaskFile, String csvFile, String outputFilePrefix, int maskWidth,
 			int maskHeight, double daysSince1970, String varName, int col, String... drivers)
 			throws IOException, FileNotFoundException {
 		gdal.AllRegister();
@@ -335,9 +346,14 @@ public class RenderHelper {
 		Double lonMin = +360.;
 		Integer initialI = null;
 		Integer initialJ = null;
-
-		LineIterator lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile),
-				Charsets.UTF_8);
+		
+		LineIterator lineIterator;
+		if (coordinateMaskFile != null) {
+			lineIterator = IOUtils.lineIterator(new FileInputStream(coordinateMaskFile), Charsets.UTF_8);
+		} else {
+			lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
+		}
+		
 		while (lineIterator.hasNext()) {
 			String line = (String) lineIterator.next();
 			String[] lineSplit = line.split(",");

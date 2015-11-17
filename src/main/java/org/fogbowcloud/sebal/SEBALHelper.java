@@ -123,7 +123,7 @@ public class SEBALHelper {
         return boundingBox;
     }
     
-	private static int findCentralMeridian(int zoneNumber) throws ClientProtocolException,
+	public static int findCentralMeridian(int zoneNumber) throws ClientProtocolException,
 			IOException {
 		if (zoneToCentralMeridian.get(zoneNumber) != null) {
 			return zoneToCentralMeridian.get(zoneNumber);
@@ -193,7 +193,7 @@ public class SEBALHelper {
 		return minimunY;
 	}
 
-	private static UTMCoordinate convertLatLonToUtm(double latitude, double longitude, double zoneNumber,
+	protected static UTMCoordinate convertLatLonToUtm(double latitude, double longitude, double zoneNumber,
 			double utmZoneCenterLongitude) throws FactoryException, TransformException {
     	
 		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
