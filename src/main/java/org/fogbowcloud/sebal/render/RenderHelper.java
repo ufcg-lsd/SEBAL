@@ -323,6 +323,9 @@ public class RenderHelper {
 				throw new RuntimeException("Pixel size was not calculated propertly.");
 			}
 			
+			System.out.println("PIXEL_SIZE_X=" + PIXEL_SIZE_X);
+			System.out.println("PIXEL_SIZE_Y=" + PIXEL_SIZE_Y);
+			
 			dstNdviTiff
 					.SetGeoTransform(new double[] { ulLon, PIXEL_SIZE_X, 0, ulLat, 0, -PIXEL_SIZE_Y });
 			SpatialReference srs = new SpatialReference();
