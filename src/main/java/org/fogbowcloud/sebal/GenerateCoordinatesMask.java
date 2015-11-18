@@ -12,6 +12,8 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.operation.TransformException;
 
 
 public class GenerateCoordinatesMask {
@@ -35,83 +37,99 @@ public class GenerateCoordinatesMask {
 		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 		if (args[7] != null) {
 			String boundingboxFilePath = args[7];
-			LOGGER.debug("bounding box fiel path = " + boundingboxFilePath);
+			LOGGER.debug("bounding box file path = " + boundingboxFilePath);
 			boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingboxFilePath);
 		}
+
+		if (outputDir == null || outputDir.isEmpty()) {
+			outputDir = mtlName;
+		} else {
+			outputDir = outputDir + "/" + mtlName + "/coord_mask";
+			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
+				new File(outputDir).mkdirs();
+			}			
+		}
+
 		Locale.setDefault(Locale.ROOT);
 
 		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
 		MetadataElement metadataRoot = product.getMetadataRoot();
 
-		for(int index = 1; index < numberOfPartitions; index++) {
-			XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(iBegin, iFinal,
-					numberOfPartitions, index);
-	
-			Band bandAt = product.getBandAt(0);
-			bandAt.ensureRasterData();
-	
-			BoundingBox boundingBox = getBoundingBox(boundingBoxVertices, product, bandAt);
-	
-			int widthMax = Math.min(bandAt.getRasterWidth(),
-					Math.min(imagePartition.getIFinal(), boundingBox.getX() + boundingBox.getW()));
-			int widthMin = Math.max(imagePartition.getIBegin(), boundingBox.getX());
-	
-			//See how to do this with jBegin and jFinal
-			int heightMax = Math.min(bandAt.getRasterHeight(),
-					Math.min(jFinal, boundingBox.getY() + boundingBox.getH()));
-			int heightMin = Math.max(jBegin, boundingBox.getY());
-	
-			double ULx = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
-					.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData().getElemDouble();
-			double ULy = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
-					.getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData().getElemDouble();
-	
-			int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
-					.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
-					.getElemInt();
-	
-			int centralMeridian = SEBALHelper.findCentralMeridian(zoneNumber);
-	
-			List<Coordinates> coordinates = new ArrayList<Coordinates>();
-			LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
-			LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
-			for (int i = widthMin; i < widthMax; i++) {
-				for (int j = heightMin; j < heightMax; j++) {
-	
-					double easting = i * 30 + ULx;
-					double northing = (-1 * j * 30 + ULy);
-	
-					LatLonCoordinate latLonCoordinate = SEBALHelper.convertUtmToLatLon(easting,
-							northing, zoneNumber, centralMeridian);
-					double latitudeConv = Double.valueOf(String.format("%.10g%n",
-							latLonCoordinate.getLat()));
-					double longitudeConv = Double.valueOf(String.format("%.10g%n",
-							latLonCoordinate.getLon()));
-	
-					coordinates.add(new Coordinates(i, j, longitudeConv, latitudeConv));
-				}
-			}
-	
-			LOGGER.debug("coordinates size: " + coordinates.size());
-			
-			if (outputDir == null || outputDir.isEmpty()) {
-	    		outputDir = mtlName;
-	    	} else {
-	    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-	    			new File(outputDir).mkdirs();
-	    		}
-	    		outputDir = outputDir + "/" + mtlName + "_coord_mask_" + index + "_" + numberOfPartitions;
-	    	}
-			
-	    	saveCoordinatesInFile(outputDir, coordinates);
+		double ULx = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
+				.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData().getElemDouble();
+		double ULy = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
+				.getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData().getElemDouble();
+		
+		int zoneNumber = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
+				.getElemInt();
+
+		int centralMeridian = SEBALHelper.findCentralMeridian(zoneNumber);
+		Band bandAt = product.getBandAt(0);
+		bandAt.ensureRasterData();
+		
+		BoundingBox boundingBox = getBoundingBox(boundingBoxVertices, product, bandAt);
+
+		for (int index = 1; index <= numberOfPartitions; index++) {
+			XPartitionInterval imagePartition = BulkHelper
+					.getSelectedPartition(iBegin, iFinal, numberOfPartitions,
+							index);
+
+			List<Coordinates> coordinates = getCoorMask(
+					imagePartition.getIBegin(), imagePartition.getIFinal(),
+					jBegin, jFinal, ULx, ULy, zoneNumber, centralMeridian,
+					bandAt, boundingBox);
+
+			saveCoordinatesInFile(outputDir, coordinates, mtlName, index,
+					numberOfPartitions);
 		}
 	}
 
-	private static void saveCoordinatesInFile(String outputDir,
-			List<Coordinates> coordinates) {
-		long now = System.currentTimeMillis();
+	private static List<Coordinates> getCoorMask(int iBegin, int iFinal, int jBegin, int jFinal,
+			double ULx, double ULy, int zoneNumber, int centralMeridian,
+			Band bandAt, BoundingBox boundingBox) throws FactoryException,
+			TransformException {
+		
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, boundingBox.getX() + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, boundingBox.getX());
 
-        File outputFile = new File(outputDir);
+		//See how to do this with jBegin and jFinal
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, boundingBox.getY() + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, boundingBox.getY());
+
+		List<Coordinates> coordinates = new ArrayList<Coordinates>();
+		LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
+		LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
+		for (int i = widthMin; i < widthMax; i++) {
+			for (int j = heightMin; j < heightMax; j++) {
+
+				double easting = i * 30 + ULx;
+				double northing = (-1 * j * 30 + ULy);
+
+				LatLonCoordinate latLonCoordinate = SEBALHelper
+						.convertUtmToLatLon(easting, northing, zoneNumber,
+								centralMeridian);
+				double lat = Double.valueOf(String.format("%.10g%n",
+						latLonCoordinate.getLat()));
+				double lon = Double.valueOf(String.format("%.10g%n",
+						latLonCoordinate.getLon()));
+
+				coordinates.add(new Coordinates(i, j, lon, lat));
+			}
+		}
+
+		LOGGER.debug("coordinates size: " + coordinates.size());
+		return coordinates;
+	}
+
+	private static void saveCoordinatesInFile(String outputDir,
+			List<Coordinates> coordinates, String mtlName, int index, int numberOfPartitions) {
+		long now = System.currentTimeMillis();
+		
+		File outputFile = new File(outputDir + "/" + mtlName + "_mask_" + index
+				+ "_" + numberOfPartitions);
         StringBuilder sb = new StringBuilder();
         for (Coordinates coordinate : coordinates) {
 			String resultLine = coordinate.getI() + "," + coordinate.getJ() + ","
