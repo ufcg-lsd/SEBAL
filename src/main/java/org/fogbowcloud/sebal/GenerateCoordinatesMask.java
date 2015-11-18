@@ -71,6 +71,8 @@ public class GenerateCoordinatesMask {
 		BoundingBox boundingBox = getBoundingBox(boundingBoxVertices, product, bandAt);
 
 		for (int index = 1; index <= numberOfPartitions; index++) {
+			LOGGER.debug("Creating coordinate mask to index " + index);
+			
 			XPartitionInterval imagePartition = BulkHelper
 					.getSelectedPartition(iBegin, iFinal, numberOfPartitions,
 							index);
@@ -139,7 +141,7 @@ public class GenerateCoordinatesMask {
         try {
             FileUtils.write(outputFile, sb.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Error while writing date in file.", e);
         }
         
         LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
