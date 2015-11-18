@@ -13,6 +13,6 @@ public class Main {
 		properties.load(input);
 
 		Wrapper wrapper = new Wrapper(properties);
-        wrapper.doTask(properties.getProperty("task_type"));
+        wrapper.doTask(args[1]);
     }
 }

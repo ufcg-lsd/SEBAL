@@ -83,15 +83,17 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	}
 
 	@Override
-	public void choosePixelsQuenteFrio(Image image) {
+	public void selectPixelsQuenteFrioCandidates(Image image) {
 		LOGGER.debug("image is null? " + (image == null));
 		long now = System.currentTimeMillis();
 		ImagePixel pixelFrioInTheWater = findPixelFrioInTheWater(image);
+		if (pixelFrioInTheWater != null) {
+			LOGGER.debug("Pixel frio in the water is null.");
+			pixelFrioCandidates.add(pixelFrioInTheWater);
+		}
 		
 		LOGGER.debug("PixelFrioInTheWater execution time=" + (System.currentTimeMillis() - now));
 		now = System.currentTimeMillis();
-		List<ImagePixel> pixelFrioCandidates = new ArrayList<ImagePixel>();		
-		List<ImagePixel> pixelQuenteCandidates = new ArrayList<ImagePixel>();
 		
 		for (int x0 = 0; x0 < image.width(); x0 += clusterWidth) {
 			for (int y0 = 0; y0 < image.height(); y0 += clusterHeight) {
@@ -100,39 +102,60 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 						Math.min(clusterWidth, image.width() - x0),
 						Math.min(clusterHeight, image.height() - y0));
 
-				proccessCluster(pixelFrioCandidates, pixelQuenteCandidates, cluster);
+				proccessClusterAndSelectCandidates(cluster);
 			}
 		}
 		
 		LOGGER.debug("Processing clusters execution time=" + (System.currentTimeMillis() - now));
-		now = System.currentTimeMillis();
+	}
+
+	@Override
+	public void choosePixelsQuenteFrio() {
+		LOGGER.debug("Chossing pixels hot and cold from candidates...");
+		long now = System.currentTimeMillis();
 		
-		selectPixelFrioOutOfWater(pixelFrioInTheWater, pixelFrioCandidates);
-		selectPixelQuente(pixelQuenteCandidates);
-				
+		selectPixelFrio();
+		selectPixelQuente();
+
 		if (pixelFrio != null) {
 			LOGGER.debug("TS of pixel frio: " + pixelFrio.output().getTs());
 		}
 		if (pixelQuente != null) {
 			LOGGER.debug("TS of pixel quente: " + pixelQuente.output().getTs());
 		}
+		
+		LOGGER.debug("Chossing pixels hot and cold from candidates execution time="
+				+ (System.currentTimeMillis() - now));
 	}
 
 	private int linear(int x, int y, int width) {
 		return x + y * width;
 	}
 
-	private void proccessCluster(List<ImagePixel> pixelFrioCandidates,
-			List<ImagePixel> pixelQuenteCandidates, List<ImagePixel> cluster) {
+	private void proccessClusterAndSelectCandidates(List<ImagePixel> cluster) {
 
 		double CVForNDVI = calcCVForNDVI(cluster);
 
 		if (CVForNDVI < maxCVForNDVI) {
-			pixelFrioCandidates.addAll(cluster);
-			pixelQuenteCandidates.addAll(cluster);
+			List<ImagePixel> validPixels = removeCloud(cluster);
+			LOGGER.debug("Adding " + validPixels.size() + " valid pixels in quente/frio candidates.");
+			pixelFrioCandidates.addAll(validPixels);
+			pixelQuenteCandidates.addAll(validPixels);
 		}
 	}
 	
+	private List<ImagePixel> removeCloud(List<ImagePixel> cluster) {
+		List<ImagePixel> validPixels = new ArrayList<ImagePixel>();
+
+		for (int index = 0; index < cluster.size(); index++) {
+			ImagePixelOutput pixelOutput = cluster.get(index).output();
+			if (!pixelOutput.isCloud() && pixelOutput.getNDVI() > 0) {
+				validPixels.add(cluster.get(index));
+			}
+		}
+		return validPixels;
+	}
+
 	private double calcCVForNDVI(List<ImagePixel> cluster) {
 		List<Double> validNDVIValues = new ArrayList<Double>();
 		int invalidNDVIValues = 0;
@@ -256,21 +279,29 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		findWater(pixels, visited, i, j - 1, width, height, sampleId, samples);
 	}
 
-	private void selectPixelQuente(List<ImagePixel> pixelQuenteCandidates) {
+	private void selectPixelQuente() {
 		/*
 		 * Choosing pixel quente 
 		 * Pixel Quente candidates: 10% smallest NDVI and 20% biggest TS
 		 */
-		LOGGER.debug("number of pixel quente candidates=" + pixelQuenteCandidates.size());
-		pixelQuenteCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
-		pixelQuenteCandidates = filterBiggestTS(pixelQuenteCandidates, 20);
-				
-		double[] tsValuesQuenteCandidates = new double[pixelQuenteCandidates.size()];
-		for (int i = 0; i < pixelQuenteCandidates.size(); i++) {
-			tsValuesQuenteCandidates[i] = pixelQuenteCandidates.get(i).output().getTs();
+		LOGGER.debug("Number of pixel quente candidates=" + pixelQuenteCandidates.size());		
+		List<ImagePixel> bestCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
+		bestCandidates = filterBiggestTS(bestCandidates, 20);
+		
+		//Logging best candidates
+		LOGGER.info(" ----------------------- BEST PIXEL FRIO CANDIDATES (Lat, Lon, TS, SAVI, Rn, G) ----------------------- ");
+		for (ImagePixel imagePixel : bestCandidates) {
+			LOGGER.info("(" + imagePixel.geoLoc().getLat() + ", " + imagePixel.geoLoc().getLon()
+					+ ", " + imagePixel.output().getTs() + ", " + imagePixel.output().SAVI() + ", "
+					+ imagePixel.output().Rn() + ", " + imagePixel.output().G() + ")");
+		}
+		
+		double[] tsValuesQuenteCandidates = new double[bestCandidates.size()];
+		for (int i = 0; i < bestCandidates.size(); i++) {
+			tsValuesQuenteCandidates[i] = bestCandidates.get(i).output().getTs();
 		}
 		double tsQuenteMean = calcMean(tsValuesQuenteCandidates);
-		for (ImagePixel pixel : pixelQuenteCandidates) {
+		for (ImagePixel pixel : bestCandidates) {
 			if (pixel.output().getTs() >= (tsQuenteMean - maxDiffFromTSMean)
 					&& pixel.output().getTs() <= (tsQuenteMean + maxDiffFromTSMean)){
 				pixelQuente = pixel;
@@ -279,40 +310,39 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		}
 	}
 
-	private void selectPixelFrioOutOfWater(ImagePixel pixelFrioInTheWater,
-			List<ImagePixel> pixelFrioCandidates) {
-		LOGGER.debug("number of pixel frio candidates=" + pixelFrioCandidates.size());
+	private void selectPixelFrio() {
+		LOGGER.debug("Number of pixel frio candidates=" + pixelFrioCandidates.size());
 		/*
 		 * Choosing pixel frio out of the water 
 		 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
 		 */
-		pixelFrioCandidates = filterBiggestNDVI(pixelFrioCandidates, 5);
-		pixelFrioCandidates = filterSmallestTS(pixelFrioCandidates, 20);
+		List<ImagePixel> bestCandidates = filterBiggestNDVI(pixelFrioCandidates, 5);
+		bestCandidates = filterSmallestTS(bestCandidates, 20);
 		
-		double[] tsValuesFrioCandidates = new double[pixelFrioCandidates.size()];
-		double[] alphaValuesFrioCandidates = new double[pixelFrioCandidates.size()];
-		for (int i = 0; i < pixelFrioCandidates.size(); i++) {
-			tsValuesFrioCandidates[i] = pixelFrioCandidates.get(i).output().getTs();
-			alphaValuesFrioCandidates[i] = pixelFrioCandidates.get(i).output().getAlpha();
+		//Logging best candidates
+		LOGGER.info(" ----------------------- BEST PIXEL FRIO CANDIDATES (Lat, Lon, TS) ----------------------- ");
+		for (ImagePixel imagePixel : bestCandidates) {
+			LOGGER.info("(" + imagePixel.geoLoc().getLat() + ", " + imagePixel.geoLoc().getLon()
+					+ ", " + imagePixel.output().getTs() + ")");
+		}
+		
+		double[] tsValuesFrioCandidates = new double[bestCandidates.size()];
+		double[] alphaValuesFrioCandidates = new double[bestCandidates.size()];
+		for (int i = 0; i < bestCandidates.size(); i++) {
+			tsValuesFrioCandidates[i] = bestCandidates.get(i).output().getTs();
+			alphaValuesFrioCandidates[i] = bestCandidates.get(i).output().getAlpha();
 		}
 		double tsFrioMean = calcMean(tsValuesFrioCandidates);
 		double alphaFrioMean = calcMean(alphaValuesFrioCandidates);
-		ImagePixel pixelFrioOutOfWater = null;
-		for (ImagePixel pixel : pixelFrioCandidates) {
+		for (ImagePixel pixel : bestCandidates) {
 			if (pixel.output().getTs() >= (tsFrioMean - maxDiffFromTSMean)
 					&& pixel.output().getTs() <= (tsFrioMean + maxDiffFromTSMean)
 					&& pixel.output().getAlpha() >= (alphaFrioMean - maxDiffFromAlbedoMean)
 					&& pixel.output().getAlpha() <= (alphaFrioMean + maxDiffFromAlbedoMean)) {
-				pixelFrioOutOfWater = pixel;
+				pixelFrio = pixel;
 				break;
 			}
-		}
-		if (pixelFrioInTheWater != null) {
-			pixelFrio = (pixelFrioInTheWater.output().getTs() < pixelFrioOutOfWater.output()
-					.getTs() ? pixelFrioInTheWater : pixelFrioOutOfWater);
-		} else {
-			pixelFrio = pixelFrioOutOfWater;
-		}
+		}		
 	}
 	
 	protected List<ImagePixel> filterBiggestTS(List<ImagePixel> pixels, double percent) {

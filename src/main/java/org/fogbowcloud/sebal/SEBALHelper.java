@@ -27,7 +27,9 @@ import org.apache.log4j.Logger;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReader;
 import org.esa.beam.dataio.landsat.geotiff.LandsatGeotiffReaderPlugin;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.PixelPos;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
@@ -121,7 +123,7 @@ public class SEBALHelper {
         return boundingBox;
     }
     
-	private static int findCentralMeridian(int zoneNumber) throws ClientProtocolException,
+	public static int findCentralMeridian(int zoneNumber) throws ClientProtocolException,
 			IOException {
 		if (zoneToCentralMeridian.get(zoneNumber) != null) {
 			return zoneToCentralMeridian.get(zoneNumber);
@@ -191,7 +193,7 @@ public class SEBALHelper {
 		return minimunY;
 	}
 
-	private static UTMCoordinate convertLatLonToUtm(double latitude, double longitude, double zoneNumber,
+	protected static UTMCoordinate convertLatLonToUtm(double latitude, double longitude, double zoneNumber,
 			double utmZoneCenterLongitude) throws FactoryException, TransformException {
     	
 		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
@@ -224,7 +226,7 @@ public class SEBALHelper {
 		return new UTMCoordinate(easting, northing);
     }
 	
-	private static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
+	public static LatLonCoordinate convertUtmToLatLon(double easting, double northing, double zoneNumber,
 			double utmZoneCenterLongitude) throws FactoryException, TransformException {
 	
 		MathTransformFactory mtFactory = ReferencingFactoryFinder.getMathTransformFactory(null);
@@ -270,6 +272,8 @@ public class SEBALHelper {
     public static Image readPixels(List<ImagePixel> pixelsQuente,
             List<ImagePixel> pixelsFrio,
             PixelQuenteFrioChooser pixelQuenteFrioChooser) {
+    	pixelQuenteFrioChooser.setPixelFrioCandidates(pixelsFrio);
+    	pixelQuenteFrioChooser.setPixelQuenteCandidates(pixelsQuente);
         DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
         List<ImagePixel> pixels = new ArrayList<ImagePixel>();
         pixels.addAll(pixelsFrio);
@@ -308,8 +312,17 @@ public class SEBALHelper {
 //        image.width(Math.min(iFinal, boundingBox.getW()) - iBegin);
 //        image.height(Math.min(jFinal, boundingBox.getH()) - jBegin);
         
-        image.width(Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX));
-        image.height(Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY));
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, offSetX + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, offSetX);
+		
+		image.width(Math.max(widthMax - widthMin, 0));
+		
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, offSetY + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, offSetY);
+		
+		image.height(Math.max(heightMax - heightMin, 0));
         
         LOGGER.debug("Image width is " + image.width());
         LOGGER.debug("Image height is " + image.height());
@@ -330,19 +343,25 @@ public class SEBALHelper {
         int centralMeridian = findCentralMeridian(zoneNumber);
         
         double[] fmask = null;
-        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty()){
+        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty() && image.width() > 0 && image.height() > 0){
         	LOGGER.debug("Fmask file is " + fmaskFilePath);
-        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
-        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
-        			Math.min(jFinal, offSetY + boundingBox.getH()));        	
+//        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
+//        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
+//        			Math.min(jFinal, offSetY + boundingBox.getH()));
+        	
+			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin, heightMax);   
+			LOGGER.debug("fmask size=" + fmask.length);
         }
 		
 		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
 
 		int fmaskI = 0;
-        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+//        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
+//        	int fmaskJ = 0;
+//            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
+		for (int i = widthMin; i < widthMax; i++) {
         	int fmaskJ = 0;
-            for (int j = Math.max(jBegin, offSetY); j < Math.min(jFinal, offSetY + boundingBox.getH()); j++) {
+            for (int j = heightMin; j < heightMax; j++) {
 //            	LOGGER.debug(i + " " + j);
             	
             	DefaultImagePixel imagePixel = new DefaultImagePixel();
@@ -353,18 +372,30 @@ public class SEBALHelper {
                     LArray[k] = L;
                 }
                 imagePixel.L(LArray);
-  
+                  
                 imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
                 
-                double easting = i * 30 + ULx;
-                double northing = (-1 * j * 30 + ULy);
-                                
-				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
-						zoneNumber, centralMeridian);
+//                double easting = i * 30 + ULx;
+//                double northing = (-1 * j * 30 + ULy);
+//
+//				LatLonCoordinate latLonCoordinate = convertUtmToLatLon(easting, northing,
+//						zoneNumber, centralMeridian);
+//                double latitude = Double.valueOf(String.format("%.10g%n",
+//                      latLonCoordinate.getLat()));
+//                double longitude = Double.valueOf(String.format("%.10g%n",
+//                      latLonCoordinate.getLon()));
+//                
+                PixelPos pixelPos = new PixelPos(i, j);
+
+                imagePixel.cosTheta(Math.sin(Math.toRadians(sunElevation)));
+                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
                 double latitude = Double.valueOf(String.format("%.10g%n",
-                      latLonCoordinate.getLat()));
+                        geoPos.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
-                      latLonCoordinate.getLon()));
+                        geoPos.getLon()));
+                
+//                LOGGER.debug("lat diff=" + Math.abs(latitude - latitudeConv));
+//                LOGGER.debug("lon diff=" + Math.abs(longitude - longitudeConv));
 
                 Double z = elevation.z(latitude, longitude);
                
@@ -376,23 +407,21 @@ public class SEBALHelper {
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
                                 
-				double Ta = station.Ta(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
-						startTime.getAsDate());
+				double Ta = station.Ta(latitude, longitude, startTime.getAsDate());
 				imagePixel.Ta(Ta);
 
-				double ux = station.ux(latLonCoordinate.getLat(), latLonCoordinate.getLon(),
-						startTime.getAsDate());
+				double ux = station.ux(latitude, longitude, startTime.getAsDate());
 				imagePixel.ux(ux);
 
-				double zx = station.zx(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double zx = station.zx(latitude, longitude);
 				imagePixel.zx(zx);
 
-				double d = station.d(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double d = station.d(latitude, longitude);
 				imagePixel.d(d);
 
-				double hc = station.hc(latLonCoordinate.getLat(), latLonCoordinate.getLon());
+				double hc = station.hc(latitude, longitude);
 				imagePixel.hc(hc);
-				
+                
 				if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
 					imagePixel.isValid(false);
 				}

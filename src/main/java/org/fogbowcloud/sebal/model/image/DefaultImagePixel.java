@@ -2,8 +2,15 @@ package org.fogbowcloud.sebal.model.image;
 
 public class DefaultImagePixel implements ImagePixel {
 
+	private int[] DN;
 	private double[] L;
+	private double[] Al;
+	private double[] Ml;
+	private double[] Ap;
+	private double[] Mp;
 	private double cosTheta;
+	private double sinTheta;
+	private double sinThetaSunEle;
 	private Image image;
 	private double z;
 	private double Ta;
@@ -29,6 +36,15 @@ public class DefaultImagePixel implements ImagePixel {
 		return isValid;
 	}
 	
+	@Override
+	public int[] DN() {
+		return DN;
+	}
+	
+	public void DN(int[] DN) {
+		this.DN = DN;
+	}
+	
 	public void L(double[] L) {
 		this.L = L;
 	}
@@ -37,10 +53,51 @@ public class DefaultImagePixel implements ImagePixel {
 	public double[] L() {
 		return L;
 	}
+	
+	@Override
+	public double[] Al() {
+		return Al;
+	}
+	
+	public void Al(double[] Al) {
+		this.Al = Al;
+	}
+	
+	@Override
+	public double[] Ml() {
+		return Ml;
+	}
+	
+	public void Ml(double[] Ml) {
+		this.Ml = Ml;
+	}
+	
+	@Override
+	public double[] Ap() {
+		return Ap;
+	}
+	
+	public void Ap(double[] Ap) {
+		this.Ap = Ap;
+	}
+	
+	@Override
+	public double[] Mp() {
+		return Mp;
+	}
+	
+	public void Mp(double[] Mp) {
+		this.Mp = Mp;
+	}
 
 	@Override
 	public double cosTheta() {
 		return cosTheta;
+	}
+	
+	@Override
+	public double sinThetaSunEle() {
+		return sinThetaSunEle;
 	}
 
 	@Override
@@ -77,6 +134,14 @@ public class DefaultImagePixel implements ImagePixel {
 	
 	public void cosTheta(double cosTheta) {
 		this.cosTheta = cosTheta;
+	}
+	
+	public void sinTheta(double sinTheta) {
+		this.sinTheta = sinTheta;
+	}
+	
+	public void sinThetaEle(double sinThetaSunEle) {
+		this.sinThetaSunEle = sinThetaSunEle;
 	}
 
 	@Override
