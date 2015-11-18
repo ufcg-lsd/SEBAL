@@ -8,6 +8,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -68,6 +69,18 @@ public class RenderHelper {
 			LOGGER.info("Coordinates mask file path is " + coordinatesMaskFilePath);
 		}
 		
+		String pixelSizeFilePath = null;
+		if (args[10] != null && new File(args[10]).exists()) {
+			pixelSizeFilePath = args[10];
+			LOGGER.info("Pixel size file path is " + pixelSizeFilePath);
+			
+			Properties p = new Properties();
+			FileInputStream input = new FileInputStream(pixelSizeFilePath);
+			p.load(input);
+			PIXEL_SIZE_X = Double.parseDouble(p.getProperty("pixel_size_x"));
+			PIXEL_SIZE_Y = Double.parseDouble(p.getProperty("pixel_size_y"));
+		}
+		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
 				numberOfPartitions, partitionIndex);
 
@@ -106,7 +119,9 @@ public class RenderHelper {
 				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
 				.getElemDouble();
 		
-		calculatePixelSize(ulLon, ulLat, urLon, urLat, llLon, llLat, columns, lines);
+		if (PIXEL_SIZE_X != -1 && PIXEL_SIZE_Y != -1) {
+			calculatePixelSize(ulLon, ulLat, urLon, urLat, llLon, llLat, columns, lines);
+		}
 		
 		BoundingBox boundingBox = null;
 		if (boundingBoxVertices.size() > 3) {
@@ -135,7 +150,7 @@ public class RenderHelper {
 //		vars.add(bandVariableBuilder.build("g", 4))
 		
 		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "ndvi", 7, args[10]);
+				maskHeight, daysSince1970, "ndvi", 7, args[11]);
 		
 //		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
 //				maskHeight, daysSince1970, "evi", 24, args[10]);
