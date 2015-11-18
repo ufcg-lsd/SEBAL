@@ -137,23 +137,23 @@ public class RenderHelper {
 		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
 				maskHeight, daysSince1970, "ndvi", 7, args[10]);
 		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "evi", 24, args[10]);
-		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "iaf", 23, args[10]);
-		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "ts", 6, args[10]);
-		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "alpha", 9, args[10]);
-		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "rn", 5, args[10]);
-		
-		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-				maskHeight, daysSince1970, "g", 4, args[10]);
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "evi", 24, args[10]);
+//		
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "iaf", 23, args[10]);
+//		
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "ts", 6, args[10]);
+//		
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "alpha", 9, args[10]);
+//		
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "rn", 5, args[10]);
+//		
+//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+//				maskHeight, daysSince1970, "g", 4, args[10]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
@@ -354,18 +354,26 @@ public class RenderHelper {
 			lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 		}
 		
+		int coordinatesCount = 0;
 		while (lineIterator.hasNext()) {
 			String line = (String) lineIterator.next();
 			String[] lineSplit = line.split(",");
 			if (initialI == null && initialJ == null) {
 				initialI = Integer.parseInt(lineSplit[0]);
 				initialJ = Integer.parseInt(lineSplit[1]);
+				
+				System.out.println("initialI=" + initialI + " ------ initialJ=" + initialJ);
+				System.out.println("initialLat=" + Double.parseDouble(lineSplit[2]) + " ------ initialLon=" + Double.parseDouble(lineSplit[3]));
 			}
 			Double lat = Double.parseDouble(lineSplit[2]);
 			Double lon = Double.parseDouble(lineSplit[3]);
 			latMax = Math.max(lat, latMax);
 			lonMin = Math.min(lon, lonMin);
+			coordinatesCount++;
 		}
+		
+		System.out.println("coordinatesSize=" + coordinatesCount);
+		System.out.println("latMax=" + latMax + "lonMin=" + lonMin);
 		
 		BandVariableBuilder bandVariableBuilder = new BandVariableBuilder(outputFilePrefix,
 				new File(csvFile).getParent(), maskWidth, maskHeight, lonMin, latMax, initialI,
