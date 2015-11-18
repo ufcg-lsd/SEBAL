@@ -137,12 +137,12 @@ public class GenerateCoordinatesMask {
         	sb.append(resultLine);
         }
         try {
-            FileUtils.write(outputFile, sb.toString().trim());
+            FileUtils.write(outputFile, sb.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
         
-		System.out.println("Saving process output time=" + (System.currentTimeMillis() - now));
+        LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
 	}
 
 	private static BoundingBox getBoundingBox(List<BoundingBoxVertice> boundingBoxVertices,
@@ -168,7 +168,6 @@ public class GenerateCoordinatesMask {
 			this.lon = lon;
 			this.lat = lat;
 		}
-
 		
 		public int getI() {
 			return i;
