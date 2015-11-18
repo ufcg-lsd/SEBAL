@@ -119,7 +119,7 @@ public class RenderHelper {
 				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
 				.getElemDouble();
 		
-		if (PIXEL_SIZE_X != -1 && PIXEL_SIZE_Y != -1) {
+		if (PIXEL_SIZE_X == -1 && PIXEL_SIZE_Y == -1) {
 			calculatePixelSize(ulLon, ulLat, urLon, urLat, llLon, llLat, columns, lines);
 		}
 		
