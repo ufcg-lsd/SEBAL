@@ -19,7 +19,9 @@ import org.opengis.referencing.operation.TransformException;
 public class GenerateCoordinatesMask {
 
 	private static final Logger LOGGER = Logger.getLogger(GenerateCoordinatesMask.class);
-
+	private static double[] latitudes = null;
+	private static double[] longitutes = null;
+	
 	public static void main(String[] args) throws Exception {
 
 		String mtlFilePath = args[0];
@@ -95,35 +97,86 @@ public class GenerateCoordinatesMask {
 		int widthMax = Math.min(bandAt.getRasterWidth(),
 				Math.min(iFinal, boundingBox.getX() + boundingBox.getW()));
 		int widthMin = Math.max(iBegin, boundingBox.getX());
-
+		
 		//See how to do this with jBegin and jFinal
 		int heightMax = Math.min(bandAt.getRasterHeight(),
 				Math.min(jFinal, boundingBox.getY() + boundingBox.getH()));
 		int heightMin = Math.max(jBegin, boundingBox.getY());
+		
+		if (latitudes == null) {
+			latitudes = new double[heightMax - heightMin];
+			fillLatitudes(widthMin, heightMin, heightMax, ULx, ULy, zoneNumber, centralMeridian);
+		}
+		
+//		if (longitutes == null) {
+			longitutes = new double[widthMax - widthMin];
+			fillLongitudes(heightMin, widthMin, widthMax, ULx, ULy, zoneNumber, centralMeridian);
+//		}
 
 		List<Coordinates> coordinates = new ArrayList<Coordinates>();
 		LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
 		LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
+		
+		int lonIndex = 0;
 		for (int i = widthMin; i < widthMax; i++) {
+			int latIndex = 0;
 			for (int j = heightMin; j < heightMax; j++) {
+//				double easting = i * 30 + ULx;
+//				double northing = (-1 * j * 30 + ULy);
+//
+//				LatLonCoordinate latLonCoordinate = SEBALHelper
+//						.convertUtmToLatLon(easting, northing, zoneNumber,
+//								centralMeridian);
+//				double lat = Double.valueOf(String.format("%.10g%n",
+//						latLonCoordinate.getLat()));
+//				double lon = Double.valueOf(String.format("%.10g%n",
+//						latLonCoordinate.getLon()));
 
-				double easting = i * 30 + ULx;
-				double northing = (-1 * j * 30 + ULy);
-
-				LatLonCoordinate latLonCoordinate = SEBALHelper
-						.convertUtmToLatLon(easting, northing, zoneNumber,
-								centralMeridian);
-				double lat = Double.valueOf(String.format("%.10g%n",
-						latLonCoordinate.getLat()));
-				double lon = Double.valueOf(String.format("%.10g%n",
-						latLonCoordinate.getLon()));
-
-				coordinates.add(new Coordinates(i, j, lon, lat));
+				coordinates.add(new Coordinates(i, j, longitutes[lonIndex], latitudes[latIndex]));
+				latIndex++;
 			}
+			lonIndex++;
 		}
 
 		LOGGER.debug("coordinates size: " + coordinates.size());
 		return coordinates;
+	}
+
+	private static void fillLongitudes(int heightMin, int widthMin, int widthMax, double uLx,
+			double uLy, int zoneNumber, int centralMeridian) throws FactoryException,
+			TransformException {
+
+		int lonIndex = 0;
+		for (int i = widthMin; i < widthMax; i++) {
+			double easting = i * 30 + uLx;
+			double northing = (-1 * heightMin * 30 + uLy);
+
+			LatLonCoordinate latLonCoordinate = SEBALHelper.convertUtmToLatLon(easting, northing,
+					zoneNumber, centralMeridian);
+
+			double lon = Double.valueOf(String.format("%.10g%n", latLonCoordinate.getLon()));
+			longitutes[lonIndex] = lon;
+			lonIndex++;
+		}
+
+	}
+
+	private static void fillLatitudes(int widthMin, int heightMin, int heightMax, double uLx,
+			double uLy, int zoneNumber, int centralMeridian) throws FactoryException, TransformException {
+
+		int latIndex = 0;
+		for (int j = heightMin; j < heightMax; j++) {
+			double easting = widthMin * 30 + uLx;
+			double northing = (-1 * j * 30 + uLy);
+
+			LatLonCoordinate latLonCoordinate = SEBALHelper.convertUtmToLatLon(easting, northing,
+					zoneNumber, centralMeridian);
+
+			double lat = Double.valueOf(String.format("%.10g%n", latLonCoordinate.getLat()));
+
+			latitudes[latIndex] = lat;
+			latIndex++;
+		}
 	}
 
 	private static void saveCoordinatesInFile(String outputDir,

@@ -130,8 +130,27 @@ public class RenderHelper {
 		int offSetX = boundingBox.getX();
 		int offSetY = boundingBox.getY();
 		
-		int maskWidth = Math.min(rightX, offSetX + boundingBox.getW()) - Math.max(leftX, offSetX);
+		int maskWidth = Math.min(imagePartition.getIFinal(), offSetX + boundingBox.getW()) - Math.max(imagePartition.getIBegin(), offSetX);
 		int maskHeight = Math.min(upperY, offSetY + boundingBox.getH()) - Math.max(lowerY, offSetY);
+		
+		LOGGER.debug("mask width = " + maskWidth);
+		LOGGER.debug("mask height = " + maskHeight);
+		
+//		int maskWidth = Math.min(rightX, offSetX + boundingBox.getW()) - Math.max(leftX, offSetX);
+//		int maskHeight = Math.min(upperY, offSetY + boundingBox.getH()) - Math.max(lowerY, offSetY);
+		
+		
+		
+//		int widthMax = Math.min(bandAt.getRasterWidth(),
+//				Math.min(iFinal, offSetX + boundingBox.getW()));
+//		int widthMin = Math.max(iBegin, offSetX);
+//		
+////		image.width(Math.max(widthMax - widthMin, 0));
+//		
+//		int heightMax = Math.min(bandAt.getRasterHeight(),
+//				Math.min(jFinal, offSetY + boundingBox.getH()));
+//		int heightMin = Math.max(jBegin, offSetY);
+		
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
 //				maskHeight, daysSince1970, RenderHelper.TIFF, RenderHelper.BMP,
