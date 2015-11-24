@@ -108,14 +108,15 @@ public class GenerateCoordinatesMask {
 			fillLatitudes(widthMin, heightMin, heightMax, ULx, ULy, zoneNumber, centralMeridian);
 		}
 		
+		LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
+		LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
 //		if (longitutes == null) {
-			longitutes = new double[widthMax - widthMin];
+		
+			longitutes = new double[Math.max(0, widthMax - widthMin)];
 			fillLongitudes(heightMin, widthMin, widthMax, ULx, ULy, zoneNumber, centralMeridian);
 //		}
 
 		List<Coordinates> coordinates = new ArrayList<Coordinates>();
-		LOGGER.debug("widthMin=" + widthMin + " and widthMax=" + widthMax);
-		LOGGER.debug("heightMin=" + heightMin + " and heightMax=" + heightMax);
 		
 		int lonIndex = 0;
 		for (int i = widthMin; i < widthMax; i++) {

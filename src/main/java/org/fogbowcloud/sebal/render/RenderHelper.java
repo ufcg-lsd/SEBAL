@@ -171,23 +171,23 @@ public class RenderHelper {
 		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
 				maskHeight, daysSince1970, "ndvi", 7, args[11]);
 		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "evi", 24, args[10]);
-//		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "iaf", 23, args[10]);
-//		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "ts", 6, args[10]);
-//		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "alpha", 9, args[10]);
-//		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "rn", 5, args[10]);
-//		
-//		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
-//				maskHeight, daysSince1970, "g", 4, args[10]);
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "evi", 24, args[11]);
+		
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "iaf", 23, args[11]);
+		
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "ts", 6, args[11]);
+		
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "alpha", 9, args[11]);
+		
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "rn", 5, args[11]);
+		
+		render(coordinatesMaskFilePath, csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex, maskWidth,
+				maskHeight, daysSince1970, "g", 4, args[11]);
 		
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
