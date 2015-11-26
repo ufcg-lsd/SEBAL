@@ -303,18 +303,28 @@ public class RenderHelper {
 			}
 		}
 
-		public void read(String[] splitLine) {
-			int i = Integer.parseInt(splitLine[0]);
-			int j = Integer.parseInt(splitLine[1]);
+//		public void read(String[] splitLine) {
+		public void read(int i, int j, String[] splitLine) {
+//			int i = Integer.parseInt(splitLine[0]);
+//			int j = Integer.parseInt(splitLine[1]);
 			int iIdx = i - initialI;
 			int jIdx = j - initialJ;
+//			double val;
+//			try {
+//				val = Double.parseDouble(splitLine[columnIdx]);				
+//			} catch (Exception e) {
+//				LOGGER.error("There was an error while reading var from csv.", e);
+//				val = Double.NaN;
+//			}
 			double val;
-			try {
-				val = Double.parseDouble(splitLine[columnIdx]);				
-			} catch (Exception e) {
-				LOGGER.error("There was an error while reading var from csv.", e);
+			if (splitLine == null) {
+				LOGGER.error("There was an error while reading var from csv. i=" + i + " and j="
+						+ j);
 				val = Double.NaN;
+			} else {
+				val = Double.parseDouble(splitLine[columnIdx]);
 			}
+			
 			if (rasterTiff != null) {
 				rasterTiff[jIdx * maskWidth + iIdx] = val;
 			}
@@ -390,16 +400,16 @@ public class RenderHelper {
 		Integer initialI = null;
 		Integer initialJ = null;
 		
-		LineIterator lineIterator;
+		LineIterator maskLineIterator;
 		if (coordinateMaskFile != null && new File(coordinateMaskFile).exists()) {
-			lineIterator = IOUtils.lineIterator(new FileInputStream(coordinateMaskFile), Charsets.UTF_8);
+			maskLineIterator = IOUtils.lineIterator(new FileInputStream(coordinateMaskFile), Charsets.UTF_8);
 		} else {
-			lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
+			maskLineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 		}
 		
 		int coordinatesCount = 0;
-		while (lineIterator.hasNext()) {
-			String line = (String) lineIterator.next();
+		while (maskLineIterator.hasNext()) {
+			String line = (String) maskLineIterator.next();
 			String[] lineSplit = line.split(",");
 			if (initialI == null && initialJ == null) {
 				initialI = Integer.parseInt(lineSplit[0]);
@@ -431,13 +441,20 @@ public class RenderHelper {
 //		vars.add(bandVariableBuilder.build("rn", 5));
 //		vars.add(bandVariableBuilder.build("g", 4));
 
-		lineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
+		LineIterator csvLineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 
-		while (lineIterator.hasNext()) {
-			String line = (String) lineIterator.next();
-			String[] lineSplit = line.split(",");
+		while (maskLineIterator.hasNext()) {
+			String line = (String) maskLineIterator.next();
+			String[] maskSplit = line.split(",");
+			
+			String[] csvSplit = null;
+			if (csvLineIterator.hasNext()) {
+				String csvLine = (String) csvLineIterator.next();
+				csvSplit = csvLine.split(",");
+			}
+			
 			for (BandVariable var : vars) {
-				var.read(lineSplit);
+				var.read(Integer.parseInt(maskSplit[0]), Integer.parseInt(maskSplit[1]), csvSplit);
 			}
 		}
 
