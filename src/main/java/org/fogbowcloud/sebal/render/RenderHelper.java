@@ -308,7 +308,13 @@ public class RenderHelper {
 			int j = Integer.parseInt(splitLine[1]);
 			int iIdx = i - initialI;
 			int jIdx = j - initialJ;
-			double val = Double.parseDouble(splitLine[columnIdx]);
+			double val;
+			try {
+				val = Double.parseDouble(splitLine[columnIdx]);				
+			} catch (Exception e) {
+				LOGGER.error("There was an error while reading var from csv.", e);
+				val = Double.NaN;
+			}
 			if (rasterTiff != null) {
 				rasterTiff[jIdx * maskWidth + iIdx] = val;
 			}
