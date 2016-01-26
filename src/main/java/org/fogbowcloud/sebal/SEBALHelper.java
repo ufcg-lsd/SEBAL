@@ -40,6 +40,7 @@ import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.parsers.Elevation;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
+import org.fogbowcloud.sebal.wrapper.Wrapper;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
@@ -60,6 +61,8 @@ public class SEBALHelper {
 	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 	
 	private static final Logger LOGGER = Logger.getLogger(SEBALHelper.class);
+	
+	public static DefaultImage imageElevation;
 	
     public static Product readProduct(String mtlFileName,
             List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
@@ -287,7 +290,10 @@ public class SEBALHelper {
 			String fmaskFilePath) throws Exception {
 
         Locale.setDefault(Locale.ROOT);
-        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);
+        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);     
+        
+        setImageElevation(pixelQuenteFrioChooser);
+        
         Elevation elevation = new Elevation();
         WeatherStation station = new WeatherStation();
 
@@ -397,9 +403,10 @@ public class SEBALHelper {
 //                LOGGER.debug("lat diff=" + Math.abs(latitude - latitudeConv));
 //                LOGGER.debug("lon diff=" + Math.abs(longitude - longitudeConv));
 
-                Double z = elevation.z(latitude, longitude);
+                Double z = elevation.z(latitude, longitude);                              
                
-                imagePixel.z(z == null ? 400 : z);
+                imagePixel.z(z == null ? 400 : z);                                                    
+                
                 GeoLoc geoLoc = new GeoLoc();
                 geoLoc.setI(i);
                 geoLoc.setJ(j);
@@ -425,7 +432,7 @@ public class SEBALHelper {
 				if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
 					imagePixel.isValid(false);
 				}
-
+				
                 imagePixel.image(image);
                 image.addPixel(imagePixel);
                 
@@ -437,7 +444,7 @@ public class SEBALHelper {
         if (fmask != null) {
         	LOGGER.debug("FMask size=" + fmask.length);
         }
-        LOGGER.debug("Pixels size=" + image.pixels().size());
+        LOGGER.debug("Pixels size=" + image.pixels().size());             
         
         return image;
     }
@@ -457,6 +464,21 @@ public class SEBALHelper {
 		band.ReadRaster(iInitial, jInitial, maskWidth, maskHeight, fmask);
 
 		return fmask;
+	}
+	
+	public static DefaultImagePixel readElevation(ImagePixel imagePixel) {
+
+		DefaultImagePixel defaultImagePixel = new DefaultImagePixel();
+
+		defaultImagePixel.z(imagePixel.z());
+		GeoLoc geoLoc = new GeoLoc();
+
+		geoLoc.setLat(imagePixel.geoLoc().getLat());
+		geoLoc.setLon(imagePixel.geoLoc().getLon());
+
+		defaultImagePixel.geoLoc(geoLoc);
+
+		return defaultImagePixel;
 	}
 
 	public static long getDaysSince1970(String mtlFilePath) throws Exception,
@@ -484,6 +506,16 @@ public class SEBALHelper {
 		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
 				+ jFinal + ".pixels.csv";
 	}
+	
+	public static String getElevationFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
+			int jBegin, int jFinal) {
+		if (mtlName == null || mtlName.isEmpty()) {
+			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+					+ jFinal + ".elevation.csv";
+		}
+		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+				+ jFinal + ".elevation.csv";
+	}
 
 	public static List<BoundingBoxVertice> getVerticesFromFile(String boundingBoxFileName) throws IOException {
 		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
@@ -506,5 +538,13 @@ public class SEBALHelper {
 			LOGGER.debug("Invalid bounding box file path: " + boundingBoxFileName);
 		}
 		return boundingBoxVertices;
+	}
+	
+	public static void setImageElevation(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
+		imageElevation = new DefaultImage(pixelQuenteFrioChooser);
+	}
+	
+	public static Image getImageElevation() {
+		return imageElevation;
 	}
 }

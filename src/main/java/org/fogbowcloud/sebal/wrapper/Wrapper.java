@@ -154,7 +154,7 @@ public class Wrapper {
         }
                 
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
+                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);                          
         
         MetadataElement metadataRoot = product.getMetadataRoot();
         String landsatType = metadataRoot.getElement("L1_METADATA_FILE")
@@ -178,7 +178,9 @@ public class Wrapper {
 		}
 		
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);                        
+        
+        saveElevationOutput(SEBALHelper.getImageElevation());
         
         saveProcessOutput(updatedImage);
 //        savePixelQuente(updatedImage, getPixelQuenteFileName());
@@ -345,6 +347,28 @@ public class Wrapper {
         }
 		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
     }
+    
+    private void saveElevationOutput(Image image) {
+    	long now = System.currentTimeMillis();
+        List<ImagePixel> pixels = image.pixels();
+        String allPixelsFileName = getElevationFileName();
+
+        File outputFile = new File(allPixelsFileName);
+        try {
+            FileUtils.write(outputFile, "");
+            for (ImagePixel imagePixel : pixels) {
+                String resultLine = generateElevationResultLine(imagePixel);
+                FileUtils.write(outputFile, resultLine, true);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
+    }
+    
+    private String getElevationFileName() {
+    	return SEBALHelper.getElevationFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
+    }
 
     private String getAllPixelsFileName() {
     	return SEBALHelper.getAllPixelsFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
@@ -377,6 +401,16 @@ public class Wrapper {
 				output.getRLDown(), output.getEpsilonA(), output.getRLUp(), output.getIAF(),
 				output.getEVI(), output.getRSDown(), output.getTauSW(), output.getAlphaToa(),
 				imagePixel.Ta(), imagePixel.d(), imagePixel.ux(), imagePixel.zx(), imagePixel.hc());
+
+        return line;
+    }
+    
+    private String generateElevationResultLine(ImagePixel imagePixel) {
+        double lat = imagePixel.geoLoc().getLat();
+        double lon = imagePixel.geoLoc().getLon();
+        double z = imagePixel.z();
+        
+		String line = getRow(lat, lon, z);
 
         return line;
     }
