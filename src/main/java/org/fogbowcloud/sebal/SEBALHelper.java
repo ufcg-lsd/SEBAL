@@ -1,5 +1,6 @@
 package org.fogbowcloud.sebal;
 
+import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -61,8 +62,6 @@ public class SEBALHelper {
 	private static Map<Integer, Integer> zoneToCentralMeridian = new HashMap<Integer, Integer>();
 	
 	private static final Logger LOGGER = Logger.getLogger(SEBALHelper.class);
-	
-	public static DefaultImage imageElevation;
 	
     public static Product readProduct(String mtlFileName,
             List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
@@ -290,9 +289,7 @@ public class SEBALHelper {
 			String fmaskFilePath) throws Exception {
 
         Locale.setDefault(Locale.ROOT);
-        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);     
-        
-        setImageElevation(pixelQuenteFrioChooser);
+        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);             
         
         Elevation elevation = new Elevation();
         WeatherStation station = new WeatherStation();
@@ -448,6 +445,104 @@ public class SEBALHelper {
         
         return image;
     }
+	
+	public static Image readPreProcessedData(Image image, Product product,
+			List<BoundingBoxVertice> boundingBoxVertices,
+			PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+
+		Locale.setDefault(Locale.ROOT);
+		List<ImagePixel> pixels = image.pixels();
+		DefaultImage imageElevation = new DefaultImage(pixelQuenteFrioChooser);
+
+		WeatherStation station = new WeatherStation();
+
+		UTC startTime = product.getStartTime();
+		int day = startTime.getAsCalendar().get(Calendar.DAY_OF_YEAR);
+		imageElevation.setDay(day);
+
+		for (ImagePixel imagePixel : pixels) {
+			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)
+					&& imagePixel.isValid()) {
+
+				DefaultImagePixel imagePixelElevation = new DefaultImagePixel();
+
+				imagePixelElevation.z(imagePixel.z());
+
+				GeoLoc geoLoc = new GeoLoc();
+				geoLoc.setI(imagePixel.geoLoc().getI());
+				geoLoc.setJ(imagePixel.geoLoc().getJ());
+				geoLoc.setLat(imagePixel.geoLoc().getLat());
+				geoLoc.setLon(imagePixel.geoLoc().getLon());
+				imagePixelElevation.geoLoc(geoLoc);
+				
+				double Ta = station.Ta(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(), startTime.getAsDate());
+				imagePixelElevation.Ta(Ta);
+
+				double ux = station.ux(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(), startTime.getAsDate());
+				imagePixelElevation.ux(ux);
+
+				double zx = station.zx(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
+				imagePixelElevation.zx(zx);
+
+				double d = station.d(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
+				imagePixelElevation.d(d);
+
+				double hc = station.hc(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
+				imagePixelElevation.hc(hc);
+
+				imagePixelElevation.image(imageElevation);
+				imageElevation.addPixel(imagePixelElevation);
+			} else {
+				DefaultImagePixel imagePixelElevation = new DefaultImagePixel();
+
+				imagePixelElevation.z(Double.NaN);
+
+				GeoLoc geoLoc = new GeoLoc();
+				geoLoc.setI(imagePixel.geoLoc().getI());
+				geoLoc.setJ(imagePixel.geoLoc().getJ());
+				geoLoc.setLat(imagePixel.geoLoc().getLat());
+				geoLoc.setLon(imagePixel.geoLoc().getLon());
+				imagePixelElevation.geoLoc(geoLoc);
+				
+				imagePixelElevation.Ta(Double.NaN);
+				imagePixelElevation.ux(Double.NaN);
+				imagePixelElevation.zx(Double.NaN);
+				imagePixelElevation.d(Double.NaN);
+				imagePixelElevation.hc(Double.NaN);
+
+				imagePixelElevation.image(imageElevation);
+				imageElevation.addPixel(imagePixelElevation);
+			}
+		}
+
+		LOGGER.debug("Pixels size=" + image.pixels().size());
+
+		return imageElevation;
+	}
+	
+	private static boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
+			List<BoundingBoxVertice> boundingBoxVertices) {
+    	if (boundingBoxVertices.size() < 3) {
+    		return true;
+    	}
+    	
+    	double[] xpoints = new double[boundingBoxVertices.size()];
+    	double[] ypoints = new double[boundingBoxVertices.size()];
+
+    	for (int i = 0; i < boundingBoxVertices.size(); i++) {
+			xpoints[i] = boundingBoxVertices.get(i).getLon();
+			ypoints[i]= boundingBoxVertices.get(i).getLat();	
+		}
+    	
+    	Path2D path = new Path2D.Double();
+    	path.moveTo(xpoints[0], ypoints[0]);
+    	for(int i = 1; i < xpoints.length; ++i) {
+    	   path.lineTo(xpoints[i], ypoints[i]);
+    	}
+    	path.closePath();
+   	
+    	return path.contains(imagePixel.geoLoc().getLon(), imagePixel.geoLoc().getLat());
+	}
 
 	private static double[] readFmask(String fmaskFilePath, int iInitial, int iFinal, int jInitial,
 			int jFinal) {
@@ -507,6 +602,16 @@ public class SEBALHelper {
 				+ jFinal + ".pixels.csv";
 	}
 	
+	public static String getWeatherFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
+			int jBegin, int jFinal) {
+		if (mtlName == null || mtlName.isEmpty()) {
+			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+					+ jFinal + ".weather.csv";
+		}
+		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+				+ jFinal + ".weather.csv";
+	}
+	
 	public static String getElevationFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
 			int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
@@ -538,13 +643,5 @@ public class SEBALHelper {
 			LOGGER.debug("Invalid bounding box file path: " + boundingBoxFileName);
 		}
 		return boundingBoxVertices;
-	}
-	
-	public static void setImageElevation(PixelQuenteFrioChooser pixelQuenteFrioChooser) {
-		imageElevation = new DefaultImage(pixelQuenteFrioChooser);
-	}
-	
-	public static Image getImageElevation() {
-		return imageElevation;
 	}
 }

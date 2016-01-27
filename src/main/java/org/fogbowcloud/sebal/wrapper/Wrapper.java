@@ -117,6 +117,10 @@ public class Wrapper {
     
     public void doTask(String taskType) throws Exception {
         try {
+        	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)){
+        		preProcessingPixels(pixelQuenteFrioChooser);
+                return;
+        	}        	
             if (taskType.equalsIgnoreCase(TaskType.F1)) {
                 F1(pixelQuenteFrioChooser);
                 return;
@@ -138,6 +142,34 @@ public class Wrapper {
             System.exit(128);
         }
     }
+    
+    public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
+    		throws Exception{
+    	LOGGER.info("Pre processing pixels...");
+    	
+    	long now = System.currentTimeMillis();
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
+        
+        BoundingBox boundingBox = null;
+        if (boundingBoxVertices.size() > 3) {
+        	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
+        	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+        	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
+        }             
+                
+        Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
+                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
+        
+		Image preProcessedImage = SEBALHelper.readPreProcessedData(image, product,
+				boundingBoxVertices, pixelQuenteFrioChooser);
+        
+        LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
+        
+        saveElevationOutput(preProcessedImage);
+        saveWeatherOutput(preProcessedImage);
+        
+        LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+    }
 
     public void F1(PixelQuenteFrioChooser pixelQuenteFrioChooser)
             throws Exception {
@@ -151,7 +183,7 @@ public class Wrapper {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
         	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
         	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
-        }
+        }             
                 
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);                          
@@ -178,9 +210,7 @@ public class Wrapper {
 		}
 		
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);                        
-        
-        saveElevationOutput(SEBALHelper.getImageElevation());
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);                               
         
         saveProcessOutput(updatedImage);
 //        savePixelQuente(updatedImage, getPixelQuenteFileName());
@@ -348,22 +378,53 @@ public class Wrapper {
 		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
     }
     
-    private void saveElevationOutput(Image image) {
-    	long now = System.currentTimeMillis();
-        List<ImagePixel> pixels = image.pixels();
-        String allPixelsFileName = getElevationFileName();
+	private void saveElevationOutput(Image image) {
+		long now = System.currentTimeMillis();
+		List<ImagePixel> pixels = image.pixels();
+		String elevationPixelsFileName = getElevationFileName();
 
-        File outputFile = new File(allPixelsFileName);
-        try {
-            FileUtils.write(outputFile, "");
-            for (ImagePixel imagePixel : pixels) {
-                String resultLine = generateElevationResultLine(imagePixel);
-                FileUtils.write(outputFile, resultLine, true);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-		LOGGER.debug("Saving process output time=" + (System.currentTimeMillis() - now));
+		File outputFile = new File(elevationPixelsFileName);
+		try {
+			FileUtils.write(outputFile, "");
+			for (ImagePixel imagePixel : pixels) {
+				String resultLine = getRow(imagePixel.geoLoc().getI(),
+						imagePixel.geoLoc().getJ(), imagePixel.geoLoc()
+								.getLat(), imagePixel.geoLoc().getLon(),
+						imagePixel.z());
+				FileUtils.write(outputFile, resultLine, true);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		LOGGER.debug("Saving process output time="
+				+ (System.currentTimeMillis() - now));
+	}
+    
+	private void saveWeatherOutput(Image image) {
+		long now = System.currentTimeMillis();
+		List<ImagePixel> pixels = image.pixels();
+		String weatherPixelsFileName = getWeatherFileName();
+
+		File outputFile = new File(weatherPixelsFileName);
+		try {
+			FileUtils.write(outputFile, "");
+			for (ImagePixel imagePixel : pixels) {
+				String resultLine = getRow(imagePixel.geoLoc().getI(),
+						imagePixel.geoLoc().getJ(), imagePixel.geoLoc()
+								.getLat(), imagePixel.geoLoc().getLon(),
+						imagePixel.Ta(), imagePixel.ux(), imagePixel.zx(),
+						imagePixel.d(), imagePixel.hc());
+				FileUtils.write(outputFile, resultLine, true);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		LOGGER.debug("Saving process output time="
+				+ (System.currentTimeMillis() - now));
+	}
+    
+    private String getWeatherFileName() {
+    	return SEBALHelper.getWeatherFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
     }
     
     private String getElevationFileName() {
@@ -401,16 +462,6 @@ public class Wrapper {
 				output.getRLDown(), output.getEpsilonA(), output.getRLUp(), output.getIAF(),
 				output.getEVI(), output.getRSDown(), output.getTauSW(), output.getAlphaToa(),
 				imagePixel.Ta(), imagePixel.d(), imagePixel.ux(), imagePixel.zx(), imagePixel.hc());
-
-        return line;
-    }
-    
-    private String generateElevationResultLine(ImagePixel imagePixel) {
-        double lat = imagePixel.geoLoc().getLat();
-        double lon = imagePixel.geoLoc().getLon();
-        double z = imagePixel.z();
-        
-		String line = getRow(lat, lon, z);
 
         return line;
     }
