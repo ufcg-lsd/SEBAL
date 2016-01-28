@@ -206,7 +206,7 @@ public class RenderHelper {
 		double heidth = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
 		
 		PIXEL_SIZE_X = width/columns;
-		PIXEL_SIZE_Y = heidth/lines;		
+		PIXEL_SIZE_Y = heidth/lines;
 	}
 
 	private static class BandVariableBuilder {

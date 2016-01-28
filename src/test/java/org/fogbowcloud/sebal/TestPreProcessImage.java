@@ -2,7 +2,6 @@ package org.fogbowcloud.sebal;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ public class TestPreProcessImage {
     private int iFinal;
     private int jBegin;
     private int jFinal;
-    private String outputDir;
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
@@ -59,19 +57,6 @@ public class TestPreProcessImage {
 		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
 
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-
-		String fileName = new File(mtlFile).getName();
-		String mtlName = fileName.substring(0, fileName.indexOf("_"));
-		String outputDir = properties.getProperty("output_dir_path");
-
-		if (outputDir == null || outputDir.isEmpty()) {
-    		this.outputDir = mtlName;
-    	} else {
-    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-    			new File(outputDir).mkdirs();
-    		}
-    		this.outputDir = outputDir + "/" + mtlName;
-    	}
 		
 		fmaskFilePath = properties.getProperty("fmask_file_path");
 	}
@@ -86,7 +71,6 @@ public class TestPreProcessImage {
 		
 		LOGGER.info("Pre processing pixels...");
     	
-    	long now = System.currentTimeMillis();
         Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
         
         BoundingBox boundingBox = null;
@@ -109,27 +93,33 @@ public class TestPreProcessImage {
 		List<ImagePixel> pixelsWeather = preProcessedImageWeather.pixels();
 		
 		int i = 0;
+		int count = 0;
+		LOGGER.info("Making the asserts...");
+		
+		double none = Double.NaN;
 		
 		for(ImagePixel imagePixel : pixelsElevation) {
-			if(imagePixel.z() == Double.NaN) {
-				
-				System.out.println(imagePixel.z() + " - " + pixelsWeather.get(i).Ta());
-				assertField(imagePixel.z(), pixelsWeather.get(i).Ta());				
-				
-				System.out.println(imagePixel.z() + " - " + pixelsWeather.get(i).ux());
-				assertField(imagePixel.z(), pixelsWeather.get(i).ux());
-				
-				System.out.println(imagePixel.z() + " - " + pixelsWeather.get(i).zx());
-				assertField(imagePixel.z(), pixelsWeather.get(i).zx());
-				
-				System.out.println(imagePixel.z() + " - " + pixelsWeather.get(i).d());
-				assertField(imagePixel.z(), pixelsWeather.get(i).d());
-				
-				System.out.println(imagePixel.z() + " - " + pixelsWeather.get(i).hc());
+			if(imagePixel.z() == none) {				
+				assertField(imagePixel.geoLoc().getI(), pixelsWeather.get(i).geoLoc().getI());
+				assertField(imagePixel.geoLoc().getJ(), pixelsWeather.get(i).geoLoc().getJ());				
+				assertField(imagePixel.z(), pixelsWeather.get(i).Ta());								
+				assertField(imagePixel.z(), pixelsWeather.get(i).ux());				
+				assertField(imagePixel.z(), pixelsWeather.get(i).zx());							
+				assertField(imagePixel.z(), pixelsWeather.get(i).d());				
 				assertField(imagePixel.z(), pixelsWeather.get(i).hc());
 			}
+			
+			if(imagePixel.z() != none) {
+				System.out.println("z: " +  imagePixel.z());
+				count++;
+			}
+				
 			i++;
 		}		
+		
+		System.out.println("Number of elements (z): " + count);
+		
+		LOGGER.info("Asserts completed successfully...");
 	}
 	
 	private void assertField(double expectedValue, double obtainedValue) {

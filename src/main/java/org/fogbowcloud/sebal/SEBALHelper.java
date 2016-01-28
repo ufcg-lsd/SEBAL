@@ -121,7 +121,7 @@ public class SEBALHelper {
         int w = (int) ((x1 - x0) / 30);
         int h = (int) ((y0 - y1) / 30);
 
-        BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);
+        BoundingBox boundingBox = new BoundingBox(offsetX, offsetY, w, h);        
         return boundingBox;
     }
     
@@ -478,18 +478,6 @@ public class SEBALHelper {
 				double Ta = station.Ta(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(), startTime.getAsDate());
 				imagePixelElevation.Ta(Ta);
 
-				double ux = station.ux(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(), startTime.getAsDate());
-				imagePixelElevation.ux(ux);
-
-				double zx = station.zx(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
-				imagePixelElevation.zx(zx);
-
-				double d = station.d(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
-				imagePixelElevation.d(d);
-
-				double hc = station.hc(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon());
-				imagePixelElevation.hc(hc);
-
 				imagePixelElevation.image(imageElevation);
 				imageElevation.addPixel(imagePixelElevation);
 			} else {
@@ -505,10 +493,6 @@ public class SEBALHelper {
 				imagePixelElevation.geoLoc(geoLoc);
 				
 				imagePixelElevation.Ta(Double.NaN);
-				imagePixelElevation.ux(Double.NaN);
-				imagePixelElevation.zx(Double.NaN);
-				imagePixelElevation.d(Double.NaN);
-				imagePixelElevation.hc(Double.NaN);
 
 				imagePixelElevation.image(imageElevation);
 				imageElevation.addPixel(imagePixelElevation);
@@ -605,21 +589,17 @@ public class SEBALHelper {
 	public static String getWeatherFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
 			int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
-					+ jFinal + ".weather.csv";
+			return outputDir + "/" + "LT52150652001135CUB00_Ta.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
-				+ jFinal + ".weather.csv";
+		return outputDir + "/" + mtlName + "/" + "LT52150652001135CUB00_Ta.csv";
 	}
 	
 	public static String getElevationFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
 			int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
-					+ jFinal + ".elevation.csv";
+			return outputDir + "/" + "LT52150652001135CUB00_elevation.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "." + jBegin + "."
-				+ jFinal + ".elevation.csv";
+		return outputDir + "/" + mtlName + "/" + "LT52150652001135CUB00_elevation.csv";
 	}
 
 	public static List<BoundingBoxVertice> getVerticesFromFile(String boundingBoxFileName) throws IOException {

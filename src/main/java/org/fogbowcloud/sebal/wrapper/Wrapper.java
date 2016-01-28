@@ -41,6 +41,7 @@ public class Wrapper {
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
+    private String rScriptFilePath;
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -88,11 +89,12 @@ public class Wrapper {
     	}
 		
 		fmaskFilePath = properties.getProperty("fmask_file_path");
+		rScriptFilePath = properties.getProperty("rScript_file_path");
 	}
 	
 	public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
 			int jFinal, String mtlName, String boundingBoxFileName, Properties properties,
-			String fmaskFilePath) throws IOException {
+			String fmaskFilePath, String rScriptFilePath) throws IOException {
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
@@ -113,11 +115,16 @@ public class Wrapper {
 			this.outputDir = outputDir + "/" + mtlName;
 		}
 		this.fmaskFilePath = fmaskFilePath;
+		this.rScriptFilePath = rScriptFilePath;
 	}
     
     public void doTask(String taskType) throws Exception {
         try {
-        	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)){
+        	if(taskType.equalsIgnoreCase(TaskType.RCALL)) {
+        		rScriptCaller(pixelQuenteFrioChooser);
+        		return;
+        	}
+        	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
         		preProcessingPixels(pixelQuenteFrioChooser);
                 return;
         	}        	
@@ -143,7 +150,17 @@ public class Wrapper {
         }
     }
     
-    public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
+    private void rScriptCaller(PixelQuenteFrioChooser pixelQuenteFrioChooser2) throws IOException {
+    	LOGGER.info("Calling R script...");
+    	
+    	long now = System.currentTimeMillis();    	    	
+    	
+    	Runtime.getRuntime().exec(rScriptFilePath);
+    	
+    	LOGGER.info("R script execution time is " + (System.currentTimeMillis() - now));
+	}
+
+	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
     		throws Exception{
     	LOGGER.info("Pre processing pixels...");
     	
@@ -166,7 +183,7 @@ public class Wrapper {
         LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
         saveElevationOutput(preProcessedImage);
-        saveWeatherOutput(preProcessedImage);
+        saveTaOutput(preProcessedImage);
         
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
@@ -210,7 +227,7 @@ public class Wrapper {
 		}
 		
         Image updatedImage = new SEBAL().processPixelQuentePixelFrio(image,
-                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);                               
+                satellite, boundingBoxVertices, image.width(), image.height(), cloudDetection);        
         
         saveProcessOutput(updatedImage);
 //        savePixelQuente(updatedImage, getPixelQuenteFileName());
@@ -382,16 +399,21 @@ public class Wrapper {
 		long now = System.currentTimeMillis();
 		List<ImagePixel> pixels = image.pixels();
 		String elevationPixelsFileName = getElevationFileName();
+		int count = 0;
+		String resultLine = new String();		
 
 		File outputFile = new File(elevationPixelsFileName);
 		try {
 			FileUtils.write(outputFile, "");
 			for (ImagePixel imagePixel : pixels) {
-				String resultLine = getRow(imagePixel.geoLoc().getI(),
-						imagePixel.geoLoc().getJ(), imagePixel.geoLoc()
-								.getLat(), imagePixel.geoLoc().getLon(),
+				if(count == 0) {
+					resultLine = getRow("latitude", "longitude", "elevation");
+				} else {
+				resultLine = getRow(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(),
 						imagePixel.z());
+				}
 				FileUtils.write(outputFile, resultLine, true);
+				count++;
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -400,21 +422,26 @@ public class Wrapper {
 				+ (System.currentTimeMillis() - now));
 	}
     
-	private void saveWeatherOutput(Image image) {
+	private void saveTaOutput(Image image) {
 		long now = System.currentTimeMillis();
 		List<ImagePixel> pixels = image.pixels();
 		String weatherPixelsFileName = getWeatherFileName();
-
+		int count = 0;
+		String resultLine = new String();
+		
 		File outputFile = new File(weatherPixelsFileName);
 		try {
 			FileUtils.write(outputFile, "");
 			for (ImagePixel imagePixel : pixels) {
-				String resultLine = getRow(imagePixel.geoLoc().getI(),
-						imagePixel.geoLoc().getJ(), imagePixel.geoLoc()
-								.getLat(), imagePixel.geoLoc().getLon(),
-						imagePixel.Ta(), imagePixel.ux(), imagePixel.zx(),
-						imagePixel.d(), imagePixel.hc());
+				if(count == 0) {
+					resultLine = getRow("latitude", "longitude", "Ta");
+				} else {					
+				resultLine = getRow(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(),
+						imagePixel.Ta());
+				}
+				
 				FileUtils.write(outputFile, resultLine, true);
+				count++;
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
