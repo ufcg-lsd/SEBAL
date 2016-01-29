@@ -43,6 +43,10 @@ public class RenderHelper {
 	private static final Logger LOGGER = Logger.getLogger(RenderHelper.class);
 	
 	public static void main(String[] args) throws ParseException, Exception {
+		LOGGER.info("Renderizing pixels...");
+    	
+    	long now = System.currentTimeMillis();
+		
 		String mtlFilePath = args[0];
 		String fileName = new File(mtlFilePath).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
@@ -192,6 +196,8 @@ public class RenderHelper {
 //		render(csvFilePath, prefixRaw + "_" + numberOfPartitions + "_" + partitionIndex,
 //				imagePartition.getIFinal() - imagePartition.getIBegin(), lowerY - upperY,
 //				daysSince1970, RenderHelper.TIFF);
+		
+		LOGGER.info("Renderization execution time is " + (System.currentTimeMillis() - now));
 	}
 
 	protected static void calculatePixelSize(double ulLon, double ulLat,

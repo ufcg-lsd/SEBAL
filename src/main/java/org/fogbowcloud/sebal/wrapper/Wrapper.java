@@ -41,7 +41,6 @@ public class Wrapper {
     private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
-    private String rScriptFilePath;
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -89,7 +88,6 @@ public class Wrapper {
     	}
 		
 		fmaskFilePath = properties.getProperty("fmask_file_path");
-		rScriptFilePath = properties.getProperty("rScript_file_path");
 	}
 	
 	public Wrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
@@ -115,15 +113,10 @@ public class Wrapper {
 			this.outputDir = outputDir + "/" + mtlName;
 		}
 		this.fmaskFilePath = fmaskFilePath;
-		this.rScriptFilePath = rScriptFilePath;
 	}
     
     public void doTask(String taskType) throws Exception {
         try {
-        	if(taskType.equalsIgnoreCase(TaskType.RCALL)) {
-        		rScriptCaller(pixelQuenteFrioChooser);
-        		return;
-        	}
         	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
         		preProcessingPixels(pixelQuenteFrioChooser);
                 return;
@@ -149,16 +142,6 @@ public class Wrapper {
             System.exit(128);
         }
     }
-    
-    private void rScriptCaller(PixelQuenteFrioChooser pixelQuenteFrioChooser2) throws IOException {
-    	LOGGER.info("Calling R script...");
-    	
-    	long now = System.currentTimeMillis();    	    	
-    	
-    	Runtime.getRuntime().exec(rScriptFilePath);
-    	
-    	LOGGER.info("R script execution time is " + (System.currentTimeMillis() - now));
-	}
 
 	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
     		throws Exception{
