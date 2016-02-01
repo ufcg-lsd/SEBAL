@@ -44,6 +44,9 @@ public class RWrapper {
     	
     	long now = System.currentTimeMillis();
     	
+    	//ProcessBuilder pb = new ProcessBuilder("Rscript", rScriptFilePath);    	
+    	//Process p = pb.start();
+    	
     	Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath);
     	p.waitFor();
     	

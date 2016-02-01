@@ -329,7 +329,7 @@ public class RenderHelper {
 				val = Double.NaN;
 			} else {
 				val = Double.parseDouble(splitLine[columnIdx]);
-			}
+			}		
 			
 			if (rasterTiff != null) {
 				rasterTiff[jIdx * maskWidth + iIdx] = val;
@@ -449,6 +449,12 @@ public class RenderHelper {
 
 		LineIterator csvLineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
 
+		if (coordinateMaskFile != null && new File(coordinateMaskFile).exists()) {
+			maskLineIterator = IOUtils.lineIterator(new FileInputStream(coordinateMaskFile), Charsets.UTF_8);
+		} else {
+			maskLineIterator = IOUtils.lineIterator(new FileInputStream(csvFile), Charsets.UTF_8);
+		}
+		
 		while (maskLineIterator.hasNext()) {
 			String line = (String) maskLineIterator.next();
 			String[] maskSplit = line.split(",");

@@ -352,7 +352,7 @@ public class SEBALHelper {
 //        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
 //        			Math.min(jFinal, offSetY + boundingBox.getH()));
         	
-			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin, heightMax);   
+			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin, heightMax);
 			LOGGER.debug("fmask size=" + fmask.length);
         }
 		
