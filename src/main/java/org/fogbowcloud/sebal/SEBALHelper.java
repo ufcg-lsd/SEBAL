@@ -586,20 +586,31 @@ public class SEBALHelper {
 				+ jFinal + ".pixels.csv";
 	}
 	
-	public static String getWeatherFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
-			int jBegin, int jFinal) {
+	public static String getWeatherFilePath(String outputDir, String mtlName,
+			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + "LT52150652001135CUB00_Ta.csv";
+			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+					+ jFinal + ".Ta.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + "LT52150652001135CUB00_Ta.csv";
+		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "."
+				+ jBegin + "." + jFinal + ".Ta.csv";
 	}
 	
-	public static String getElevationFilePath(String outputDir, String mtlName, int iBegin, int iFinal,
-			int jBegin, int jFinal) {
+	public static String getElevationFilePath(String outputDir, String mtlName,
+			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + "LT52150652001135CUB00_elevation.csv";
+			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+					+ jFinal + ".elevation.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + "LT52150652001135CUB00_elevation.csv";
+		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "."
+				+ jBegin + "." + jFinal + ".elevation.csv";
+	}
+	
+	public static String getDadosFilePath(String outputDir, String mtlName) {
+		if (mtlName == null || mtlName.isEmpty()) {
+			return outputDir + "/" + "dados.csv";
+		}
+		return outputDir + "/" + mtlName + "/" + "dados.csv";
 	}
 
 	public static List<BoundingBoxVertice> getVerticesFromFile(String boundingBoxFileName) throws IOException {
