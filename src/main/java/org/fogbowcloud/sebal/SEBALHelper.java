@@ -586,24 +586,26 @@ public class SEBALHelper {
 				+ jFinal + ".pixels.csv";
 	}
 	
-	public static String getWeatherFilePath(String outputDir, String mtlName,
+	public static String getWeatherFilePath(String outputDir, String mtlName, String imageFileName,
 			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+			return outputDir + "/" + imageFileName + "_" + iBegin + "." + iFinal + "." + jBegin + "."
 					+ jFinal + ".Ta.csv";
+		} else {
+			return outputDir + "/" + mtlName + "/" + imageFileName + "_" + iBegin + "." + iFinal
+					+ "." + jBegin + "." + jFinal + ".Ta.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "."
-				+ jBegin + "." + jFinal + ".Ta.csv";
 	}
 	
-	public static String getElevationFilePath(String outputDir, String mtlName,
+	public static String getElevationFilePath(String outputDir, String mtlName, String imageFileName,
 			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + iBegin + "." + iFinal + "." + jBegin + "."
+			return outputDir + "/" + imageFileName + "_" + iBegin + "." + iFinal + "." + jBegin + "."
 					+ jFinal + ".elevation.csv";
+		} else {
+			return outputDir + "/" + mtlName + "/" + imageFileName + "_" + iBegin + "." + iFinal
+					+ "." + jBegin + "." + jFinal + ".elevation.csv";
 		}
-		return outputDir + "/" + mtlName + "/" + iBegin + "." + iFinal + "."
-				+ jBegin + "." + jFinal + ".elevation.csv";
 	}
 	
 	public static String getDadosFilePath(String rScriptFilePath) {

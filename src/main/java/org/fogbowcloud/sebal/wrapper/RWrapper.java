@@ -105,7 +105,7 @@ public class RWrapper {
 			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
 				new File(outputDir).mkdirs();
 			}
-			this.outputDir = outputDir + "/" + mtlName;
+			this.outputDir = outputDir + mtlName;
 		}
 		
 		this.rScriptFilePath = rScriptFilePath;
@@ -134,8 +134,8 @@ public class RWrapper {
     	LOGGER.info("Pre processing pixels...");
     	
     	long now = System.currentTimeMillis();
-        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
-        
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);        
+                
         BoundingBox boundingBox = null;
         if (boundingBoxVertices.size() > 3) {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
@@ -153,18 +153,18 @@ public class RWrapper {
         
         saveElevationOutput(preProcessedImage);
         saveTaOutput(preProcessedImage);
-        
-        saveDadosOutput(rScriptFilePath);
-        
+
+        saveDadosOutput(rScriptFilePath);  
+              
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
 
 	private void rF1ScriptCaller() throws IOException, InterruptedException {
 		LOGGER.info("Calling F1 R script...");
 		
-		long now = System.currentTimeMillis();    	
+		long now = System.currentTimeMillis();	
 		
-		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName);
+		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName + " " + rScriptFilePath);
 		p.waitFor();
 		
 		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
@@ -174,21 +174,27 @@ public class RWrapper {
 		long now = System.currentTimeMillis();
 		String dadosFileName = getDadosFileName(rScriptFilePath);
 		String resultLine = new String();
+		String fileName = new File(mtlFile).getName();
+		String imageFileName = fileName.substring(0, fileName.indexOf("_"));
+		int count = 0;
 
 		File outputFile = new File(dadosFileName);
 		try {
 			FileUtils.write(outputFile, "");
 			for (int i = 0; i < 3; i++) {
 				if (i == 0) {
-					resultLine = getRow("File Images", "File Elevation", "MTL",
-							"File Ta", "Output Path", "Prefix");
+					resultLine = getRow("N", "File images", "File Elevation",
+							"MTL", "File Ta", "Output Path", "Prefix");
 				} else {
-					resultLine = getRow(imagesPath, outputDir + "/" + iBegin + "."
-							+ iFinal + "." + jBegin + "." + jFinal
-							+ ".elevation.csv", mtlFile, outputDir + "/"
-							+ iBegin + "." + iFinal + "." + jBegin + "."
-							+ jFinal + ".Ta.csv", outputDir, iBegin + "."
-							+ iFinal + "." + jBegin + "." + jFinal + ".");
+					count++;
+					resultLine = getRow(count, imagesPath, outputDir + "/"
+							+ imageFileName + "_" + iBegin + "." + iFinal + "."
+							+ jBegin + "." + jFinal + ".elevation.csv",
+							mtlFile, outputDir + "/" + imageFileName + "_" + iBegin
+									+ "." + iFinal + "." + jBegin + "."
+									+ jFinal + ".Ta.csv", outputDir, imageFileName
+									+ "_" + iBegin + "." + iFinal + "."
+									+ jBegin + "." + jFinal + ".");
 				}
 				FileUtils.write(outputFile, resultLine, true);
 				i++;
@@ -261,11 +267,15 @@ public class RWrapper {
 	}
 	
     private String getWeatherFileName() {
-    	return SEBALHelper.getWeatherFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
+    	String fileName = new File(mtlFile).getName();
+        String imageFileName = fileName.substring(0, fileName.indexOf("_"));
+    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName, iBegin, iFinal, jBegin, jFinal);
     }
     
     private String getElevationFileName() {
-    	return SEBALHelper.getElevationFilePath(outputDir, "", iBegin, iFinal, jBegin, jFinal);
+    	String fileName = new File(mtlFile).getName();
+        String imageFileName = fileName.substring(0, fileName.indexOf("_"));
+    	return SEBALHelper.getElevationFilePath(outputDir, "", imageFileName , iBegin, iFinal, jBegin, jFinal);
     }
     
     private static String getRow(Object... rowItems) {
