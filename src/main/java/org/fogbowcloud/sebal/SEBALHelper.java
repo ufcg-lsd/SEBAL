@@ -606,11 +606,8 @@ public class SEBALHelper {
 				+ jBegin + "." + jFinal + ".elevation.csv";
 	}
 	
-	public static String getDadosFilePath(String outputDir, String mtlName) {
-		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + "dados.csv";
-		}
-		return outputDir + "/" + mtlName + "/" + "dados.csv";
+	public static String getDadosFilePath(String rScriptFilePath) {
+		return rScriptFilePath  + "dados.csv";
 	}
 
 	public static List<BoundingBoxVertice> getVerticesFromFile(String boundingBoxFileName) throws IOException {

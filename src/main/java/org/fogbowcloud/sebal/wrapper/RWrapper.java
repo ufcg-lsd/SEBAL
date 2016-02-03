@@ -19,6 +19,7 @@ import org.fogbowcloud.sebal.model.image.ImagePixel;
 
 public class RWrapper {
 	
+	private String imagesPath;
 	private String mtlFile;
     private int iBegin;
     private int iFinal;
@@ -29,6 +30,7 @@ public class RWrapper {
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
     private String rScriptFilePath;
+    private String rScriptFileName;
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -39,6 +41,8 @@ public class RWrapper {
 			throw new IllegalArgumentException("Property mtl_file_path must be set.");
 		}
 		this.mtlFile = mtlFilePath;
+		
+		this.imagesPath = properties.getProperty("images_path");
 		
 		String iBeginStr = properties.getProperty("i_begin_interval");
 		String iFinalStr = properties.getProperty("i_final_interval");
@@ -65,6 +69,8 @@ public class RWrapper {
 		String fileName = new File(mtlFile).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 		String outputDir = properties.getProperty("output_dir_path");
+		String rScriptFilePath = properties.getProperty("rScript_file_path");
+		String rScriptFileName = properties.getProperty("rScript_file_name");
 
 		if (outputDir == null || outputDir.isEmpty()) {
     		this.outputDir = mtlName;
@@ -78,9 +84,10 @@ public class RWrapper {
 		fmaskFilePath = properties.getProperty("fmask_file_path");
 	}
 	
-	public RWrapper(String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
+	public RWrapper(String imagesPath, String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
 			int jFinal, String mtlName, String boundingBoxFileName, Properties properties,
-			String fmaskFilePath, String rScriptFilePath) throws IOException {
+			String fmaskFilePath, String rScriptFilePath, String rScriptFileName) throws IOException {
+		this.imagesPath = imagesPath;
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
@@ -100,6 +107,9 @@ public class RWrapper {
 			}
 			this.outputDir = outputDir + "/" + mtlName;
 		}
+		
+		this.rScriptFilePath = rScriptFilePath;
+		this.rScriptFileName = rScriptFileName;
 		this.fmaskFilePath = fmaskFilePath;
 	}
 	
@@ -110,7 +120,7 @@ public class RWrapper {
                 return;
         	}        	
         	if(taskType.equalsIgnoreCase(TaskType.F1RCALL)) {
-        		rF1ScriptCaller(rScriptFilePath);
+        		rF1ScriptCaller();
         		return;
         	}
         } catch (Throwable e) {
@@ -118,18 +128,7 @@ public class RWrapper {
             System.exit(128);
         }
 	}
-	
-    private void rF1ScriptCaller(String rScriptFilePath) throws IOException, InterruptedException {
-    	LOGGER.info("Calling F1 R script...");
-    	
-    	long now = System.currentTimeMillis();    	
-    	
-    	Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath);
-    	p.waitFor();
-    	
-    	LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
-	}
-    
+	    
 	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
     		throws Exception{
     	LOGGER.info("Pre processing pixels...");
@@ -155,24 +154,41 @@ public class RWrapper {
         saveElevationOutput(preProcessedImage);
         saveTaOutput(preProcessedImage);
         
-        saveDadosOutput(preProcessedImage);
+        saveDadosOutput(rScriptFilePath);
         
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
+
+	private void rF1ScriptCaller() throws IOException, InterruptedException {
+		LOGGER.info("Calling F1 R script...");
+		
+		long now = System.currentTimeMillis();    	
+		
+		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName);
+		p.waitFor();
+		
+		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
+	}
 	
-    private void saveDadosOutput(Image image) {
-    	long now = System.currentTimeMillis();
-		String dadosFileName = getDadosFileName();
-		String resultLine = new String();		
+	private void saveDadosOutput(String rScriptFilePath) {
+		long now = System.currentTimeMillis();
+		String dadosFileName = getDadosFileName(rScriptFilePath);
+		String resultLine = new String();
 
 		File outputFile = new File(dadosFileName);
 		try {
 			FileUtils.write(outputFile, "");
-			for (int i = 0; i < 2; i++) {
-				if(i == 0) {
-					resultLine = getRow("File Images", "File Elevation", "MTL", "File Ta", "Output Path", "Prefix");
+			for (int i = 0; i < 3; i++) {
+				if (i == 0) {
+					resultLine = getRow("File Images", "File Elevation", "MTL",
+							"File Ta", "Output Path", "Prefix");
 				} else {
-				resultLine = getRow();
+					resultLine = getRow(imagesPath, outputDir + "/" + iBegin + "."
+							+ iFinal + "." + jBegin + "." + jFinal
+							+ ".elevation.csv", mtlFile, outputDir + "/"
+							+ iBegin + "." + iFinal + "." + jBegin + "."
+							+ jFinal + ".Ta.csv", outputDir, iBegin + "."
+							+ iFinal + "." + jBegin + "." + jFinal + ".");
 				}
 				FileUtils.write(outputFile, resultLine, true);
 				i++;
@@ -181,11 +197,11 @@ public class RWrapper {
 			e.printStackTrace();
 		}
 		LOGGER.debug("Saving process output time="
-				+ (System.currentTimeMillis() - now));		
+				+ (System.currentTimeMillis() - now));
 	}
     
-	private String getDadosFileName() {
-		return SEBALHelper.getDadosFilePath(outputDir, "");
+	private String getDadosFileName(String rScriptFilePath) {
+		return SEBALHelper.getDadosFilePath(rScriptFilePath);
 	}
 	
     
