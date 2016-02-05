@@ -167,6 +167,9 @@ public class RWrapper {
 		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName + " " + rScriptFilePath);
 		p.waitFor();
 		
+		p.getErrorStream();
+		p.getOutputStream();
+		
 		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
 	}
 	

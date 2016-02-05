@@ -346,15 +346,19 @@ public class SEBALHelper {
         int centralMeridian = findCentralMeridian(zoneNumber);
         
         double[] fmask = null;
-        if (fmaskFilePath != null  && !fmaskFilePath.isEmpty() && image.width() > 0 && image.height() > 0){
-        	LOGGER.debug("Fmask file is " + fmaskFilePath);
-//        	fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
-//        			Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin, offSetY),
-//        			Math.min(jFinal, offSetY + boundingBox.getH()));
-        	
-			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin, heightMax);
+		if (fmaskFilePath != null && !fmaskFilePath.isEmpty()
+				&& new File(fmaskFilePath).exists() && image.width() > 0
+				&& image.height() > 0) {
+			LOGGER.debug("Fmask file is " + fmaskFilePath);
+			// fmask = readFmask(fmaskFilePath, Math.max(iBegin, offSetX),
+			// Math.min(iFinal, offSetX + boundingBox.getW()), Math.max(jBegin,
+			// offSetY),
+			// Math.min(jFinal, offSetY + boundingBox.getH()));
+
+			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin,
+					heightMax);
 			LOGGER.debug("fmask size=" + fmask.length);
-        }
+		}
 		
 		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
 

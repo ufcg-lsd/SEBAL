@@ -41,7 +41,7 @@ public class RBulkMain {
 		String rScriptFileName = args[13];
 
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(
-				leftX, rightX, numberOfPartitions, partitionIndex);
+				leftX, rightX, numberOfPartitions, partitionIndex);		
 
 		RWrapper rwrapper = new RWrapper(imagesPath, mtlFilePath, outputDir,
 				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
