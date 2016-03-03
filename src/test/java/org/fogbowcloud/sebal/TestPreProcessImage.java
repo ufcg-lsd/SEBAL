@@ -83,11 +83,11 @@ public class TestPreProcessImage {
         Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         
-		Image preProcessedImageElevation = SEBALHelper.readPreProcessedData(image, product,
-				boundingBoxVertices, pixelQuenteFrioChooser);
-		
-		Image preProcessedImageWeather = SEBALHelper.readPreProcessedData(image, product,
-				boundingBoxVertices, pixelQuenteFrioChooser);
+		Image preProcessedImageElevation = SEBALHelper
+				.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);
+
+		Image preProcessedImageWeather = SEBALHelper
+				.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);
 		
 		List<ImagePixel> pixelsElevation = preProcessedImageElevation.pixels();
 		List<ImagePixel> pixelsWeather = preProcessedImageWeather.pixels();

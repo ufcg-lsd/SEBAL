@@ -3,6 +3,7 @@ package org.fogbowcloud.sebal;
 import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -18,6 +19,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -362,6 +364,9 @@ public class SEBALHelper {
 		
 		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
 
+		long processedPixels = 0;
+		long count = 0;
+		
 		int fmaskI = 0;
 //        for (int i = Math.max(iBegin, offSetX); i < Math.min(iFinal, offSetX + boundingBox.getW()); i++) {
 //        	int fmaskJ = 0;
@@ -400,12 +405,10 @@ public class SEBALHelper {
                         geoPos.getLat()));
                 double longitude = Double.valueOf(String.format("%.10g%n",
                         geoPos.getLon()));
-                
 //                LOGGER.debug("lat diff=" + Math.abs(latitude - latitudeConv));
 //                LOGGER.debug("lon diff=" + Math.abs(longitude - longitudeConv));
 
                 Double z = elevation.z(latitude, longitude);                              
-               
                 imagePixel.z(z == null ? 400 : z);                                                    
                 
                 GeoLoc geoLoc = new GeoLoc();
@@ -414,7 +417,7 @@ public class SEBALHelper {
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);
                 imagePixel.geoLoc(geoLoc);
-                                
+               
 				double Ta = station.Ta(latitude, longitude, startTime.getAsDate());
 				imagePixel.Ta(Ta);
 
@@ -437,6 +440,13 @@ public class SEBALHelper {
                 imagePixel.image(image);
                 image.addPixel(imagePixel);
                 
+                processedPixels++;
+                if (processedPixels == 10000) {
+                	count++;
+					LOGGER.debug("10000 more pixel processed. count=" + count);
+                	processedPixels = 0;
+                }
+                
                 fmaskJ++;
             }
             fmaskI++;
@@ -450,62 +460,19 @@ public class SEBALHelper {
         return image;
     }
 	
-	public static Image readPreProcessedData(Image image, Product product,
-			List<BoundingBoxVertice> boundingBoxVertices,
-			PixelQuenteFrioChooser pixelQuenteFrioChooser) throws Exception {
+	public static Image invalidatePixelsOutsideBoundingBox(Image image,
+			List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
 
-		Locale.setDefault(Locale.ROOT);
-		List<ImagePixel> pixels = image.pixels();
-		DefaultImage imageElevation = new DefaultImage(pixelQuenteFrioChooser);
-
-		WeatherStation station = new WeatherStation();
-
-		UTC startTime = product.getStartTime();
-		int day = startTime.getAsCalendar().get(Calendar.DAY_OF_YEAR);
-		imageElevation.setDay(day);
-
-		for (ImagePixel imagePixel : pixels) {
-			if (pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)
+		for (DefaultImagePixel imagePixel : (List<DefaultImagePixel>) (List<?>) image
+				.pixels()) {
+			if (!pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)
 					&& imagePixel.isValid()) {
-
-				DefaultImagePixel imagePixelElevation = new DefaultImagePixel();
-
-				imagePixelElevation.z(imagePixel.z());
-
-				GeoLoc geoLoc = new GeoLoc();
-				geoLoc.setI(imagePixel.geoLoc().getI());
-				geoLoc.setJ(imagePixel.geoLoc().getJ());
-				geoLoc.setLat(imagePixel.geoLoc().getLat());
-				geoLoc.setLon(imagePixel.geoLoc().getLon());
-				imagePixelElevation.geoLoc(geoLoc);
-				
-				double Ta = station.Ta(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(), startTime.getAsDate());
-				imagePixelElevation.Ta(Ta);
-
-				imagePixelElevation.image(imageElevation);
-				imageElevation.addPixel(imagePixelElevation);
-			} else {
-				DefaultImagePixel imagePixelElevation = new DefaultImagePixel();
-
-				imagePixelElevation.z(Double.NaN);
-
-				GeoLoc geoLoc = new GeoLoc();
-				geoLoc.setI(imagePixel.geoLoc().getI());
-				geoLoc.setJ(imagePixel.geoLoc().getJ());
-				geoLoc.setLat(imagePixel.geoLoc().getLat());
-				geoLoc.setLon(imagePixel.geoLoc().getLon());
-				imagePixelElevation.geoLoc(geoLoc);
-				
-				imagePixelElevation.Ta(Double.NaN);
-
-				imagePixelElevation.image(imageElevation);
-				imageElevation.addPixel(imagePixelElevation);
+				imagePixel.z(Double.NaN);
 			}
 		}
 
 		LOGGER.debug("Pixels size=" + image.pixels().size());
-
-		return imageElevation;
+		return image;
 	}
 	
 	private static boolean pixelIsInsideBoundingBox(ImagePixel imagePixel,
@@ -594,10 +561,10 @@ public class SEBALHelper {
 			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
 			return outputDir + "/" + imageFileName + "_" + iBegin + "." + iFinal + "." + jBegin + "."
-					+ jFinal + ".Ta.csv";
+					+ jFinal + ".station.csv";
 		} else {
 			return outputDir + "/" + mtlName + "/" + imageFileName + "_" + iBegin + "." + iFinal
-					+ "." + jBegin + "." + jFinal + ".Ta.csv";
+					+ "." + jBegin + "." + jFinal + ".station.csv";
 		}
 	}
 	
@@ -637,5 +604,151 @@ public class SEBALHelper {
 			LOGGER.debug("Invalid bounding box file path: " + boundingBoxFileName);
 		}
 		return boundingBoxVertices;
+	}
+
+	public static String getStationData(Product product, int iBegin,
+			int iFinal, int jBegin, int jFinal,
+			PixelQuenteFrioChooser pixelQuenteFrioChooser,
+			BoundingBox boundingBox) throws URISyntaxException, HttpException,
+			IOException {
+
+        Locale.setDefault(Locale.ROOT);
+
+		Band bandAt = product.getBandAt(0);
+		bandAt.ensureRasterData();
+
+		if (boundingBox == null) {
+			boundingBox = new BoundingBox(0, 0, bandAt.getRasterWidth(),
+					bandAt.getRasterHeight());
+		}
+
+		int offSetX = boundingBox.getX();
+		int offSetY = boundingBox.getY();
+
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, offSetX + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, offSetX);
+
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, offSetY + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, offSetY);
+
+		int i = (widthMax - widthMin) / 2 + widthMin;
+		int j = (heightMax - heightMin) / 2 + heightMin;
+		
+		PixelPos pixelPos = new PixelPos(i, j);
+		GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+		double latitude = Double.valueOf(String.format("%.10g%n",
+				geoPos.getLat()));
+		double longitude = Double.valueOf(String.format("%.10g%n",
+				geoPos.getLon()));
+
+		WeatherStation station = new WeatherStation();
+		UTC startTime = product.getStartTime();
+		return station.getStationData(latitude, longitude,
+				startTime.getAsDate());
+	}
+
+	public static Image getElevationData(Product product, int iBegin,
+			int iFinal, int jBegin, int jFinal,
+			PixelQuenteFrioChooser pixelQuenteFrioChooser,
+			BoundingBox boundingBox, String fmaskFilePath) throws Exception {
+
+        Locale.setDefault(Locale.ROOT);
+        DefaultImage image = new DefaultImage(pixelQuenteFrioChooser);             
+        
+        Elevation elevation = new Elevation();
+
+        Band bandAt = product.getBandAt(0);
+        bandAt.ensureRasterData();
+
+        if (boundingBox == null) {
+			boundingBox = new BoundingBox(0, 0, bandAt.getRasterWidth(), bandAt.getRasterHeight());
+        }
+        
+        int offSetX = boundingBox.getX();
+        int offSetY = boundingBox.getY();
+        
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, offSetX + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, offSetX);
+		
+		image.width(Math.max(widthMax - widthMin, 0));
+		
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, offSetY + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, offSetY);
+		
+		image.height(Math.max(heightMax - heightMin, 0));
+        
+        LOGGER.debug("Image width is " + image.width());
+        LOGGER.debug("Image height is " + image.height());
+        
+        double[] fmask = null;
+		if (fmaskFilePath != null && !fmaskFilePath.isEmpty()
+				&& new File(fmaskFilePath).exists() && image.width() > 0
+				&& image.height() > 0) {
+			LOGGER.debug("Fmask file is " + fmaskFilePath);
+
+			fmask = readFmask(fmaskFilePath, widthMin, widthMax, heightMin,
+					heightMax);
+			LOGGER.debug("fmask size=" + fmask.length);
+		}
+		
+		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
+
+		long processedPixels = 0;
+		long count = 0;
+		
+		int fmaskI = 0;
+		for (int i = widthMin; i < widthMax; i++) {
+        	int fmaskJ = 0;
+            for (int j = heightMin; j < heightMax; j++) {
+//            	LOGGER.debug(i + " " + j);
+            	
+            	DefaultImagePixel imagePixel = new DefaultImagePixel();
+                
+                PixelPos pixelPos = new PixelPos(i, j);
+                GeoPos geoPos = bandAt.getGeoCoding().getGeoPos(pixelPos, null);
+                double latitude = Double.valueOf(String.format("%.10g%n",
+                        geoPos.getLat()));
+                double longitude = Double.valueOf(String.format("%.10g%n",
+                        geoPos.getLon()));
+
+                Double z = elevation.z(latitude, longitude);                              
+                imagePixel.z(z == null ? 400 : z);                                                    
+                
+                GeoLoc geoLoc = new GeoLoc();
+                geoLoc.setI(i);
+                geoLoc.setJ(j);
+                geoLoc.setLat(latitude);
+                geoLoc.setLon(longitude);
+                imagePixel.geoLoc(geoLoc);
+                
+				if (fmask != null && fmask[fmaskJ * maskWidth + fmaskI] > 1) {
+					imagePixel.isValid(false);
+				}
+				
+                imagePixel.image(image);
+                image.addPixel(imagePixel);
+                
+                processedPixels++;
+                if (processedPixels == 10000) {
+                	count++;
+					LOGGER.debug("10000 more pixel processed. count=" + count);
+                	processedPixels = 0;
+                }
+                
+                fmaskJ++;
+            }
+            fmaskI++;
+        }
+        
+        if (fmask != null) {
+        	LOGGER.debug("FMask size=" + fmask.length);
+        }
+        LOGGER.debug("Pixels size=" + image.pixels().size());             
+        
+        return image;
 	}
 }

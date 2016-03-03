@@ -29,6 +29,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -41,6 +42,8 @@ public class WeatherStation {
 	
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-YYYY");
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
+	
+	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 	
 	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
@@ -160,6 +163,7 @@ public class WeatherStation {
 				cache.put(url, data);
 			} catch (Exception e) {
 				cache.put(url, "FAILED");
+				LOGGER.error("Setting URL " + url + " as FAILED.");
 				throw e;
 			}
 		} else if (data.equals("FAILED")) {
@@ -183,6 +187,7 @@ public class WeatherStation {
 		
 		for (int i = 0; i < dataArray.length(); i++) {
 			JSONObject stationDataRecord = dataArray.optJSONObject(i);
+//			System.out.println(stationDataRecord);
 			String temp = stationDataRecord.optString("TempBulboSeco");
 			String vel = stationDataRecord.optString("VelocidadeVento");
 			
@@ -225,11 +230,78 @@ public class WeatherStation {
 				
 				return closestRecord;
 			} catch (Exception e) {
+//				LOGGER.error("Error while reading station.", e);
 //				return null;
 			}
 		}
 		return null;
 		
+	}
+	
+	private String readClosestRecord(Date date, List<JSONObject> stations, int numberOfDays) {
+		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
+		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
+		
+		for (JSONObject station : stations) {
+			try {
+				JSONArray stationData = readStation(httpClient, station.optString("id"), 
+						DATE_FORMAT.format(inicio), DATE_FORMAT.format(fim));
+				
+				boolean dataIsValid = false;
+				
+				for (int i = 0; i < stationData.length(); i++) {
+					JSONObject stationDataRecord = stationData.optJSONObject(i);
+					String dateValue = stationDataRecord.optString("Data");
+					String timeValue = stationDataRecord.optString("Hora");
+					
+					if (!dateValue.isEmpty()
+							&& !timeValue.isEmpty()
+							&& !stationDataRecord.optString("TempBulboSeco")
+									.isEmpty()
+							&& !stationDataRecord.optString("VelocidadeVento")
+									.isEmpty()) {
+						dataIsValid = true;
+					}
+				}
+				
+				if (dataIsValid) {
+					return generateStationData(stationData);
+				}
+				
+			} catch (Exception e) {
+//				LOGGER.error("Error while reading station.", e);
+//				return null;
+			}
+		}
+		return null;
+		
+	}
+
+	private String generateStationData(JSONArray stationData) {
+		StringBuilder toReturn = new StringBuilder();
+		for (int i = 0; i < stationData.length(); i++) {
+			JSONObject stationDataRecord = stationData.optJSONObject(i);
+
+			String dateValue = stationDataRecord.optString("Data");
+			String timeValue = stationDataRecord.optString("Hora");
+			String temBulboSeco = stationDataRecord.optString("TempBulboSeco");
+			String temBulboUmido = stationDataRecord
+					.optString("TempBulboUmido");
+			String estacao = stationDataRecord.optString("Estacao");
+			String umidadeRelativa = stationDataRecord
+					.optString("UmidadeRelativa");
+			String pressaoAtmEstacao = stationDataRecord
+					.optString("PressaoAtmEstacao");
+			String direcaoVento = stationDataRecord.optString("DirecaoVento");
+			String velocidadeVento = stationDataRecord
+					.optString("VelocidadeVento");
+
+			toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
+					+ temBulboSeco + ";" + temBulboUmido + ";"
+					+ umidadeRelativa + ";" + pressaoAtmEstacao + ";"
+					+ direcaoVento + ";" + velocidadeVento + ";\n");
+		}
+		return toReturn.toString().trim();
 	}
 
 	public double Ta(double lat, double lon, Date date) {
@@ -293,5 +365,10 @@ public class WeatherStation {
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {
 		new WeatherStation();
+	}
+
+	public String getStationData(double lat, double lon, Date date) {
+		List<JSONObject> station = findNearestStation(lat, lon);
+		return readClosestRecord(date, station, 0);
 	}
 }

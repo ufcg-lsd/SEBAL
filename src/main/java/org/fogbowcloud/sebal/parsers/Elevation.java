@@ -9,10 +9,14 @@ import java.net.URL;
 import net.lingala.zip4j.core.ZipFile;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class Elevation {
 
     private static final int HGT_RETRY_COUNT = 3;
+
+	private static final Logger LOGGER = Logger.getLogger(Elevation.class);
 
     /*
      * South America
@@ -84,8 +88,11 @@ public class Elevation {
         String hgtZipFile = hgtFile + ".zip";
 
         String location = getLocation(latChar, lat, lonChar, lon); 
-//        System.out.println("name: " + hgtFile);
+//        System.out.println("FileName: " + hgtFile);
+//        System.out.println("Location: " + location);
+        
         if (!new File(hgtZipFile).exists()) {
+        	LOGGER.debug("File + " + hgtFile + " for location " + location + " doesn't exist and will be downloaded.");
             int waitTime = 1000;
             for (int i = 0; i < HGT_RETRY_COUNT; i++) {
                 try {
@@ -97,6 +104,9 @@ public class Elevation {
                     zipFile.extractAll(".");
                     break;
                 } catch (Throwable t) {
+					LOGGER.error(
+							"There was an error while downloading ou unzip elevation file and will wait "
+									+ waitTime + " miliseconds.", t);
                     try {
                         Thread.sleep(waitTime);
                     } catch (InterruptedException e) {

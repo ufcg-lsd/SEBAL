@@ -3,6 +3,7 @@ package org.fogbowcloud.sebal.wrapper;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -142,17 +143,23 @@ public class RWrapper {
         	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
         	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         }             
-                
-        Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
+        
+        String stationData = SEBALHelper.getStationData(product, iBegin, iFinal, jBegin,
+                jFinal, pixelQuenteFrioChooser, boundingBox);
+        LOGGER.debug("stationData: " + stationData);
+       
+        Image image = SEBALHelper.getElevationData(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
         
-		Image preProcessedImage = SEBALHelper.readPreProcessedData(image, product,
-				boundingBoxVertices, pixelQuenteFrioChooser);
+//        Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
+//                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
+        
+		SEBALHelper.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);
         
         LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
-        saveElevationOutput(preProcessedImage);
-        saveTaOutput(preProcessedImage);
+        saveElevationOutput(image);
+        saveWeatherStationInfo(stationData);
 
         saveDadosOutput(rScriptFilePath);  
               
@@ -187,7 +194,7 @@ public class RWrapper {
 			for (int i = 0; i < 3; i++) {
 				if (i == 0) {
 					resultLine = getRow("N", "File images", "File Elevation",
-							"MTL", "File Ta", "Output Path", "Prefix");
+							"MTL", "File Station", "Output Path", "Prefix");
 				} else {
 					count++;
 					resultLine = getRow(count, imagesPath, outputDir + "/"
@@ -195,7 +202,7 @@ public class RWrapper {
 							+ jBegin + "." + jFinal + ".elevation.csv",
 							mtlFile, outputDir + "/" + imageFileName + "_" + iBegin
 									+ "." + iFinal + "." + jBegin + "."
-									+ jFinal + ".Ta.csv", outputDir, imageFileName
+									+ jFinal + ".station.csv", outputDir, imageFileName
 									+ "_" + iBegin + "." + iFinal + "."
 									+ jBegin + "." + jFinal + ".");
 				}
@@ -205,14 +212,9 @@ public class RWrapper {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		LOGGER.debug("Saving process output time="
+		LOGGER.debug("Saving dados output time="
 				+ (System.currentTimeMillis() - now));
 	}
-    
-	private String getDadosFileName(String rScriptFilePath) {
-		return SEBALHelper.getDadosFilePath(rScriptFilePath);
-	}
-	
     
 	private void saveElevationOutput(Image image) {
 		long now = System.currentTimeMillis();
@@ -237,35 +239,22 @@ public class RWrapper {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		LOGGER.debug("Saving process output time="
+		LOGGER.debug("Saving elevation output time="
 				+ (System.currentTimeMillis() - now));
 	}
 	
-	private void saveTaOutput(Image image) {
+	private void saveWeatherStationInfo(String stationData) {
 		long now = System.currentTimeMillis();
-		List<ImagePixel> pixels = image.pixels();
 		String weatherPixelsFileName = getWeatherFileName();
-		int count = 0;
-		String resultLine = new String();
 		
 		File outputFile = new File(weatherPixelsFileName);
 		try {
-			FileUtils.write(outputFile, "");
-			for (ImagePixel imagePixel : pixels) {
-				if(count == 0) {
-					resultLine = getRow("latitude", "longitude", "Ta");
-				} else {					
-				resultLine = getRow(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(),
-						imagePixel.Ta());
-				}
-				
-				FileUtils.write(outputFile, resultLine, true);
-				count++;
-			}
+			FileUtils.write(outputFile, "");			
+			FileUtils.write(outputFile, stationData, true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		LOGGER.debug("Saving process output time="
+		LOGGER.debug("Saving station data output time="
 				+ (System.currentTimeMillis() - now));
 	}
 	
@@ -280,6 +269,10 @@ public class RWrapper {
         String imageFileName = fileName.substring(0, fileName.indexOf("_"));
     	return SEBALHelper.getElevationFilePath(outputDir, "", imageFileName , iBegin, iFinal, jBegin, jFinal);
     }
+    
+	private String getDadosFileName(String rScriptFilePath) {
+		return SEBALHelper.getDadosFilePath(rScriptFilePath);
+	}
     
     private static String getRow(Object... rowItems) {
         StringBuilder sb = new StringBuilder();
