@@ -244,27 +244,32 @@ public class WeatherStation {
 		
 		for (JSONObject station : stations) {
 			try {
-				JSONArray stationData = readStation(httpClient, station.optString("id"), 
-						DATE_FORMAT.format(inicio), DATE_FORMAT.format(fim));
-				
-				boolean dataIsValid = false;
-				
+				JSONArray stationData = readStation(httpClient,
+						station.optString("id"), DATE_FORMAT.format(inicio),
+						DATE_FORMAT.format(fim));
+
+				JSONObject closestRecord = null;
+				Long smallestDiff = Long.MAX_VALUE;
+
 				for (int i = 0; i < stationData.length(); i++) {
 					JSONObject stationDataRecord = stationData.optJSONObject(i);
 					String dateValue = stationDataRecord.optString("Data");
 					String timeValue = stationDataRecord.optString("Hora");
-					
-					if (!dateValue.isEmpty()
-							&& !timeValue.isEmpty()
-							&& !stationDataRecord.optString("TempBulboSeco")
-									.isEmpty()
-							&& !stationDataRecord.optString("VelocidadeVento")
-									.isEmpty()) {
-						dataIsValid = true;
+
+					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
+							+ timeValue);
+					long diff = Math.abs(recordDate.getTime() - date.getTime());
+					if (diff < smallestDiff) {
+						smallestDiff = diff;
+						closestRecord = stationDataRecord;
 					}
 				}
-				
-				if (dataIsValid) {
+			
+				if (!closestRecord.optString("Data").isEmpty()
+						&& !closestRecord.optString("Hora").isEmpty()
+						&& !closestRecord.optString("TempBulboSeco").isEmpty()
+						&& !closestRecord.optString("VelocidadeVento")
+								.isEmpty()) {
 					return generateStationData(stationData);
 				}
 				
