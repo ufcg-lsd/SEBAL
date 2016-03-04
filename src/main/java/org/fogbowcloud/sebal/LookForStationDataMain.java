@@ -29,6 +29,7 @@ public class LookForStationDataMain {
 		String outputDir = args[1];
 
 		String fileName = new File(mtlFilePath).getName();
+		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 		
 		Product product = SEBALHelper.readProduct(mtlFilePath,
 				null);
@@ -47,7 +48,7 @@ public class LookForStationDataMain {
 
 		now = System.currentTimeMillis();
 
-		saveWeatherStationInfo(stationData, outputDir, fileName);
+		saveWeatherStationInfo(stationData, outputDir, mtlName);
 
 		LOGGER.debug("Saving station data output time="
 				+ (System.currentTimeMillis() - now));
@@ -78,10 +79,10 @@ public class LookForStationDataMain {
 	}
 
 	private static void saveWeatherStationInfo(String stationData,
-			String outputDir, String imageFileName) {
+			String outputDir, String mtlName) {
 		long now = System.currentTimeMillis();
-		String weatherPixelsFileName = outputDir + "/" + imageFileName + "/"
-				+ imageFileName + ".station.csv";
+		String weatherPixelsFileName = outputDir + "/" + mtlName + "/"
+				+ mtlName + ".station.csv";
 
 		File outputFile = new File(weatherPixelsFileName);
 		try {
