@@ -1,22 +1,35 @@
 package org.fogbowcloud.sebal.wrapper;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
 import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
+import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
+import org.fogbowcloud.sebal.parsers.Elevation;
+import org.gdal.gdal.Band;
+import org.gdal.gdal.Dataset;
+import org.gdal.gdal.Driver;
+import org.gdal.gdal.gdal;
+import org.gdal.gdalconst.gdalconstConstants;
+import org.gdal.osr.SpatialReference;
 
 public class RWrapper {
 	
@@ -32,6 +45,8 @@ public class RWrapper {
     private String fmaskFilePath;
     private String rScriptFilePath;
     private String rScriptFileName;
+    
+    public static final String TIFF = "tiff";
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -158,13 +173,138 @@ public class RWrapper {
         
         LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
-        saveElevationOutput(image);
         saveWeatherStationInfo(stationData);
+        writeElevationTiff(product, image, boundingBox);        
+//        saveElevationOutput(image);
 
         saveDadosOutput(rScriptFilePath);  
               
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
+
+	private void writeElevationTiff(Product product, Image image,
+			BoundingBox boundingBox) throws Exception {
+		gdal.AllRegister();
+
+		Locale.setDefault(Locale.ROOT);
+		org.esa.beam.framework.datamodel.Band bandAt = product.getBandAt(0);
+		bandAt.ensureRasterData();
+
+		if (boundingBox == null) {
+			boundingBox = new BoundingBox(0, 0, bandAt.getRasterWidth(),
+					bandAt.getRasterHeight());
+		}
+		
+		int offSetX = boundingBox.getX();
+		int offSetY = boundingBox.getY();
+				
+		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
+		int maskHeight = Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY);
+		
+		LOGGER.debug("mask width = " + maskWidth);
+		LOGGER.debug("mask height = " + maskHeight);
+		
+		Double latMax = -360.;
+		Double lonMin = +360.;
+
+		for (ImagePixel pixel : image.pixels()) {
+			latMax = Math.max(pixel.geoLoc().getLat(), latMax);
+			lonMin = Math.min(pixel.geoLoc().getLon(), lonMin);
+		}
+
+		Band tiffBand;
+		double[] rasterTiff;
+
+		Driver tiffDriver = gdal.GetDriverByName("GTiff");
+		String tiffFile = new File(getElevationFileName()).getAbsolutePath();
+
+
+		Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
+				gdalconstConstants.GDT_Float64);
+		tiffBand = createBand(product, dstTiff, lonMin, latMax);
+
+		rasterTiff = new double[image.pixels().size()];
+
+		
+		int initialI = image.pixels().get(0).geoLoc().getI();
+		int initialJ = image.pixels().get(0).geoLoc().getJ();
+		
+		for (int i = 0; i < image.pixels().size(); i++) {
+			int iIdx = image.pixels().get(i).geoLoc().getI() - initialI;
+			int jIdx = image.pixels().get(i).geoLoc().getJ() - initialJ;
+			
+			rasterTiff[jIdx * maskWidth + iIdx] = image.pixels().get(i).z();
+			
+//			rasterTiff[i] = image.pixels().get(i).z();
+			System.out.println(rasterTiff[i]);
+		}
+
+		tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
+		tiffBand.FlushCache();
+	}
+	
+	private static Band createBand(Product product, Dataset dstNdviTiff, Double lonMin, Double latMax) {
+		MetadataElement metadataRoot = product.getMetadataRoot();
+		
+		double ulLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double urLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double llLat = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LAT_PRODUCT").getData()
+				.getElemDouble();
+		double ulLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UL_LON_PRODUCT").getData()
+				.getElemDouble();
+		double urLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_UR_LON_PRODUCT").getData()
+				.getElemDouble();
+		double llLon = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("CORNER_LL_LON_PRODUCT").getData()
+				.getElemDouble();
+		double lines = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_LINES").getData()
+				.getElemDouble();
+		double columns = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("THERMAL_SAMPLES").getData()
+				.getElemDouble();
+		
+		double a = Math.abs(urLon) - Math.abs(ulLon);
+		double b = Math.abs(ulLat) - Math.abs(urLat);
+		double width = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+		
+		a = Math.abs(ulLat) - Math.abs(llLat);
+		b = Math.abs(llLon) - Math.abs(ulLon);
+		double heidth = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+		
+		double pixelSizeX = width/columns;
+		double pixelSizeY = heidth/lines;
+		
+				
+		/*
+		 * In case of north up images, the GT(2) and GT(4) coefficients are
+		 * zero, and the GT(1) is pixel width, and GT(5) is pixel height.
+		 * The (GT(0),GT(3)) position is the top left corner of the top left
+		 * pixel of the raster.
+		 */		
+		
+		if (pixelSizeX == -1 || pixelSizeY == -1) {
+			throw new RuntimeException("Pixel size was not calculated propertly.");
+		}
+		
+		LOGGER.debug("PIXEL_SIZE_X=" + pixelSizeX);
+		LOGGER.debug("PIXEL_SIZE_Y=" + pixelSizeY);
+		
+		dstNdviTiff
+				.SetGeoTransform(new double[] { lonMin, pixelSizeX, 0, latMax, 0, -pixelSizeY });
+		SpatialReference srs = new SpatialReference();
+		srs.SetWellKnownGeogCS("WGS84");
+		dstNdviTiff.SetProjection(srs.ExportToWkt());
+		Band bandNdvi = dstNdviTiff.GetRasterBand(1);
+		return bandNdvi;
+	}
 
 	private void rF1ScriptCaller() throws IOException, InterruptedException {
 		LOGGER.info("Calling F1 R script...");

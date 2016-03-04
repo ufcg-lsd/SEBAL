@@ -572,10 +572,10 @@ public class SEBALHelper {
 			int iBegin, int iFinal, int jBegin, int jFinal) {
 		if (mtlName == null || mtlName.isEmpty()) {
 			return outputDir + "/" + imageFileName + "_" + iBegin + "." + iFinal + "." + jBegin + "."
-					+ jFinal + ".elevation.csv";
+					+ jFinal + ".elevation.tiff";
 		} else {
 			return outputDir + "/" + mtlName + "/" + imageFileName + "_" + iBegin + "." + iFinal
-					+ "." + jBegin + "." + jFinal + ".elevation.csv";
+					+ "." + jBegin + "." + jFinal + ".elevation.tiff";
 		}
 	}
 	
