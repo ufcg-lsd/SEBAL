@@ -466,7 +466,8 @@ public class SEBALHelper {
 		for (DefaultImagePixel imagePixel : (List<DefaultImagePixel>) (List<?>) image
 				.pixels()) {
 			if (!pixelIsInsideBoundingBox(imagePixel, boundingBoxVertices)
-					&& imagePixel.isValid()) {
+					|| !imagePixel.isValid()) {
+				System.out.println("Entrou");
 				imagePixel.z(Double.NaN);
 			}
 		}

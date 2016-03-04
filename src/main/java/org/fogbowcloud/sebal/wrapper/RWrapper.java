@@ -198,8 +198,21 @@ public class RWrapper {
 		int offSetX = boundingBox.getX();
 		int offSetY = boundingBox.getY();
 				
-		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
-		int maskHeight = Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY);
+		
+		int widthMax = Math.min(bandAt.getRasterWidth(),
+				Math.min(iFinal, offSetX + boundingBox.getW()));
+		int widthMin = Math.max(iBegin, offSetX);
+		int maskWidth = Math.max(widthMax - widthMin, 0);
+		
+		int heightMax = Math.min(bandAt.getRasterHeight(),
+				Math.min(jFinal, offSetY + boundingBox.getH()));
+		int heightMin = Math.max(jBegin, offSetY);
+		
+		int maskHeight = Math.max(heightMax - heightMin, 0);
+		
+		
+//		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
+//		int maskHeight = Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY);
 		
 		LOGGER.debug("mask width = " + maskWidth);
 		LOGGER.debug("mask height = " + maskHeight);
@@ -236,7 +249,7 @@ public class RWrapper {
 			rasterTiff[jIdx * maskWidth + iIdx] = image.pixels().get(i).z();
 			
 //			rasterTiff[i] = image.pixels().get(i).z();
-			System.out.println(rasterTiff[i]);
+//			System.out.println(rasterTiff[i]);
 		}
 
 		tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
@@ -333,18 +346,16 @@ public class RWrapper {
 			FileUtils.write(outputFile, "");
 			for (int i = 0; i < 3; i++) {
 				if (i == 0) {
-					resultLine = getRow("N", "File images", "File Elevation",
-							"MTL", "File Station", "Output Path", "Prefix");
+					resultLine = getRow("N", "File images", "MTL", "File Elevation",
+							"File Station", "Bounding Box Path");
 				} else {
 					count++;
-					resultLine = getRow(count, imagesPath, outputDir + "/"
+					resultLine = getRow(count, imagesPath, mtlFile, outputDir + "/"
 							+ imageFileName + "_" + iBegin + "." + iFinal + "."
-							+ jBegin + "." + jFinal + ".elevation.csv",
-							mtlFile, outputDir + "/" + imageFileName + "_" + iBegin
+							+ jBegin + "." + jFinal + ".elevation.tiff",
+							 outputDir + "/" + imageFileName + "_" + iBegin
 									+ "." + iFinal + "." + jBegin + "."
-									+ jFinal + ".station.csv", outputDir, imageFileName
-									+ "_" + iBegin + "." + iFinal + "."
-									+ jBegin + "." + jFinal + ".");
+									+ jFinal + ".station.csv", outputDir + "/" + "boundingbox_vertices");
 				}
 				FileUtils.write(outputFile, resultLine, true);
 				i++;
