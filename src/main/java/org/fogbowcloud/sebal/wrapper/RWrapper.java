@@ -1,17 +1,15 @@
 package org.fogbowcloud.sebal.wrapper;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
@@ -20,10 +18,8 @@ import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
-import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
-import org.fogbowcloud.sebal.parsers.Elevation;
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
@@ -182,6 +178,40 @@ public class RWrapper {
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
 
+	private void rF1ScriptCaller() throws Exception {
+		LOGGER.info("Calling F1 R script...");
+		
+		long now = System.currentTimeMillis();
+		
+		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName + " " + rScriptFilePath);
+		p.waitFor();
+		
+		writeScriptLog(p);
+		
+		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
+	}
+	
+	private void writeScriptLog(Process p) throws Exception {
+		String fileName = new File(mtlFile).getName();
+		String imageFileName = fileName.substring(0, fileName.indexOf("_"));
+		File fileOut = new File(outputDir + "/" + imageFileName + "_standard-out");
+		File fileErr = new File(outputDir + "/" + imageFileName + "_standard-err");
+		String s = new String();
+		
+		BufferedReader stdInput = new BufferedReader(new InputStreamReader(
+				p.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(
+				p.getErrorStream()));
+		
+		while ((s = stdInput.readLine()) != null) {
+			FileUtils.write(fileOut, s + "\n", true);
+		}
+
+		while ((s = stdError.readLine()) != null) {
+			FileUtils.write(fileErr, s + "\n", true);
+		}
+	}
+
 	private void writeElevationTiff(Product product, Image image,
 			BoundingBox boundingBox) throws Exception {
 		gdal.AllRegister();
@@ -318,20 +348,6 @@ public class RWrapper {
 		Band bandNdvi = dstNdviTiff.GetRasterBand(1);
 		return bandNdvi;
 	}
-
-	private void rF1ScriptCaller() throws IOException, InterruptedException {
-		LOGGER.info("Calling F1 R script...");
-		
-		long now = System.currentTimeMillis();	
-		
-		Process p = Runtime.getRuntime().exec("Rscript " + rScriptFilePath + rScriptFileName + " " + rScriptFilePath);
-		p.waitFor();
-		
-		p.getErrorStream();
-		p.getOutputStream();
-		
-		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
-	}
 	
 	private void saveDadosOutput(String rScriptFilePath) {
 		long now = System.currentTimeMillis();
@@ -364,33 +380,6 @@ public class RWrapper {
 			e.printStackTrace();
 		}
 		LOGGER.debug("Saving dados output time="
-				+ (System.currentTimeMillis() - now));
-	}
-    
-	private void saveElevationOutput(Image image) {
-		long now = System.currentTimeMillis();
-		List<ImagePixel> pixels = image.pixels();
-		String elevationPixelsFileName = getElevationFileName();
-		int count = 0;
-		String resultLine = new String();		
-
-		File outputFile = new File(elevationPixelsFileName);
-		try {
-			FileUtils.write(outputFile, "");
-			for (ImagePixel imagePixel : pixels) {
-				if(count == 0) {
-					resultLine = getRow("latitude", "longitude", "elevation");
-				} else {
-				resultLine = getRow(imagePixel.geoLoc().getLat(), imagePixel.geoLoc().getLon(),
-						imagePixel.z());
-				}
-				FileUtils.write(outputFile, resultLine, true);
-				count++;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		LOGGER.debug("Saving elevation output time="
 				+ (System.currentTimeMillis() - now));
 	}
 	
