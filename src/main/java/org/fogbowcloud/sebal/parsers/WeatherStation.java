@@ -238,6 +238,57 @@ public class WeatherStation {
 		
 	}
 	
+	private String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
+		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
+		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
+		
+		for (JSONObject station : stations) {
+			try {
+				JSONArray stationData = readStation(httpClient,
+						station.optString("id"), DATE_FORMAT.format(inicio),
+						DATE_FORMAT.format(fim));
+
+				JSONObject closestRecord = null;
+				Long smallestDiff = Long.MAX_VALUE;
+
+				for (int i = 0; i < stationData.length(); i++) {
+					JSONObject stationDataRecord = stationData.optJSONObject(i);
+					String dateValue = stationDataRecord.optString("Data");
+					String timeValue = stationDataRecord.optString("Hora");
+
+					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
+							+ timeValue);
+					long diff = Math.abs(recordDate.getTime() - date.getTime());
+					if (diff < smallestDiff) {
+						smallestDiff = diff;
+						closestRecord = stationDataRecord;
+					}
+					
+					if (!closestRecord.optString("Data").isEmpty()
+							&& !closestRecord.optString("Hora").isEmpty()
+							&& !closestRecord.optString("TempBulboSeco")
+									.isEmpty()
+							&& !closestRecord.optString("TempBulboUmido")
+									.isEmpty()
+							&& !closestRecord.optString("VelocidadeVento")
+									.isEmpty()
+							&& !closestRecord.optString("UmidadeRelativa")
+									.isEmpty()
+							&& !closestRecord.optString("DirecaoVento")
+									.isEmpty()
+							&& !closestRecord.optString("PressaoAtmEstacao")
+									.isEmpty()) {
+						return generateStationData(stationData, closestRecord);
+					}
+				} 
+			} catch(Exception e) {				
+					
+			}
+		}		
+		
+		return null;
+	}
+	
 	private String readClosestRecord(Date date, List<JSONObject> stations, int numberOfDays) {
 		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
 		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
@@ -270,8 +321,9 @@ public class WeatherStation {
 						&& !closestRecord.optString("TempBulboSeco").isEmpty()
 						&& !closestRecord.optString("VelocidadeVento")
 								.isEmpty()) {
-					return generateStationData(stationData);
+					return generateStationData(stationData, closestRecord);
 				}
+				
 				
 			} catch (Exception e) {
 //				LOGGER.error("Error while reading station.", e);
@@ -282,7 +334,7 @@ public class WeatherStation {
 		
 	}
 
-	private String generateStationData(JSONArray stationData) {
+	private String generateStationData(JSONArray stationData, JSONObject closestRecord) {
 		StringBuilder toReturn = new StringBuilder();
 		for (int i = 0; i < stationData.length(); i++) {
 			JSONObject stationDataRecord = stationData.optJSONObject(i);
@@ -300,7 +352,26 @@ public class WeatherStation {
 			String direcaoVento = stationDataRecord.optString("DirecaoVento");
 			String velocidadeVento = stationDataRecord
 					.optString("VelocidadeVento");
-
+			
+/*			if(closestRecord.optString("TempBulboSeco").isEmpty()) {
+				temBulboSeco = "-1";
+			}		
+			if(closestRecord.optString("UmidadeRelativa").isEmpty()) {
+				umidadeRelativa = "-1";
+			}			
+			if(closestRecord.optString("TempBulboUmido").isEmpty()) {
+				temBulboUmido = "-1";
+			}			
+			if(closestRecord.optString("PressaoAtmEstacao").isEmpty()) {
+				pressaoAtmEstacao = "-1";
+			}			
+			if(closestRecord.optString("DirecaoVento").isEmpty()) {
+				direcaoVento = "-1";
+			}			
+			if(closestRecord.optString("VelocidadeVento").isEmpty()) {
+				velocidadeVento = "-1";
+			}*/
+			
 			toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
 					+ temBulboSeco + ";" + temBulboUmido + ";"
 					+ umidadeRelativa + ";" + pressaoAtmEstacao + ";"
@@ -375,5 +446,6 @@ public class WeatherStation {
 	public String getStationData(double lat, double lon, Date date) {
 		List<JSONObject> station = findNearestStation(lat, lon);
 		return readClosestRecord(date, station, 0);
+		//return readFullRecord(date, station, 0);
 	}
 }

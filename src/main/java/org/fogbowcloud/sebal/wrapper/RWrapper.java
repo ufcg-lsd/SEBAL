@@ -40,9 +40,7 @@ public class RWrapper {
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
     private String rScriptFilePath;
-    private String rScriptFileName;
-    
-    public static final String TIFF = "tiff";
+    private String rScriptFileName;   
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -81,8 +79,6 @@ public class RWrapper {
 		String fileName = new File(mtlFile).getName();
 		String mtlName = fileName.substring(0, fileName.indexOf("_"));
 		String outputDir = properties.getProperty("output_dir_path");
-		String rScriptFilePath = properties.getProperty("rScript_file_path");
-		String rScriptFileName = properties.getProperty("rScript_file_name");
 
 		if (outputDir == null || outputDir.isEmpty()) {
     		this.outputDir = mtlName;
@@ -160,10 +156,7 @@ public class RWrapper {
         LOGGER.debug("stationData: " + stationData);
        
         Image image = SEBALHelper.getElevationData(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
-        
-//        Image image = SEBALHelper.readPixels(product, iBegin, iFinal, jBegin,
-//                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);
+                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);        
         
 		SEBALHelper.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);
         
@@ -171,7 +164,6 @@ public class RWrapper {
         
         saveWeatherStationInfo(stationData);
         writeElevationTiff(product, image, boundingBox);        
-//        saveElevationOutput(image);
 
         saveDadosOutput(rScriptFilePath);  
               
@@ -203,10 +195,12 @@ public class RWrapper {
 		BufferedReader stdError = new BufferedReader(new InputStreamReader(
 				p.getErrorStream()));
 		
+		LOGGER.info("Writing standard output file...");
 		while ((s = stdInput.readLine()) != null) {
 			FileUtils.write(fileOut, s + "\n", true);
 		}
 
+		LOGGER.info("Writing standard error file...");
 		while ((s = stdError.readLine()) != null) {
 			FileUtils.write(fileErr, s + "\n", true);
 		}
@@ -238,11 +232,7 @@ public class RWrapper {
 				Math.min(jFinal, offSetY + boundingBox.getH()));
 		int heightMin = Math.max(jBegin, offSetY);
 		
-		int maskHeight = Math.max(heightMax - heightMin, 0);
-		
-		
-//		int maskWidth = Math.min(iFinal, offSetX + boundingBox.getW()) - Math.max(iBegin, offSetX);
-//		int maskHeight = Math.min(jFinal, offSetY + boundingBox.getH()) - Math.max(jBegin, offSetY);
+		int maskHeight = Math.max(heightMax - heightMin, 0);	
 		
 		LOGGER.debug("mask width = " + maskWidth);
 		LOGGER.debug("mask height = " + maskHeight);
@@ -276,10 +266,7 @@ public class RWrapper {
 			int iIdx = image.pixels().get(i).geoLoc().getI() - initialI;
 			int jIdx = image.pixels().get(i).geoLoc().getJ() - initialJ;
 			
-			rasterTiff[jIdx * maskWidth + iIdx] = image.pixels().get(i).z();
-			
-//			rasterTiff[i] = image.pixels().get(i).z();
-//			System.out.println(rasterTiff[i]);
+			rasterTiff[jIdx * maskWidth + iIdx] = image.pixels().get(i).z();			
 		}
 
 		tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
@@ -323,8 +310,7 @@ public class RWrapper {
 		double heidth = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
 		
 		double pixelSizeX = width/columns;
-		double pixelSizeY = heidth/lines;
-		
+		double pixelSizeY = heidth/lines;		
 				
 		/*
 		 * In case of north up images, the GT(2) and GT(4) coefficients are

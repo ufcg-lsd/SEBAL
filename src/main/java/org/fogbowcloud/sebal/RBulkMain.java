@@ -47,7 +47,7 @@ public class RBulkMain {
 				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
 				lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath,
 				rScriptFilePath, rScriptFileName);
-		//rwrapper.doTask(TaskType.PREPROCESS);
+		rwrapper.doTask(TaskType.PREPROCESS);
 		rwrapper.doTask(TaskType.F1RCALL);
 	}
 
