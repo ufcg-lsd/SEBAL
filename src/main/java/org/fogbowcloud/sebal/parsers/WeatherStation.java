@@ -353,24 +353,24 @@ public class WeatherStation {
 			String velocidadeVento = stationDataRecord
 					.optString("VelocidadeVento");
 			
-/*			if(closestRecord.optString("TempBulboSeco").isEmpty()) {
-				temBulboSeco = "-1";
+			if(closestRecord.optString("TempBulboSeco").isEmpty()) {
+				temBulboSeco = "NA";
 			}		
 			if(closestRecord.optString("UmidadeRelativa").isEmpty()) {
-				umidadeRelativa = "-1";
+				umidadeRelativa = "NA";
 			}			
 			if(closestRecord.optString("TempBulboUmido").isEmpty()) {
-				temBulboUmido = "-1";
+				temBulboUmido = "NA";
 			}			
 			if(closestRecord.optString("PressaoAtmEstacao").isEmpty()) {
-				pressaoAtmEstacao = "-1";
+				pressaoAtmEstacao = "NA";
 			}			
 			if(closestRecord.optString("DirecaoVento").isEmpty()) {
-				direcaoVento = "-1";
+				direcaoVento = "NA";
 			}			
 			if(closestRecord.optString("VelocidadeVento").isEmpty()) {
-				velocidadeVento = "-1";
-			}*/
+				velocidadeVento = "NA";
+			}
 			
 			toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
 					+ temBulboSeco + ";" + temBulboUmido + ";"
@@ -445,7 +445,7 @@ public class WeatherStation {
 
 	public String getStationData(double lat, double lon, Date date) {
 		List<JSONObject> station = findNearestStation(lat, lon);
-		return readClosestRecord(date, station, 0);
-		//return readFullRecord(date, station, 0);
+		//return readClosestRecord(date, station, 0);
+		return readFullRecord(date, station, 0);
 	}
 }

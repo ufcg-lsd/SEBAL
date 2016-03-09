@@ -151,10 +151,12 @@ public class RWrapper {
         	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
         }             
         
+        // The following will probably change because the elevation data will be downloaded externally
         String stationData = SEBALHelper.getStationData(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox);
         LOGGER.debug("stationData: " + stationData);
        
+        // The following will probably change because the elevation data will be downloaded externally
         Image image = SEBALHelper.getElevationData(product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);        
         
