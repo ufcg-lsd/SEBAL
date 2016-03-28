@@ -10,7 +10,6 @@ import net.lingala.zip4j.core.ZipFile;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class Elevation {
 

@@ -2,14 +2,20 @@ package org.fogbowcloud.sebal.wrapper;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
+import net.lingala.zip4j.core.ZipFile;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
@@ -27,6 +33,12 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
 
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
+
 public class RWrapper {
 	
 	private String imagesPath;
@@ -40,7 +52,7 @@ public class RWrapper {
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
     private String fmaskFilePath;
     private String rScriptFilePath;
-    private String rScriptFileName;   
+    private String rScriptFileName;
     
 	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
     
@@ -136,7 +148,7 @@ public class RWrapper {
             System.exit(128);
         }
 	}
-	    
+
 	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
     		throws Exception{
     	LOGGER.info("Pre processing pixels...");
@@ -165,9 +177,11 @@ public class RWrapper {
         LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
         saveWeatherStationInfo(stationData);
-        writeElevationTiff(product, image, boundingBox);        
+        //writeElevationTiff(product, image, boundingBox);
+        downloadBoundingBoxFile();
+        downloadElevationFile();
 
-        saveDadosOutput(rScriptFilePath);  
+        saveDadosOutput(rScriptFilePath);
               
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
@@ -183,6 +197,119 @@ public class RWrapper {
 		writeScriptLog(p);
 		
 		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
+	}
+	
+	private void downloadBoundingBoxFile() throws Exception {
+		// TODO: Modify the following to change as the bounding box file is
+		// switched
+		String boundingBoxFilePrefix = "wrs2_asc_desc";
+
+		String boundingBoxZipFile = boundingBoxFilePrefix + ".zip";
+		String boundingBoxFilePath = outputDir + "/" + boundingBoxZipFile;
+
+		if (!new File(boundingBoxFilePath).exists()) {
+			LOGGER.debug("File + " + boundingBoxZipFile + " for location "
+					+ outputDir + " doesn't exist and will be downloaded.");
+			int waitTime = 1000;
+			for (int i = 0; i < 3; i++) {
+				try {
+					String zipURL = "https://landsat.usgs.gov/documents/"
+							+ boundingBoxZipFile;
+					IOUtils.copy(new URL(zipURL).openStream(),
+							new FileOutputStream(boundingBoxFilePath));
+					ZipFile zipFile = new ZipFile(boundingBoxFilePath);
+					zipFile.extractAll(".");
+					break;
+				} catch (Throwable t) {
+					LOGGER.error(
+							"There was an error while downloading or unzipping bounding box file...wait time is "
+									+ waitTime + " miliseconds.", t);
+					try {
+						Thread.sleep(waitTime);
+					} catch (InterruptedException e) {
+						// Do nothing
+					}
+					waitTime += 1000;
+				}
+			}
+		}
+	}
+	
+	private void downloadElevationFile() throws Exception {
+		Properties latLonproperties = new Properties();
+		FileInputStream minMax = new FileInputStream("example/min_max");
+		latLonproperties.load(minMax);
+
+		WebClient webClient = new WebClient();
+
+		// Get the first page
+		HtmlPage page1 = webClient
+				.getPage("http://srtm.csi.cgiar.org/SELECTION/inputCoord.asp");
+
+		// Get the form that we are dealing with and within that form,
+		// find the submit button and the field that we want to change.
+		HtmlForm form = page1.getFormByName("SRTM Data Selection Options");
+
+		HtmlSubmitInput button = form.getInputByName("Input Coordinates");
+		button.click();
+
+		HtmlTextInput lonMinField = form.getInputByName("txtLongMin");
+		HtmlTextInput lonMaxField = form.getInputByName("txtLongMax");
+		HtmlTextInput latMinField = form.getInputByName("txtLatMin");
+		HtmlTextInput latMaxField = form.getInputByName("txtLatMax");
+
+		lonMinField.setValueAttribute(latLonproperties.getProperty("lon_min"));
+		lonMaxField.setValueAttribute(latLonproperties.getProperty("lon_max"));
+		latMinField.setValueAttribute(latLonproperties.getProperty("lat_min"));
+		latMaxField.setValueAttribute(latLonproperties.getProperty("lat_max"));
+
+		button = form.getInputByName("Click here to Begin Search >>");
+
+		// Now submit the form by clicking the button and get back the second
+		// page.
+		HtmlPage page2 = button.click();
+
+		File elevationDir = new File(outputDir);
+
+		// TODO: Modify the following to change as the elevation file is
+		// switched
+		String elevationPrefix = "srtm_";
+
+		String localElevationFilePath = outputDir + "/" + elevationPrefix
+				+ ".zip";
+		String localElevationFileName = elevationPrefix + ".zip";
+
+		if (!elevationDir.exists() || !elevationDir.isDirectory()) {
+			elevationDir.mkdirs();
+		}
+
+		if (!new File(localElevationFilePath).exists()) {
+			LOGGER.debug("File + " + localElevationFileName + " for location "
+					+ outputDir + " doesn't exist and will be downloaded.");
+			int waitTime = 1000;
+			for (int i = 0; i < 3; i++) {
+				try {
+					String zipURL = String.valueOf(page2.getBaseURL());
+					IOUtils.copy(new URL(zipURL).openStream(),
+							new FileOutputStream(localElevationFilePath));
+					ZipFile zipFile = new ZipFile(localElevationFilePath);
+					zipFile.extractAll(".");
+				} catch (Throwable t) {
+					LOGGER.error(
+							"There was an error while downloading or unziping elevation file...wait time is "
+									+ waitTime + " miliseconds.", t);
+					try {
+						Thread.sleep(waitTime);
+					} catch (InterruptedException e) {
+						// Do nothing
+					}
+					waitTime += 1000;
+				}
+			}
+		}
+
+		minMax.close();
+		webClient.closeAllWindows();
 	}
 	
 	private void writeScriptLog(Process p) throws Exception {
