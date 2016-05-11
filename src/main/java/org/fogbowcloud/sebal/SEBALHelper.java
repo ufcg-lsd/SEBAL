@@ -557,14 +557,11 @@ public class SEBALHelper {
 				+ jFinal + ".pixels.csv";
 	}
 	
-	public static String getWeatherFilePath(String outputDir, String mtlName, String imageFileName,
-			int iBegin, int iFinal, int jBegin, int jFinal) {
+	public static String getWeatherFilePath(String outputDir, String mtlName, String imageFileName) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + imageFileName + "_" + iBegin + "." + iFinal + "." + jBegin + "."
-					+ jFinal + ".station.csv";
+			return outputDir + "/" + imageFileName + "_station.csv";
 		} else {
-			return outputDir + "/" + mtlName + "/" + imageFileName + "_" + iBegin + "." + iFinal
-					+ "." + jBegin + "." + jFinal + ".station.csv";
+			return outputDir + "/" + mtlName + "/" + imageFileName + "_station.csv";
 		}
 	}
 	

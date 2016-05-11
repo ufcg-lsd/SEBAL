@@ -133,6 +133,29 @@ public class RWrapper {
 		this.fmaskFilePath = fmaskFilePath;
 	}
 	
+	public RWrapper(String imagesPath, String outputDir, String mtlName, String mtlFile, int iBegin, int iFinal, int jBegin,
+			int jFinal, String fmaskFilePath, String boundingBoxFileName, Properties properties) throws IOException {
+		this.imagesPath = imagesPath;
+		this.mtlFile = mtlFile;
+		this.iBegin = iBegin;
+		this.iFinal = iFinal;
+		this.jBegin = jBegin;
+		this.jFinal = jFinal;
+		
+		if (outputDir == null) {
+			this.outputDir = mtlName;
+		} else {
+			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
+				new File(outputDir).mkdirs();
+			}
+			this.outputDir = outputDir + mtlName;
+		}
+		
+		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
+		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
+		this.fmaskFilePath = fmaskFilePath;
+	}
+	
 	public void doTask(String taskType) throws Exception {
 		try {
         	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
@@ -154,7 +177,7 @@ public class RWrapper {
     	LOGGER.info("Pre processing pixels...");
     	
     	long now = System.currentTimeMillis();
-        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);        
+        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
                 
         BoundingBox boundingBox = null;
         if (boundingBoxVertices.size() > 3) {
@@ -169,19 +192,19 @@ public class RWrapper {
         LOGGER.debug("stationData: " + stationData);
        
         // The following will probably change because the elevation data will be downloaded externally
-        Image image = SEBALHelper.getElevationData(product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);        
+        /*Image image = SEBALHelper.getElevationData(product, iBegin, iFinal, jBegin,
+                jFinal, pixelQuenteFrioChooser, boundingBox, fmaskFilePath);*/     
         
-		SEBALHelper.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);
+		/*SEBALHelper.invalidatePixelsOutsideBoundingBox(image, boundingBoxVertices);*/
         
         LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
         saveWeatherStationInfo(stationData);
         //writeElevationTiff(product, image, boundingBox);
-        downloadBoundingBoxFile();
-        downloadElevationFile();
+        //downloadBoundingBoxFile();
+        //downloadElevationFile();
 
-        saveDadosOutput(rScriptFilePath);
+        //saveDadosOutput(rScriptFilePath);
               
         LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
     }
@@ -516,7 +539,7 @@ public class RWrapper {
     private String getWeatherFileName() {
     	String fileName = new File(mtlFile).getName();
         String imageFileName = fileName.substring(0, fileName.indexOf("_"));
-    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName, iBegin, iFinal, jBegin, jFinal);
+    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName);
     }
     
     private String getElevationFileName() {
