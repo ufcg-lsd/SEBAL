@@ -6,8 +6,8 @@ import java.util.Map;
 
 import org.fogbowcloud.sebal.model.image.DefaultImage;
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
-import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

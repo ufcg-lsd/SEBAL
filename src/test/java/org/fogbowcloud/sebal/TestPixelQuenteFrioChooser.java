@@ -1,8 +1,8 @@
 package org.fogbowcloud.sebal;
 
 import org.fogbowcloud.sebal.model.image.DefaultImagePixel;
-import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
+import org.fogbowcloud.sebal.model.image.Image;
 
 public class TestPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
     

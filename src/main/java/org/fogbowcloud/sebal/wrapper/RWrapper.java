@@ -2,20 +2,14 @@ package org.fogbowcloud.sebal.wrapper;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.ArrayList;
 import java.util.Properties;
 
-import net.lingala.zip4j.core.ZipFile;
-
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
@@ -24,20 +18,9 @@ import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
-import org.fogbowcloud.sebal.model.image.Image;
-import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.Driver;
-import org.gdal.gdal.gdal;
-import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
-
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
-import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
 
 public class RWrapper {
 	
@@ -53,9 +36,9 @@ public class RWrapper {
     private String fmaskFilePath;
     private String rScriptFilePath;
     private String rScriptFileName;
-    
-	private static final Logger LOGGER = Logger.getLogger(Wrapper.class);
-    
+
+	private static final Logger LOGGER = Logger.getLogger(RWrapper.class);
+
 	public RWrapper(Properties properties) throws IOException {
 		String mtlFilePath = properties.getProperty("mtl_file_path");
 		if (mtlFilePath == null || mtlFilePath.isEmpty()) {
@@ -63,14 +46,14 @@ public class RWrapper {
 			throw new IllegalArgumentException("Property mtl_file_path must be set.");
 		}
 		this.mtlFile = mtlFilePath;
-		
+
 		this.imagesPath = properties.getProperty("images_path");
-		
+
 		String iBeginStr = properties.getProperty("i_begin_interval");
 		String iFinalStr = properties.getProperty("i_final_interval");
 		String jBeginStr = properties.getProperty("j_begin_interval");
 		String jFinalStr = properties.getProperty("j_final_interval");
-		
+
 		if (iBeginStr == null || iFinalStr == null || jBeginStr == null || jFinalStr == null) {
 			LOGGER.error("Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
 			throw new IllegalArgumentException(
@@ -80,10 +63,10 @@ public class RWrapper {
 		this.iFinal = Integer.parseInt(iFinalStr);
 		this.jBegin = Integer.parseInt(jBeginStr);
 		this.jFinal = Integer.parseInt(jFinalStr);
-		
+
 		LOGGER.debug("i interval: (" + iBegin + ", " + iFinal + ")");
 		LOGGER.debug("j interval: (" + jBegin + ", " + jFinal + ")");
-		
+
 		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
 
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
@@ -93,46 +76,17 @@ public class RWrapper {
 		String outputDir = properties.getProperty("output_dir_path");
 
 		if (outputDir == null || outputDir.isEmpty()) {
-    		this.outputDir = mtlName;
-    	} else {
-    		if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-    			new File(outputDir).mkdirs();
-    		}
-    		this.outputDir = outputDir + "/" + mtlName;
-    	}
-		
-		fmaskFilePath = properties.getProperty("fmask_file_path");
-	}
-	
-	public RWrapper(String imagesPath, String mtlFile, String outputDir, int iBegin, int iFinal, int jBegin,
-			int jFinal, String mtlName, String boundingBoxFileName, Properties properties,
-			String fmaskFilePath, String rScriptFilePath, String rScriptFileName) throws IOException {
-		this.imagesPath = imagesPath;
-		this.mtlFile = mtlFile;
-		this.iBegin = iBegin;
-		this.iFinal = iFinal;
-		this.jBegin = jBegin;
-		this.jFinal = jFinal;
-
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
-
-		// this.pixelQuenteFrioChooser = new RandomPixelQuenteFrioChooser();
-		// this.pixelQuenteFrioChooser = new DefaultPixelQuenteFrioChooser();
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-		if (outputDir == null) {
 			this.outputDir = mtlName;
 		} else {
 			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
 				new File(outputDir).mkdirs();
 			}
-			this.outputDir = outputDir + mtlName;
+			this.outputDir = outputDir + "/" + mtlName;
 		}
-		
-		this.rScriptFilePath = rScriptFilePath;
-		this.rScriptFileName = rScriptFileName;
-		this.fmaskFilePath = fmaskFilePath;
+
+		fmaskFilePath = properties.getProperty("fmask_file_path");
 	}
-	
+
 	public RWrapper(String imagesPath, String outputDir, String mtlName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String fmaskFilePath, String boundingBoxFileName, Properties properties) throws IOException {
 		this.imagesPath = imagesPath;
@@ -221,120 +175,7 @@ public class RWrapper {
 		
 		LOGGER.info("F1 R script execution time is " + (System.currentTimeMillis() - now));
 	}
-	
-	private void downloadBoundingBoxFile() throws Exception {
-		// TODO: Modify the following to change as the bounding box file is
-		// switched
-		String boundingBoxFilePrefix = "wrs2_asc_desc";
 
-		String boundingBoxZipFile = boundingBoxFilePrefix + ".zip";
-		String boundingBoxFilePath = outputDir + "/" + boundingBoxZipFile;
-
-		if (!new File(boundingBoxFilePath).exists()) {
-			LOGGER.debug("File + " + boundingBoxZipFile + " for location "
-					+ outputDir + " doesn't exist and will be downloaded.");
-			int waitTime = 1000;
-			for (int i = 0; i < 3; i++) {
-				try {
-					String zipURL = "https://landsat.usgs.gov/documents/"
-							+ boundingBoxZipFile;
-					IOUtils.copy(new URL(zipURL).openStream(),
-							new FileOutputStream(boundingBoxFilePath));
-					ZipFile zipFile = new ZipFile(boundingBoxFilePath);
-					zipFile.extractAll(".");
-					break;
-				} catch (Throwable t) {
-					LOGGER.error(
-							"There was an error while downloading or unzipping bounding box file...wait time is "
-									+ waitTime + " miliseconds.", t);
-					try {
-						Thread.sleep(waitTime);
-					} catch (InterruptedException e) {
-						// Do nothing
-					}
-					waitTime += 1000;
-				}
-			}
-		}
-	}
-	
-	private void downloadElevationFile() throws Exception {
-		Properties latLonproperties = new Properties();
-		FileInputStream minMax = new FileInputStream("example/min_max");
-		latLonproperties.load(minMax);
-
-		WebClient webClient = new WebClient();
-
-		// Get the first page
-		HtmlPage page1 = webClient
-				.getPage("http://srtm.csi.cgiar.org/SELECTION/inputCoord.asp");
-
-		// Get the form that we are dealing with and within that form,
-		// find the submit button and the field that we want to change.
-		HtmlForm form = page1.getFormByName("SRTM Data Selection Options");
-
-		HtmlSubmitInput button = form.getInputByName("Input Coordinates");
-		button.click();
-
-		HtmlTextInput lonMinField = form.getInputByName("txtLongMin");
-		HtmlTextInput lonMaxField = form.getInputByName("txtLongMax");
-		HtmlTextInput latMinField = form.getInputByName("txtLatMin");
-		HtmlTextInput latMaxField = form.getInputByName("txtLatMax");
-
-		lonMinField.setValueAttribute(latLonproperties.getProperty("lon_min"));
-		lonMaxField.setValueAttribute(latLonproperties.getProperty("lon_max"));
-		latMinField.setValueAttribute(latLonproperties.getProperty("lat_min"));
-		latMaxField.setValueAttribute(latLonproperties.getProperty("lat_max"));
-
-		button = form.getInputByName("Click here to Begin Search >>");
-
-		// Now submit the form by clicking the button and get back the second
-		// page.
-		HtmlPage page2 = button.click();
-
-		File elevationDir = new File(outputDir);
-
-		// TODO: Modify the following to change as the elevation file is
-		// switched
-		String elevationPrefix = "srtm_";
-
-		String localElevationFilePath = outputDir + "/" + elevationPrefix
-				+ ".zip";
-		String localElevationFileName = elevationPrefix + ".zip";
-
-		if (!elevationDir.exists() || !elevationDir.isDirectory()) {
-			elevationDir.mkdirs();
-		}
-
-		if (!new File(localElevationFilePath).exists()) {
-			LOGGER.debug("File + " + localElevationFileName + " for location "
-					+ outputDir + " doesn't exist and will be downloaded.");
-			int waitTime = 1000;
-			for (int i = 0; i < 3; i++) {
-				try {
-					String zipURL = String.valueOf(page2.getBaseURL());
-					IOUtils.copy(new URL(zipURL).openStream(),
-							new FileOutputStream(localElevationFilePath));
-					ZipFile zipFile = new ZipFile(localElevationFilePath);
-					zipFile.extractAll(".");
-				} catch (Throwable t) {
-					LOGGER.error(
-							"There was an error while downloading or unziping elevation file...wait time is "
-									+ waitTime + " miliseconds.", t);
-					try {
-						Thread.sleep(waitTime);
-					} catch (InterruptedException e) {
-						// Do nothing
-					}
-					waitTime += 1000;
-				}
-			}
-		}
-
-		minMax.close();
-		webClient.closeAllWindows();
-	}
-	
 	private void writeScriptLog(Process p) throws Exception {
 		String fileName = new File(mtlFile).getName();
 		String imageFileName = fileName.substring(0, fileName.indexOf("_"));
@@ -356,73 +197,6 @@ public class RWrapper {
 		while ((s = stdError.readLine()) != null) {
 			FileUtils.write(fileErr, s + "\n", true);
 		}
-	}
-
-	private void writeElevationTiff(Product product, Image image,
-			BoundingBox boundingBox) throws Exception {
-		gdal.AllRegister();
-
-		Locale.setDefault(Locale.ROOT);
-		org.esa.beam.framework.datamodel.Band bandAt = product.getBandAt(0);
-		bandAt.ensureRasterData();
-
-		if (boundingBox == null) {
-			boundingBox = new BoundingBox(0, 0, bandAt.getRasterWidth(),
-					bandAt.getRasterHeight());
-		}
-		
-		int offSetX = boundingBox.getX();
-		int offSetY = boundingBox.getY();
-				
-		
-		int widthMax = Math.min(bandAt.getRasterWidth(),
-				Math.min(iFinal, offSetX + boundingBox.getW()));
-		int widthMin = Math.max(iBegin, offSetX);
-		int maskWidth = Math.max(widthMax - widthMin, 0);
-		
-		int heightMax = Math.min(bandAt.getRasterHeight(),
-				Math.min(jFinal, offSetY + boundingBox.getH()));
-		int heightMin = Math.max(jBegin, offSetY);
-		
-		int maskHeight = Math.max(heightMax - heightMin, 0);	
-		
-		LOGGER.debug("mask width = " + maskWidth);
-		LOGGER.debug("mask height = " + maskHeight);
-		
-		Double latMax = -360.;
-		Double lonMin = +360.;
-
-		for (ImagePixel pixel : image.pixels()) {
-			latMax = Math.max(pixel.geoLoc().getLat(), latMax);
-			lonMin = Math.min(pixel.geoLoc().getLon(), lonMin);
-		}
-
-		Band tiffBand;
-		double[] rasterTiff;
-
-		Driver tiffDriver = gdal.GetDriverByName("GTiff");
-		String tiffFile = new File(getElevationFileName()).getAbsolutePath();
-
-
-		Dataset dstTiff = tiffDriver.Create(tiffFile, maskWidth, maskHeight, 1,
-				gdalconstConstants.GDT_Float64);
-		tiffBand = createBand(product, dstTiff, lonMin, latMax);
-
-		rasterTiff = new double[image.pixels().size()];
-
-		
-		int initialI = image.pixels().get(0).geoLoc().getI();
-		int initialJ = image.pixels().get(0).geoLoc().getJ();
-		
-		for (int i = 0; i < image.pixels().size(); i++) {
-			int iIdx = image.pixels().get(i).geoLoc().getI() - initialI;
-			int jIdx = image.pixels().get(i).geoLoc().getJ() - initialJ;
-			
-			rasterTiff[jIdx * maskWidth + iIdx] = image.pixels().get(i).z();			
-		}
-
-		tiffBand.WriteRaster(0, 0, maskWidth, maskHeight, rasterTiff);
-		tiffBand.FlushCache();
 	}
 	
 	private static Band createBand(Product product, Dataset dstNdviTiff, Double lonMin, Double latMax) {
@@ -487,40 +261,6 @@ public class RWrapper {
 		return bandNdvi;
 	}
 	
-	private void saveDadosOutput(String rScriptFilePath) {
-		long now = System.currentTimeMillis();
-		String dadosFileName = getDadosFileName(rScriptFilePath);
-		String resultLine = new String();
-		String fileName = new File(mtlFile).getName();
-		String imageFileName = fileName.substring(0, fileName.indexOf("_"));
-		int count = 0;
-
-		File outputFile = new File(dadosFileName);
-		try {
-			FileUtils.write(outputFile, "");
-			for (int i = 0; i < 3; i++) {
-				if (i == 0) {
-					resultLine = getRow("N", "File images", "MTL", "File Elevation",
-							"File Station", "Bounding Box Path");
-				} else {
-					count++;
-					resultLine = getRow(count, imagesPath, mtlFile, outputDir + "/"
-							+ imageFileName + "_" + iBegin + "." + iFinal + "."
-							+ jBegin + "." + jFinal + ".elevation.tiff",
-							 outputDir + "/" + imageFileName + "_" + iBegin
-									+ "." + iFinal + "." + jBegin + "."
-									+ jFinal + ".station.csv", outputDir + "/" + "boundingbox_vertices");
-				}
-				FileUtils.write(outputFile, resultLine, true);
-				i++;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		LOGGER.debug("Saving dados output time="
-				+ (System.currentTimeMillis() - now));
-	}
-	
 	private void saveWeatherStationInfo(String stationData) {
 		long now = System.currentTimeMillis();
 		String weatherPixelsFileName = getWeatherFileName();
@@ -540,25 +280,6 @@ public class RWrapper {
     	String fileName = new File(mtlFile).getName();
         String imageFileName = fileName.substring(0, fileName.indexOf("_"));
     	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName);
-    }
-    
-    private String getElevationFileName() {
-    	String fileName = new File(mtlFile).getName();
-        String imageFileName = fileName.substring(0, fileName.indexOf("_"));
-    	return SEBALHelper.getElevationFilePath(outputDir, "", imageFileName , iBegin, iFinal, jBegin, jFinal);
-    }
-    
-	private String getDadosFileName(String rScriptFilePath) {
-		return SEBALHelper.getDadosFilePath(rScriptFilePath);
-	}
-    
-    private static String getRow(Object... rowItems) {
-        StringBuilder sb = new StringBuilder();
-        for (Object rowItem : rowItems) {
-            sb.append(rowItem).append(",");
-        }
-        sb.setCharAt(sb.length() - 1, '\n');
-        return sb.toString();
     }
 
 }
