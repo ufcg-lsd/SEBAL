@@ -7,7 +7,7 @@ import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
 public class TestPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
     
     @Override
-    public void choosePixelsQuenteFrio(Image image) {
+    public void choosePixelsQuenteFrio() {
       DefaultImagePixel pixelQuenteLocal = new DefaultImagePixel();
       pixelQuenteLocal.ux(4.388);
       pixelQuenteLocal.zx(6.);
@@ -29,4 +29,10 @@ public class TestPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
       this.pixelQuente = pixelQuenteLocal;
       this.pixelFrio = pixelFrioLocal;
     }
+
+	@Override
+	public void selectPixelsQuenteFrioCandidates(Image image) {
+		// TODO Auto-generated method stub
+		
+	}
 }

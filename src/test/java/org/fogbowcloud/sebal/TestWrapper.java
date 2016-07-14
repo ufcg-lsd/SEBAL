@@ -35,7 +35,7 @@ public class TestWrapper {
 	@Before
 	public void setUp() throws Exception {
 		wrapper = new Wrapper(MTL_FILE, null, I_BEGIN, I_FINAL, J_BEGIN, J_FINAL, MTL_NAME, null,
-				null, null);
+				null, null, null);
 		wrapper.setPixelQuenteFrioChooser(new TestPixelQuenteFrioChooser());
 	}
 

@@ -29,6 +29,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -41,6 +42,8 @@ public class WeatherStation {
 	
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-YYYY");
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
+	
+	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 	
 	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
@@ -160,6 +163,7 @@ public class WeatherStation {
 				cache.put(url, data);
 			} catch (Exception e) {
 				cache.put(url, "FAILED");
+				LOGGER.error("Setting URL " + url + " as FAILED.");
 				throw e;
 			}
 		} else if (data.equals("FAILED")) {
@@ -181,7 +185,20 @@ public class WeatherStation {
 			dataArray.put(jsonObject);
 		}
 		
-		return dataArray;
+		for (int i = 0; i < dataArray.length(); i++) {
+			JSONObject stationDataRecord = dataArray.optJSONObject(i);
+//			System.out.println(stationDataRecord);
+			String temp = stationDataRecord.optString("TempBulboSeco");
+			String vel = stationDataRecord.optString("VelocidadeVento");
+			
+			if (!temp.isEmpty() && !vel.isEmpty()) {
+				return dataArray;
+			}
+		}
+		
+		cache.put(url, "FAILED");
+		throw new Exception();
+//		return dataArray;
 	}
 
 	private JSONObject findClosestRecord(Date date, List<JSONObject> stations) {
@@ -200,21 +217,167 @@ public class WeatherStation {
 					String dateValue = stationDataRecord.optString("Data");
 					String timeValue = stationDataRecord.optString("Hora");
 					
-					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";" + timeValue);
+					if (!stationDataRecord.optString("TempBulboSeco").isEmpty() && !stationDataRecord.optString("VelocidadeVento").isEmpty()) {
+						Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";" + timeValue);
+						long diff = Math.abs(recordDate.getTime() - date.getTime());
+						if (diff < smallestDiff) {
+							smallestDiff = diff;
+							closestRecord = stationDataRecord;
+						}						
+					}
+					
+				}
+				
+				return closestRecord;
+			} catch (Exception e) {
+//				LOGGER.error("Error while reading station.", e);
+//				return null;
+			}
+		}
+		return null;
+		
+	}
+	
+	private String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
+		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
+		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
+		
+		for (JSONObject station : stations) {
+			try {
+				JSONArray stationData = readStation(httpClient,
+						station.optString("id"), DATE_FORMAT.format(inicio),
+						DATE_FORMAT.format(fim));
+
+				JSONObject closestRecord = null;
+				Long smallestDiff = Long.MAX_VALUE;
+
+				for (int i = 0; i < stationData.length(); i++) {
+					JSONObject stationDataRecord = stationData.optJSONObject(i);
+					String dateValue = stationDataRecord.optString("Data");
+					String timeValue = stationDataRecord.optString("Hora");
+
+					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
+							+ timeValue);
+					long diff = Math.abs(recordDate.getTime() - date.getTime());
+					if (diff < smallestDiff) {
+						smallestDiff = diff;
+						closestRecord = stationDataRecord;
+					}
+					
+					if (!closestRecord.optString("Data").isEmpty()
+							&& !closestRecord.optString("Hora").isEmpty()
+							&& !closestRecord.optString("TempBulboSeco")
+									.isEmpty()
+							&& !closestRecord.optString("TempBulboUmido")
+									.isEmpty()
+							&& !closestRecord.optString("VelocidadeVento")
+									.isEmpty()
+							&& !closestRecord.optString("UmidadeRelativa")
+									.isEmpty()
+							&& !closestRecord.optString("DirecaoVento")
+									.isEmpty()
+							&& !closestRecord.optString("PressaoAtmEstacao")
+									.isEmpty()) {
+						return generateStationData(stationData, closestRecord);
+					}
+				} 
+			} catch(Exception e) {				
+					
+			}
+		}		
+		
+		return null;
+	}
+	
+	private String readClosestRecord(Date date, List<JSONObject> stations, int numberOfDays) {
+		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
+		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
+		
+		for (JSONObject station : stations) {
+			try {
+				JSONArray stationData = readStation(httpClient,
+						station.optString("id"), DATE_FORMAT.format(inicio),
+						DATE_FORMAT.format(fim));
+
+				JSONObject closestRecord = null;
+				Long smallestDiff = Long.MAX_VALUE;
+
+				for (int i = 0; i < stationData.length(); i++) {
+					JSONObject stationDataRecord = stationData.optJSONObject(i);
+					String dateValue = stationDataRecord.optString("Data");
+					String timeValue = stationDataRecord.optString("Hora");
+
+					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
+							+ timeValue);
 					long diff = Math.abs(recordDate.getTime() - date.getTime());
 					if (diff < smallestDiff) {
 						smallestDiff = diff;
 						closestRecord = stationDataRecord;
 					}
 				}
+			
+				if (!closestRecord.optString("Data").isEmpty()
+						&& !closestRecord.optString("Hora").isEmpty()
+						&& !closestRecord.optString("TempBulboSeco").isEmpty()
+						&& !closestRecord.optString("VelocidadeVento")
+								.isEmpty()) {
+					return generateStationData(stationData, closestRecord);
+				}
 				
-				return closestRecord;
+				
 			} catch (Exception e) {
+//				LOGGER.error("Error while reading station.", e);
 //				return null;
 			}
 		}
 		return null;
 		
+	}
+
+	private String generateStationData(JSONArray stationData, JSONObject closestRecord) {
+		StringBuilder toReturn = new StringBuilder();
+		for (int i = 0; i < stationData.length(); i++) {
+			JSONObject stationDataRecord = stationData.optJSONObject(i);
+
+			String dateValue = stationDataRecord.optString("Data");
+			String timeValue = stationDataRecord.optString("Hora");
+			String temBulboSeco = stationDataRecord.optString("TempBulboSeco");
+			String temBulboUmido = stationDataRecord
+					.optString("TempBulboUmido");
+			String estacao = stationDataRecord.optString("Estacao");
+			String umidadeRelativa = stationDataRecord
+					.optString("UmidadeRelativa");
+			String pressaoAtmEstacao = stationDataRecord
+					.optString("PressaoAtmEstacao");
+			String direcaoVento = stationDataRecord.optString("DirecaoVento");
+			String velocidadeVento = stationDataRecord
+					.optString("VelocidadeVento");
+			
+			if(closestRecord.optString("TempBulboSeco").isEmpty()) {
+				temBulboSeco = "NA";
+			}		
+			if(closestRecord.optString("UmidadeRelativa").isEmpty()) {
+				umidadeRelativa = "NA";
+			}			
+			if(closestRecord.optString("TempBulboUmido").isEmpty()) {
+				temBulboUmido = "NA";
+			}			
+			if(closestRecord.optString("PressaoAtmEstacao").isEmpty()) {
+				pressaoAtmEstacao = "NA";
+			}			
+			if(closestRecord.optString("DirecaoVento").isEmpty()) {
+				direcaoVento = "NA";
+			}			
+			if(closestRecord.optString("VelocidadeVento").isEmpty()) {
+				velocidadeVento = "NA";
+			}
+			
+			toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
+					+ temBulboSeco + ";" + temBulboUmido + ";"
+					+ umidadeRelativa + ";" + pressaoAtmEstacao + ";"
+					+ direcaoVento + ";" + velocidadeVento + ";\n");
+		}
+		return toReturn.toString().trim();
 	}
 
 	public double Ta(double lat, double lon, Date date) {
@@ -223,6 +386,7 @@ public class WeatherStation {
 		if (record == null) {
 			return Double.NaN;
 		}
+//		System.out.println("record: " + record);
 		//TODO review it
 //		return Double.parseDouble(record.optString("TempBulboSeco"));
 //		return 32.23;
@@ -277,5 +441,11 @@ public class WeatherStation {
 	
 	public static void main(String[] args) throws URISyntaxException, HttpException, IOException {
 		new WeatherStation();
+	}
+
+	public String getStationData(double lat, double lon, Date date) {
+		List<JSONObject> station = findNearestStation(lat, lon);
+		//return readClosestRecord(date, station, 0);
+		return readFullRecord(date, station, 0);
 	}
 }

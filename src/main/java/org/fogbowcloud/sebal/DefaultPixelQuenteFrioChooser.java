@@ -1,14 +1,22 @@
 package org.fogbowcloud.sebal;
 
+import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 
 public class DefaultPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChooser {
-    
-    @Override
-    public void choosePixelsQuenteFrio(Image image) {
-    	long now = System.currentTimeMillis();
-        for (ImagePixel pixel : image.pixels()) {
+
+	private static final Logger LOGGER = Logger.getLogger(DefaultPixelQuenteFrioChooser.class);
+	
+	@Override
+	public void selectPixelsQuenteFrioCandidates(Image image) {
+		this.pixelFrioCandidates = this.pixelQuenteCandidates = image.pixels();
+	}
+	
+	@Override
+	public void choosePixelsQuenteFrio() {
+		long now = System.currentTimeMillis();
+		for (ImagePixel pixel : pixelFrioCandidates) {
 			double ndvi = pixel.output().getNDVI();
 			if (ndvi >= 0.1 && ndvi <= 0.2) {
 				this.pixelQuente = pixel;
@@ -19,19 +27,19 @@ public class DefaultPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoose
 			if (pixelFrio != null && pixelQuente != null) {
 				break;
 			}
-        }
-        System.out.println("Choosing pixel quente frio time=" + (System.currentTimeMillis() - now));
-		if (pixelFrio == null && !image.pixels().isEmpty()) {
-			pixelFrio = image.pixels().get((int) (Math.random() * image.pixels().size()));
 		}
-		if (pixelQuente == null && !image.pixels().isEmpty()) {
-			pixelQuente = image.pixels().get((int) (Math.random() * image.pixels().size()));
+		LOGGER.debug("Choosing pixel quente frio time=" + (System.currentTimeMillis() - now));
+		if (pixelFrio == null && !pixelFrioCandidates.isEmpty()) {
+			pixelFrio = pixelFrioCandidates.get((int) (Math.random() * pixelFrioCandidates.size()));
+		}
+		if (pixelQuente == null && !pixelQuenteCandidates.isEmpty()) {
+			pixelQuente = pixelQuenteCandidates.get((int) (Math.random() * pixelQuenteCandidates.size()));
 		}
 		if (pixelFrio != null) {
-			System.out.println("PixelFrio: " + pixelFrio.output().getTs());
+			LOGGER.debug("PixelFrio: " + pixelFrio.output().getTs());
 		}
 		if (pixelQuente != null) {
-			System.out.println("PixelQuente: " + pixelQuente.output().getTs());
+			LOGGER.debug("PixelQuente: " + pixelQuente.output().getTs());
 		}
-    }
+	}
 }

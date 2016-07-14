@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.fogbowcloud.sebal.wrapper.TaskType;
 import org.fogbowcloud.sebal.wrapper.Wrapper;
 
 public class DeployBulkMain {
@@ -22,6 +21,7 @@ public class DeployBulkMain {
 		int lowerY = Integer.parseInt(args[5]);
 
 		String phase = args[6];
+		String landsat = null;
 		
 		int numberOfPartitions = Integer.parseInt(args[7]);
 		int partitionIndex = Integer.parseInt(args[8]);
@@ -38,11 +38,15 @@ public class DeployBulkMain {
 			fmaskFilePath = args[11];
 		}
 		
+		String rScriptFilePath = args[12];
+		
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
 				numberOfPartitions, partitionIndex);
 
-		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir, imagePartition.getIBegin(),
-				imagePartition.getIFinal(), upperY, lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath);
+		Wrapper wrapper = new Wrapper(mtlFilePath, outputDir,
+				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
+				lowerY, mtlName, boundingBoxPath, properties, fmaskFilePath,
+				rScriptFilePath);
 		wrapper.doTask(phase);
 	}
 }
