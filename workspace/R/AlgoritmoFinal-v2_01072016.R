@@ -12,9 +12,10 @@ library(rgdal)
 library(maptools)
 library(ncdf4)
 library(sp)
-#args = commandArgs(trailingOnly=TRUE)
-#WD<-args[1]
-setwd("/home/ubuntu/R/") # Diretório
+args = commandArgs(trailingOnly=TRUE)
+WD<-args[1]
+#setwd("/home/ubuntu/R/") # Diretório
+setwd(WD)
 source("landsat.R")
 dados <- read.csv("dados.csv",sep=";", stringsAsFactors=FALSE) # Data
 ####################################constantes##########################################
