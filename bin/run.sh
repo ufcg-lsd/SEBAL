@@ -15,7 +15,6 @@ IMAGE_MTL_FMASK_PATH=$6
 # ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_station.csv"
 IMAGE_STATION_FILE_PATH=$7
 
-
 # Global variables
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
@@ -41,6 +40,7 @@ function preProcessImage {
   sudo java -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
   echo -e "\n" >> $IMAGE_STATION_FILE_PATH
+  cd ..
 }
 
 # This function prepare a dados.csv file and calls R script to begin image execution
@@ -51,6 +51,7 @@ function executeRScript {
 
   echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
   echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+
   echo "Executing R script..."
   sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR
   echo "Process finished!"
@@ -58,6 +59,7 @@ function executeRScript {
   echo "Renaming dados file"
   mv dados.csv dados"-${IMAGE_NAME}".csv
   sudo mv dados"-${IMAGE_NAME}".csv $OUTPUT_IMAGE_DIR
+  cd ../..
 }
 
 preProcessImage
