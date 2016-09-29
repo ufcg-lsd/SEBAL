@@ -8,14 +8,14 @@ SEBAL_DIR_PATH=$(pwd)
 SEBAL_SNAPSHOT_M2_PATH=/home/fogbow/.m2/repository/org/fogbowcloud/SEBAL/0.0.1-SNAPSHOT/
 
 function gettingSebalSnapshot {
-  cd $SEBAL_DIR_PATH
+  cd $SEBAL_DIR_PATH/SEBAL
   # getting sebal snapshot from public_html
   sudo tar -xvzf target.tar.gz
   rm target.tar.gz
 
   # putting snapshot into .m2
   sudo mkdir -p $SEBAL_SNAPSHOT_M2_PATH
-  sudo cp $SEBAL_DIR_PATH/target/SEBAL-0.0.1-SNAPSHOT.jar $SEBAL_SNAPSHOT_M2_PATH
+  sudo cp $SEBAL_DIR_PATH/SEBAL/target/SEBAL-0.0.1-SNAPSHOT.jar $SEBAL_SNAPSHOT_M2_PATH
 
   sudo mkdir -p $LOG4J_FILE_PATH
   cd ..
@@ -25,7 +25,7 @@ function verifyRScript {
   echo "Verifying dependencies for R script"
   
   # TODO: put this in our SEBAL repository
-  bash -x ${SEBAL_DIR_PATH}/scripts/verify-dependencies.sh
+  bash -x ${SEBAL_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh
 }
 
 gettingSebalSnapshot
