@@ -1,6 +1,8 @@
 #!/bin/bash
 
-Rscript check-R-dependency.R raster
+SEBAL_SCRIPTS_PATH=$1
+
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R raster
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]

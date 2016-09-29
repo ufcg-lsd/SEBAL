@@ -25,7 +25,7 @@ function verifyRScript {
   echo "Verifying dependencies for R script"
   
   # TODO: put this in our SEBAL repository
-  bash -x ${SEBAL_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh
+  bash -x ${SEBAL_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh ${SEBAL_DIR_PATH}/SEBAL/scripts
 }
 
 gettingSebalSnapshot
