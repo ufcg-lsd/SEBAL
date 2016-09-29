@@ -12,7 +12,7 @@ else
   echo "raster is installed"
 fi
 
-Rscript check-R-dependency.R rgeos
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R rgeos
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
@@ -22,7 +22,7 @@ else
   echo "rgeos is installed"
 fi
 
-Rscript check-R-dependency.R rgdal
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R rgdal
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
@@ -32,7 +32,7 @@ else
   echo "rgdal is installed"
 fi
 
-Rscript check-R-dependency.R maptools
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R maptools
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
@@ -42,7 +42,7 @@ else
   echo "maptools is installed"
 fi
 
-Rscript check-R-dependency.R ncdf4
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R ncdf4
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
@@ -52,7 +52,7 @@ else
   echo "ncdf4 is installed"
 fi
 
-Rscript check-R-dependency.R sp
+Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R sp
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
