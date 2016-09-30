@@ -20,7 +20,7 @@ CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 
-R_EXEC_DIR=SEBAL/workspace/R
+R_EXEC_DIR=
 R_ALGORITHM_VERSION=AlgoritmoFinal-v2_01072016.R
 
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
@@ -30,9 +30,12 @@ LOG4J_PATH=
 
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
-  cd SEBAL
-  SEBAL_DIR_PATH=$(pwd)
+  SANDBOX=$(pwd)
+  SEBAL_DIR_PATH=$SANDBOX/SEBAL
+  R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
   LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
+
+  cd $SEBAL_DIR_PATH
 
   #echo "Generating app snapshot"
   #mvn -e install -Dmaven.test.skip=true
