@@ -74,13 +74,13 @@ landsat<-function(){
     
     #Reflectância
     ref<-list()
-    for(i in 2:7){
+    for(i in 1:6){
       ref[[i]]<-(image.rec[[i]]*0.00002-0.1)/costheta
     }
     
     #Albedo de superfície
-    alb<-ref[[2]]*p.s$wb[2]+ref[[3]]*p.s$wb[3]+ref[[4]]*p.s$wb[4]+ref[[5]]*p.s$wb[5]+
-      ref[[6]]*p.s$wb[6]+ref[[7]]*p.s$wb[7]
+    alb<-ref[[1]]*p.s$wb[1]+ref[[2]]*p.s$wb[2]+ref[[3]]*p.s$wb[3]+ref[[4]]*p.s$wb[4]+
+      ref[[5]]*p.s$wb[5]+ref[[6]]*p.s$wb[6]
     alb<-(alb-0.03)/tal^2
     
     #Radiação de onda curta incidente
