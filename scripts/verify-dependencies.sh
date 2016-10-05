@@ -1,13 +1,14 @@
 #!/bin/bash
 
 SEBAL_SCRIPTS_PATH=$1
+MISSING_DEPENDENCIES_FILE=missing_dependencies
 
 Rscript $SEBAL_SCRIPTS_PATH/check-R-dependency.R raster
 PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing raster dependency"
+  echo "Missing raster dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "raster is installed"
 fi
@@ -17,7 +18,7 @@ PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing rgeos dependency"
+  echo "Missing rgeos dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "rgeos is installed"
 fi
@@ -27,7 +28,7 @@ PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing rgdal dependency"
+  echo "Missing rgdal dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "rgdal is installed"
 fi
@@ -37,7 +38,7 @@ PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing maptools dependency"
+  echo "Missing maptools dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "maptools is installed"
 fi
@@ -47,7 +48,7 @@ PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing ncdf4 dependency"
+  echo "Missing ncdf4 dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "ncdf4 is installed"
 fi
@@ -57,7 +58,7 @@ PROCESS_OUTPUT=$?
 
 if [ $PROCESS_OUTPUT -ne 0 ]
 then
-  echo "Missing sp dependency"
+  echo "Missing sp dependency" >> $MISSING_DEPENDENCIES_FILE
 else
   echo "sp is installed"
 fi
