@@ -14,6 +14,7 @@ library(ncdf4)
 library(sp)
 args = commandArgs(trailingOnly=TRUE)
 WD<-args[1]
+WD
 setwd(WD) # Working Directory
 source("landsat.R")
 dados <- read.csv("dados.csv",sep=";", stringsAsFactors=FALSE) # Data
