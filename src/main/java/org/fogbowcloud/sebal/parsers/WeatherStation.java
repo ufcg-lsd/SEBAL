@@ -272,6 +272,8 @@ public class WeatherStation {
 									.isEmpty()
 							&& !closestRecord.optString("VelocidadeVento")
 									.isEmpty()
+							&& Double.parseDouble(closestRecord
+									.optString("VelocidadeVento")) >= 0.3
 							&& !closestRecord.optString("UmidadeRelativa")
 									.isEmpty()
 							&& !closestRecord.optString("DirecaoVento")
@@ -279,6 +281,10 @@ public class WeatherStation {
 							&& !closestRecord.optString("PressaoAtmEstacao")
 									.isEmpty()) {
 						return generateStationData(stationData, closestRecord);
+					} else if(Double.parseDouble(closestRecord
+							.optString("VelocidadeVento")) < 0.3) {
+						closestRecord.remove("VelocidadeVento");
+						closestRecord.put("VelocidadeVento", "0.3");
 					}
 				} 
 			} catch(Exception e) {				
