@@ -77,6 +77,8 @@ if (n.sensor==5) fic.st <- stack(as.list(fichs.imagens[1:7]))
 beginCluster(clusters)
 fic.st<-projectRaster(fic.st,crs = WGS84)            # change projection (UTM para GEO)
 endCluster()
+proc.time()
+
 #Reading Bounding Box
 fic.bounding.boxes<-paste("wrs2_asc_desc/wrs2_asc_desc.shp")
 BoundingBoxes<-readShapePoly(fic.bounding.boxes,proj4string = CRS(WGS84))
@@ -88,6 +90,7 @@ Fmask <- raster(dados$File.Fmask[1])
 beginCluster(clusters)
 Fmask <- projectRaster(Fmask, crs = WGS84)
 endCluster()
+proc.time()
 
 #Reading Elevation
 fic.elevation<-paste("Elevation/srtm_29_14.tif")
@@ -95,15 +98,22 @@ raster.elevation <- raster(fic.elevation)
 beginCluster(clusters)
 raster.elevation <- crop(raster.elevation,extent(BoundingBox))
 endCluster()
+proc.time()
+
 raster.elevation.aux<-raster(raster.elevation)
 res(raster.elevation.aux)<-res(Fmask)
 
 # Resample images
 beginCluster(clusters)
 raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
+proc.time()
+
 image.rec<- resample(fic.st,raster.elevation,method="ngb")
+proc.time()
+
 Fmask <- resample(Fmask,raster.elevation,method="ngb")
 endCluster()
+proc.time()
 
 #Reading file Station weather
 fic.sw<-dados$File.Station.Weather[1]
@@ -111,27 +121,38 @@ table.sw<-(read.csv(fic.sw,sep=";", header=FALSE, stringsAsFactors=FALSE))
 
 #Transmissivity 
 tal<-0.75+2*10^-5*raster.elevation 
+proc.time()
 
 #Processamento da Fase 1
 output<-landsat()
+proc.time()
+
 beginCluster(clusters)
 output<-mask(output, BoundingBox)
 endCluster()
+proc.time()
+
 output[Fmask>1]<-NaN
 names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
 output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
 writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
             longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
+proc.time()
 
 #Opening old alb NetCDF
 var_output<-paste(dados$Path.Output,"/",fic,"_alb.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+proc.time()
+
 #Getting lat and lon values from old NetCDF
 oldLat<-ncvar_get(nc,"lat",start=1,count=raster.elevation@nrows)
 oldLon<-ncvar_get(nc,"lon",start=1,count=raster.elevation@ncols)
+
 #Defining latitude and longitude dimensions
 dimLatDef<-ncdim_def("lat","degrees",oldLat,unlim=FALSE,longname="latitude")
 dimLonDef<-ncdim_def("lon","degrees",oldLon,unlim=FALSE,longname="longitude")
+proc.time()
+
 #New alb file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_alb.nc",sep="")
 oldAlbValues<-ncvar_get(nc,fic)
@@ -140,11 +161,12 @@ nc_close(nc)
 newAlbNCDF4<-nc_create(file_output,newAlbValues)
 ncvar_put(newAlbNCDF4,"alb",oldAlbValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newAlbNCDF4)
-
+proc.time()
 
 #Opening old EVI NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_EVI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New EVI file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_EVI.nc",sep="")
 oldEVIValues<-ncvar_get(nc,fic)
@@ -153,11 +175,12 @@ nc_close(nc)
 newEVINCDF4<-nc_create(file_output,newEVIValues)
 ncvar_put(newEVINCDF4,"EVI",oldEVIValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newEVINCDF4)
-
+proc.time()
 
 #Opening old G NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_G.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New G file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_G.nc",sep="")
 oldGValues<-ncvar_get(nc,fic)
@@ -166,10 +189,12 @@ nc_close(nc)
 newGNCDF4<-nc_create(file_output,newGValues)
 ncvar_put(newGNCDF4,"G",oldGValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newGNCDF4)
+proc.time()
 
 #Opening old LAI NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_LAI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New LAI file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_LAI.nc",sep="")
 oldLAIValues<-ncvar_get(nc,fic)
@@ -178,10 +203,12 @@ nc_close(nc)
 newLAINCDF4<-nc_create(file_output,newLAIValues)
 ncvar_put(newLAINCDF4,"LAI",oldLAIValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newLAINCDF4)
+proc.time()
 
 #Opening old NDVI NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_NDVI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New NDVI file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_NDVI.nc",sep="")
 oldNDVIValues<-ncvar_get(nc,fic)
@@ -190,10 +217,12 @@ nc_close(nc)
 newNDVINCDF4<-nc_create(file_output,newNDVIValues)
 ncvar_put(newNDVINCDF4,"NDVI",oldNDVIValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newNDVINCDF4)
+proc.time()
 
 #Opening old Rn NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_Rn.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New Rn file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_Rn.nc",sep="")
 oldRnValues<-ncvar_get(nc,fic)
@@ -202,10 +231,12 @@ nc_close(nc)
 newRnNCDF4<-nc_create(file_output,newRnValues)
 ncvar_put(newRnNCDF4,"Rn",oldRnValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newRnNCDF4)
+proc.time()
 
 #Opening old TS NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_TS.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New TS file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_TS.nc",sep="")
 oldTSValues<-ncvar_get(nc,fic)
@@ -214,6 +245,7 @@ nc_close(nc)
 newTSNCDF4<-nc_create(file_output,newTSValues)
 ncvar_put(newTSNCDF4,"TS",oldTSValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newTSNCDF4)
+proc.time()
 
 ########################Selection of reference pixels###################################
 Rn<-output[[1]]
@@ -256,7 +288,7 @@ endCluster()
 TQ.hot<-TQ.hot[i.NDVI.hot.cv[1]]
 ll.hot.f<-cbind(as.vector(xy.hot[i.NDVI.hot.cv[1],1]),
                 as.vector(xy.hot[i.NDVI.hot.cv[1],2]))
-
+proc.time()
 
 #Candidates cold Pixel
 z<-TS[NDVI<0 & TS>273.16]
@@ -282,11 +314,13 @@ endCluster()
 TQ.cold<-TQ.cold[i.NDVI.cold[1]]
 ll.cold.f<-cbind(as.vector(xy.cold[i.NDVI.cold[1],1]),
                  as.vector(xy.cold[i.NDVI.cold[1],2]))
+proc.time()
 
 #Location of reference pixels (hot and cold)
 ll_ref<-rbind(ll.hot.f[1,],ll.cold.f[1,])
 colnames(ll_ref)<-c("long", "lat")
 rownames(ll_ref)<-c("hot","cold")
+proc.time()
 
 ####################################################################################
 
@@ -301,6 +335,7 @@ zom.est<-hc*0.12
 azom<- -3    #Parameter for the Zom image
 bzom<- 6.47  #Parameter for the Zom image
 F_int<-0.16  #internalization factor for Rs 24 calculation (default value)
+proc.time()
 
 #friction velocity at the station (ustar.est)
 ustar.est<-k*table.sw$V9[2]/log((x)/zom.est)
@@ -324,6 +359,7 @@ value.pixel.rah<-value.pixels.ref["hot","rah"]
 
 i<-1
 Erro<-TRUE
+proc.time()
 
 #Beginning of the cycle stability
 while(Erro){
@@ -351,6 +387,7 @@ while(Erro){
   Erro<-(abs(1-rah.hot.0/rah.hot)>=0.05)
   i<-i+1
 }
+proc.time()
 
 #End sensible heat flux (H)
 
@@ -358,9 +395,12 @@ while(Erro){
 dt.hot<-H.hot*rah.hot/(rho*cp)                  
 b<-dt.hot/(value.pixels.ref["hot","TS"]-value.pixels.ref["cold","TS"]) 
 a<- -b*(value.pixels.ref["cold","TS"]-273.15)                          
+proc.time()
+
 #All pixels
 H<-rho*cp*(a+b*(TS-273.15))/rah
 H[H>(Rn-G)]<-(Rn-G)[H>(Rn-G)]
+proc.time()
 
 #Instant latent heat flux (LE)
 LE<-Rn-G-H
@@ -372,6 +412,7 @@ phi<-(pi/180)*Lat #Solar latitude in degrees
 omegas<-acos(-tan(phi)*tan(sigma)) #Angle Time for sunsets (rad)
 Ra24h<-(((24*60/pi)*Gsc*dr)*(omegas*sin(phi)*
                                sin(sigma)+cos(phi)*cos(sigma)*sin(omegas)))*(1000000/86400)
+proc.time()
 
 #Short wave radiation incident in 24 hours (Rs24h)
 Rs24h<-F_int*sqrt(max(table.sw$V4[])-min(table.sw$V4[]))*Ra24h
@@ -391,15 +432,18 @@ LE24h_dB<-EF*Rn24h_dB
 #Evapotranspiration 24 hours (ET24h)
 ET24h_dB<-LE24h_dB*86400/((2.501-0.00236*
                              (max(table.sw$V4[])+min(table.sw$V4[]))/2)*10^6)
+proc.time()
 
 output.evapo<-stack(EF,ET24h_dB)
 names(output.evapo)<-c('EF','ET24h')
 writeRaster(output.evapo,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
             longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
+proc.time()
 
 #Opening old EF NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New EF file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
 oldEFValues<-ncvar_get(nc,fic)
@@ -408,10 +452,12 @@ nc_close(nc)
 newEFNCDF4<-nc_create(file_output,newEFValues)
 ncvar_put(newEFNCDF4,"EF",oldEFValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newEFNCDF4)
+proc.time()
 
 #Opening old ET24h NetCDF
 var_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+
 #New ET24h file name
 file_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
 oldET24hValues<-ncvar_get(nc,fic)
@@ -420,3 +466,4 @@ nc_close(nc)
 newET24hNCDF4<-nc_create(file_output,newET24hValues)
 ncvar_put(newET24hNCDF4,"ET24h",oldET24hValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
 nc_close(newET24hNCDF4)
+proc.time()
