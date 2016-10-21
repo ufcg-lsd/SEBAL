@@ -7,6 +7,10 @@
 
 options(echo=TRUE)
 rm(list=ls())
+
+# for now, this will be here
+install.packages("snow", repos="http://nbcgib.uesc.br/mirrors/cran/")
+
 library(raster)
 library(rgdal)
 library(maptools)
@@ -24,7 +28,7 @@ g<-9.81        #Gravity
 rho<- 1.15     #Air density
 cp<- 1004      #Specific heat of air
 Gsc<-0.082     #Solar constant (0.0820 MJ m-2 min-1)
-
+clusters<-7    #Number of clusters used in image processing
 ######################### Reading sensor parameters#####################################
 p.s.TM1<- read.csv("parametros do sensor/parametrosdosensorTM1.csv"
                    ,sep=";", stringsAsFactors=FALSE)
@@ -70,7 +74,7 @@ fichs.imagens <- list.files(path = fic.dir, pattern ="*.TIF", full.names = TRUE)
 if (n.sensor==8) fic.st <- stack(as.list(fichs.imagens[c(4:9,2)]))
 if (n.sensor==7) fic.st <- stack(as.list(fichs.imagens[1:8]))
 if (n.sensor==5) fic.st <- stack(as.list(fichs.imagens[1:7]))
-beginCluster(7)
+beginCluster(clusters)
 fic.st<-projectRaster(fic.st,crs = WGS84)            # change projection (UTM para GEO)
 endCluster()
 #Reading Bounding Box
@@ -81,21 +85,21 @@ BoundingBox<-BoundingBoxes[BoundingBoxes@data$WRSPR==WRSPR,]
 
 #Reading Fmask
 Fmask <- raster(dados$File.Fmask[1])
-beginCluster(7)
+beginCluster(clusters)
 Fmask <- projectRaster(Fmask, crs = WGS84)
 endCluster()
 
 #Reading Elevation
 fic.elevation<-paste("Elevation/srtm_29_14.tif")
 raster.elevation <- raster(fic.elevation)
-beginCluster(7)
+beginCluster(clusters)
 raster.elevation <- crop(raster.elevation,extent(BoundingBox))
 endCluster()
 raster.elevation.aux<-raster(raster.elevation)
 res(raster.elevation.aux)<-res(Fmask)
 
 # Resample images
-beginCluster(7)
+beginCluster(clusters)
 raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 image.rec<- resample(fic.st,raster.elevation,method="ngb")
 Fmask <- resample(Fmask,raster.elevation,method="ngb")
@@ -110,7 +114,7 @@ tal<-0.75+2*10^-5*raster.elevation
 
 #Processamento da Fase 1
 output<-landsat()
-beginCluster(7)
+beginCluster(clusters)
 output<-mask(output, BoundingBox)
 endCluster()
 output[Fmask>1]<-NaN
@@ -239,14 +243,14 @@ for(k in 0:length(Cand.hot)){
   ll.hot<-c(ll.hot,which(TS.Ho[]==Cand.hot[k]))
 }
 xy.hot <- xyFromCell(TS.Ho, ll.hot)
-beginCluster(7)
+beginCluster(clusters)
 NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
 endCluster()
 NDVI.hot.2<-NDVI.hot[!sapply(NDVI.hot, is.null)]
 NDVI.hot.cv <- sapply(NDVI.hot.2,sd, na.rm=TRUE)/sapply(NDVI.hot.2, mean, na.rm=TRUE)
 NDVI.hot.cv.min<-sort(NDVI.hot.cv)
 i.NDVI.hot.cv<-which(NDVI.hot.cv[]==NDVI.hot.cv.min[1])
-beginCluster(7)
+beginCluster(clusters)
 TQ.hot<-extract(TS,xy.hot)
 endCluster()
 TQ.hot<-TQ.hot[i.NDVI.hot.cv[1]]
@@ -264,7 +268,7 @@ for(k in 0:length(Cand.cold)){
   ll.cold<-c(ll.cold,which(TS.dif[]==Cand.cold[k]))
 }
 xy.cold <- xyFromCell(TS.dif, ll.cold)
-beginCluster(7)
+beginCluster(clusters)
 NDVI.cold<-extract(NDVI,xy.cold, buffer=120)
 endCluster()
 NDVI.cold.2<-NDVI.cold[!sapply(NDVI.cold, is.null)]
@@ -272,7 +276,7 @@ NDVI.cold.cv<-sapply(NDVI.cold.2, sd, na.rm=TRUE)/sapply(NDVI.cold.2, mean, na.r
 NDVI.cold.cv.positive<-NDVI.cold.cv[NDVI.cold.cv>0]
 NDVI.cold.cv.min<-sort(NDVI.cold.cv.positive)
 i.NDVI.cold<-which(NDVI.cold.cv[]==NDVI.cold.cv.min[1])
-beginCluster(7)
+beginCluster(clusters)
 TQ.cold<-extract(TS,xy.cold)
 endCluster()
 TQ.cold<-TQ.cold[i.NDVI.cold[1]]
