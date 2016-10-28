@@ -19,6 +19,7 @@ IMAGE_STATION_FILE_PATH=$7
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
+TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=
 R_ALGORITHM_VERSION=AlgoritmoFinal-v03102016.R
@@ -56,7 +57,7 @@ function executeRScript {
   echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
 
   echo "Executing R script..."
-  sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR
+  sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
   echo "Process finished!"
 
   echo "Renaming dados file"
