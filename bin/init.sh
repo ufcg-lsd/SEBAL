@@ -23,7 +23,7 @@ function gettingSebalSnapshot {
 }
 
 function createREnvFile {
-  touch $TEMP_DIR_PATH/.Renviron
+  sudo touch $TEMP_DIR_PATH/.Renviron
 }
 
 function verifyRScript {
