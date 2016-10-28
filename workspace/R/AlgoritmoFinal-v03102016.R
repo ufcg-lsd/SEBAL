@@ -18,8 +18,10 @@ library(ncdf4)
 library(sp)
 args = commandArgs(trailingOnly=TRUE)
 WD<-args[1]
-WD
+tmp_dir<-args[2]
 setwd(WD) # Working Directory
+write(eval(parse(text = paste("TMP = '", tmp_dir, "'"))), file=file.path(Sys.getenv('R_USER'), '.Renviron')) # Temporary Directory
+
 source("landsat.R")
 dados <- read.csv("dados.csv",sep=";", stringsAsFactors=FALSE) # Data
 ####################################constantes##########################################

@@ -3,6 +3,7 @@
 # Global variables
 LOG4J_FILE_PATH=/var/log/sebal/sebal.log
 SEBAL_DIR_PATH=$(pwd)
+TEMP_DIR_PATH=/mnt
 
 # TODO: fix this
 SEBAL_SNAPSHOT_M2_PATH=/home/fogbow/.m2/repository/org/fogbowcloud/SEBAL/0.0.1-SNAPSHOT/
@@ -19,6 +20,10 @@ function gettingSebalSnapshot {
 
   sudo mkdir -p $LOG4J_FILE_PATH
   cd ..
+}
+
+function createREnvFile {
+  touch $TEMP_DIR_PATH/.Renviron
 }
 
 function verifyRScript {
