@@ -23,6 +23,7 @@ TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=
 R_ALGORITHM_VERSION=AlgoritmoFinal-v03102016.R
+R_RASTER_TMP_DIR=/mnt/rasterTmp
 
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 
@@ -55,6 +56,12 @@ function executeRScript {
 
   echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
   echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+
+  # check if raster temporary dir exists
+  if [ ! -d $R_RASTER_TMP_DIR ]
+  then
+    sudo mkdir $R_RASTER_TMP_DIR
+  fi
 
   echo "Executing R script..."
   sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
