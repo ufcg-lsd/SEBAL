@@ -20,6 +20,9 @@ args = commandArgs(trailingOnly=TRUE)
 WD<-args[1]
 setwd(WD) # Working Directory
 
+# changing raster tmpdir
+rasterOptions(tmpdir="/mnt/rasterTmp")
+
 source("landsat.R")
 dados <- read.csv("dados.csv",sep=";", stringsAsFactors=FALSE) # Data
 ####################################constantes##########################################
