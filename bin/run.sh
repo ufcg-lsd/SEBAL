@@ -63,6 +63,10 @@ function executeRScript {
     sudo mkdir $R_RASTER_TMP_DIR
   fi
 
+  echo "Starting CPU and Memory collect..."
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" &
+
   echo "Executing R script..."
   sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
   echo "Process finished!"
