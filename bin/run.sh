@@ -48,15 +48,18 @@ function preProcessImage {
   cd ..
 }
 
-# This function prepare a dados.csv file and calls R script to begin image execution
-function executeRScript {
+# This function prepare a dados.csv file
+function creatingDadosCSV {
   echo "Creating dados.csv for image $IMAGE_NAME"
 
   cd $R_EXEC_DIR
 
   echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
   echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+}
 
+# This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
+function prepareEnvAndCollectUsage {
   # check if raster temporary dir exists
   if [ ! -d $R_RASTER_TMP_DIR ]
   then
@@ -66,16 +69,44 @@ function executeRScript {
   echo "Starting CPU and Memory collect..."
   sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" &
   sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" &
+}
 
+# This function executes R script
+function executeRScript {
   echo "Executing R script..."
   sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
-  echo "Process finished!"
+}
 
+# This function moves dados.csv to image results dir
+function mvDadosCSV {
   echo "Renaming dados file"
   mv dados.csv dados"-${IMAGE_NAME}".csv
   sudo mv dados"-${IMAGE_NAME}".csv $OUTPUT_IMAGE_DIR
   cd ../..
 }
 
+function checkProcessOutput {
+  PROCESS_OUTPUT=$?
+
+  if [ $PROCESS_OUTPUT -ne 0 ]
+  then
+    finally
+  fi
+}
+
+# This function ends the script
+function finally {
+  # see if this rm will be necessary
+  #rm -r /tmp/Rtmp*
+  exit $PROCESS_OUTPUT
+}
+
 preProcessImage
+checkProcessOutput
+creatingDadosCSV
+checkProcessOutput
+prepareEnvAndCollectUsage
+checkProcessOutput
 executeRScript
+checkProcessOutput
+finally
