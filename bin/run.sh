@@ -22,7 +22,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=
-R_ALGORITHM_VERSION=AlgoritmoFinal-v03102016.R
+R_ALGORITHM_VERSION=AlgoritmoFinal-f1-v02122016.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
@@ -85,9 +85,10 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  echo "Renaming dados file"
-  mv dados.csv dados"-${IMAGE_NAME}".csv
-  sudo mv dados"-${IMAGE_NAME}".csv $OUTPUT_IMAGE_DIR
+  #echo "Renaming dados file"
+  #mv dados.csv dados"-${IMAGE_NAME}".csv
+  #sudo mv dados"-${IMAGE_NAME}".csv $OUTPUT_IMAGE_DIR
+  sudo mv dados.csv $OUTPUT_IMAGE_DIR
   cd ../..
 }
 
