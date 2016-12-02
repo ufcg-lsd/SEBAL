@@ -64,6 +64,12 @@ function prepareEnvAndCollectUsage {
   if [ ! -d $R_RASTER_TMP_DIR ]
   then
     sudo mkdir $R_RASTER_TMP_DIR
+  else
+    count=`ls -1 $R_RASTER_TMP_DIR/r_tmp* 2>/dev/null | wc -l`
+    if [ $count != 0 ]
+    then
+      sudo rm -r $R_RASTER_TMP_DIR/r_tmp*
+    fi
   fi
 
   echo "Starting CPU and Memory collect..."
