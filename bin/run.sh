@@ -16,27 +16,49 @@ IMAGE_MTL_FMASK_PATH=$6
 IMAGE_STATION_FILE_PATH=$7
 
 # Global variables
+SANDBOX=$(pwd)
+SEBAL_DIR_PATH=$SANDBOX/SEBAL
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
-R_EXEC_DIR=
+R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=AlgoritmoFinal-f1-v02122016.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 
+INPUT_IMAGE_DIR=$IMAGES_DIR_PATH/$IMAGE_NAME
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 SCRIPTS_DIR=scripts
-SEBAL_DIR_PATH=
-LOG4J_PATH=
+SWIFT_CLI_DIR=swift-client
+LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
+
+# This function downloads image inputs and ouputs files
+function downloadInputOutputFiles {
+  cd $SEBAL_DIR_PATH/$SCRIPTS_DIR/$SWIFT_CLI_DIR
+  
+  sudo bash cli.sh DOWNLOAD --image-name $IMAGE_NAME --input-directory $INPUT_IMAGE_DIR --output-directory $OUTPUT_IMAGE_DIR
+}
+
+# This function untare image and creates an output dir into mounted dir
+function untarImageAndPrepareDirs {
+  cd $IMAGES_DIR_PATH
+
+  echo "Image file name is "$IMAGE_NAME
+
+  # untar image
+  echo "Untaring image $IMAGE_NAME"
+  cd $INPUT_IMAGE_DIR
+  sudo tar -xvzf $IMAGE_NAME".tar.gz"
+
+  echo "Creating image output directory"
+  sudo mkdir -p $OUTPUT_IMAGE_DIR
+
+  cd $SANDBOX
+}
 
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
-  SANDBOX=$(pwd)
-  SEBAL_DIR_PATH=$SANDBOX/SEBAL
-  R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
-  LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
-
   cd $SEBAL_DIR_PATH
 
   #echo "Generating app snapshot"
@@ -108,6 +130,10 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
+downloadInputOutputFiles
+checkProcessOutput
+untarImageAndPrepareDirs
+checkProcessOutput
 preProcessImage
 checkProcessOutput
 creatingDadosCSV
