@@ -21,22 +21,38 @@ function downloadInputs {
         grepCommandInputTarget='\'$IMAGE_NAME'.*'tar.gz
         grepCommandInputTarget2='\'$IMAGE_NAME'.*'MTLFmask
         grepCommandInputTarget3='\'$IMAGE_NAME'.*'MTLFmask.hdr
+	
+	beforeImageFilePath=
         for completeImageFilePath in `swift --os-auth-token $mytoken --os-storage-url $storageUrl list $SWIFT_CONTAINER_NAME | grep -o $grepCommandInputTarget`; do
-                echo "Downloading file $completeImageFilePath"
-                xbase=${completeImageFilePath##*/}
-                swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+                if [ "$completeImageFilePath" != "$beforeImageFilePath" ]
+		then
+			echo "Downloading file $completeImageFilePath"
+                	xbase=${completeImageFilePath##*/}
+                	swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+			beforeImageFilePath="$completeImageFilePath"
+		fi
         done
 
+	beforeImageFilePath=
         for completeImageFilePath in `swift --os-auth-token $mytoken --os-storage-url $storageUrl list $SWIFT_CONTAINER_NAME | grep -o $grepCommandInputTarget2`; do
-                echo "Downloading file $completeImageFilePath"
-                xbase=${completeImageFilePath##*/}
-                swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+                if [ "$completeImageFilePath" != "$beforeImageFilePath" ]
+                then
+                	echo "Downloading file $completeImageFilePath"
+                	xbase=${completeImageFilePath##*/}
+                	swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+			beforeImageFilePath="$completeImageFilePath"
+		fi
         done
 
+	beforeImageFilePath=
         for completeImageFilePath in `swift --os-auth-token $mytoken --os-storage-url $storageUrl list $SWIFT_CONTAINER_NAME | grep -o $grepCommandInputTarget3`; do
-                echo "Downloading file $completeImageFilePath"
-                xbase=${completeImageFilePath##*/}
-                swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+                if [ "$completeImageFilePath" != "$beforeImageFilePath" ]
+                then
+                	echo "Downloading file $completeImageFilePath"
+                	xbase=${completeImageFilePath##*/}
+                	swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $inputPseudFolder/$completeImageFilePath -o $INPUT_DIRECTORY/$xbase
+			beforeImageFilePath="$completeImageFilePath"
+		fi
         done
 }
 
@@ -45,10 +61,16 @@ function downloadOutputs {
 	
 	outputPseudFolder="fetcher/images"
         grepCommandTarget='\'$IMAGE_NAME'.*'nc
+
+	beforeImageFilePath=
         for completeImageFilePath in `swift --os-auth-token $mytoken --os-storage-url $storageUrl list $SWIFT_CONTAINER_NAME | grep -o $grepCommandTarget`; do
-                echo "Downloading file $completeImageFilePath"
-                xbase=${completeImageFilePath##*/}
-                swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $outputPseudFolder/$completeImageFilePath -o $OUTPUT_DIRECTORY/$xbase
+                if [ "$completeImageFilePath" != "$beforeImageFilePath" ]
+                then
+                	echo "Downloading file $completeImageFilePath"
+                	xbase=${completeImageFilePath##*/}
+                	swift --os-auth-token $mytoken --os-storage-url $storageUrl download $SWIFT_CONTAINER_NAME $outputPseudFolder/$completeImageFilePath -o $OUTPUT_DIRECTORY/$xbase
+			beforeImageFilePath="$completeImageFilePath"
+		fi
         done
 }
 
