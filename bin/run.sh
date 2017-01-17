@@ -74,13 +74,15 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" &
+  #sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" &
+  #sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh >> $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" &
 }
 
 # This function executes R script
 function executeRScript {
-  for i in $( MAX_TRIES )
+  for i in `seq $MAX_TRIES`
   do
     sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
