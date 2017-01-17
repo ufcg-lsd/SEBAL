@@ -13,6 +13,7 @@ if $COMMAND
 then
   PROCESS_OUTPUT=$?
   if [ $PROCESS_OUTPUT -ne 0 ]
+  then
     exit 1
   fi
 else

@@ -85,9 +85,11 @@ function executeRScript {
     sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
     if [ $PROCESS_OUTPUT -eq 0 ]
+    then
       break
     else
       if [ $i -ge $MAX_TRIES ]
+      then
         exit 1
       fi
     fi
