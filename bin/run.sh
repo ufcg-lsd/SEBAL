@@ -24,6 +24,7 @@ TMP_DIR_PATH=/mnt
 R_EXEC_DIR=
 R_ALGORITHM_VERSION=AlgoritmoFinal-f1-v02122016.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
+MAX_TRIES=3
 
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 SCRIPTS_DIR=scripts
@@ -79,8 +80,18 @@ function prepareEnvAndCollectUsage {
 
 # This function executes R script
 function executeRScript {
-  echo "Executing R script..."
-  sudo Rscript $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+  for i in $( MAX_TRIES )
+  do
+    sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+    PROCESS_OUTPUT=$?
+    if [ $PROCESS_OUTPUT -eq 0 ]
+      break
+    else
+      if [ $i -ge $MAX_TRIES ]
+        exit 1
+      fi
+    fi
+  done
 }
 
 # This function moves dados.csv to image results dir

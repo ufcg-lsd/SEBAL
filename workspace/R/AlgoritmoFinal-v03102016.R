@@ -47,7 +47,9 @@ load("d_sun_earth.RData")             # Ler dist?ncia realtiva Sol a Terra
 WGS84<- "+proj=longlat +datum=WGS84 +ellps=WGS84"
 
 ######################### Image Information ######################################
+proc.time()
 fic.dir<-dados$File.images[1]                     #Images file reading
+proc.time()
 m<-nchar(dados$File.images)                       #Number of file characters
 fic<-substring(fic.dir,m[1]-20)                   #Image name that will be processed
 n.sensor<-as.numeric(substr(fic,3,3))             #Sensor Number
