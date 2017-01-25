@@ -88,10 +88,12 @@ function executeRScript {
     PROCESS_OUTPUT=$?
     if [ $PROCESS_OUTPUT -eq 0 ]
     then
+      echo "NUMBER OF TRIES $i"
       break
     else
       if [ $i -ge $MAX_TRIES ]
       then
+	echo "NUMBER OF TRIES $i"
         exit 1
       fi
     fi
