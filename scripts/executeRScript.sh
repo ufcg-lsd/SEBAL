@@ -21,5 +21,5 @@ then
 else
   NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
   echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
-  exit 1
+  exit 598
 fi
