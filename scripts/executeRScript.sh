@@ -6,23 +6,38 @@ TMP_DIR_PATH=$3
 
 TIMEOUT=12600
 
-COMMAND="timeout $TIMEOUT Rscript $R_ALGORITHM_PATH $R_EXEC_DIR $TMP_DIR_PATH"
+#COMMAND="timeout $TIMEOUT Rscript $R_ALGORITHM_PATH $R_EXEC_DIR $TMP_DIR_PATH"
 
 NUMBER_OF_TIMEOUTS=0
 
 echo "Executing R script..."
-if $COMMAND
+timeout $TIMEOUT Rscript $R_ALGORITHM_PATH $R_EXEC_DIR $TMP_DIR_PATH
+PROCESS_OUTPUT=$?
+
+if [$PROCESS_OUTPUT -eq 124 ]
 then
-  PROCESS_OUTPUT=$?
-  if [$PROCESS_OUTPUT -eq 124 ]
-  then
-    NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
-    echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
-    exit 598
-  elif [ $PROCESS_OUTPUT -ne 0 ]
-  then
-    exit 1
-  fi
+  NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
+  echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
+  exit 598
+elif [ $PROCESS_OUTPUT -ne 0 ]
+then
+  exit 1
+else
+  exit 0
+fi
+
+#if $COMMAND
+#then
+#  PROCESS_OUTPUT=$?
+#  if [$PROCESS_OUTPUT -eq 124 ]
+#  then
+#    NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
+#    echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
+#    exit 598
+#  elif [ $PROCESS_OUTPUT -ne 0 ]
+#  then
+#    exit 1
+#  fi
 #else
 #  NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
 #  echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
