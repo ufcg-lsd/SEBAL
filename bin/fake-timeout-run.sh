@@ -82,14 +82,14 @@ function prepareEnvAndCollectUsage {
 function executeRScript {
   for i in `seq $MAX_TRIES`
   do
-    PROCESS_OUTPUT=598
+    PROCESS_OUTPUT=124
     if [ $PROCESS_OUTPUT -eq 0 ]
     then
       echo "NUMBER OF TRIES $i"
       break
-    elif [ $PROCESS_OUTPUT -eq 598  ] && [ $i -ge $MAX_TRIES ]
+    elif [ $PROCESS_OUTPUT -eq 124 ] && [ $i -ge $MAX_TRIES ]
     then
-      exit 598
+      exit 124
     else
       if [ $i -ge $MAX_TRIES ]
       then

@@ -18,7 +18,7 @@ if [ $PROCESS_OUTPUT -eq 124 ]
 then
   NUMBER_OF_TIMEOUTS=$(($NUMBER_OF_TIMEOUTS+1))
   echo "NUMBER OF TIMEOUTS $NUMBER_OF_TIMEOUTS"
-  exit 598
+  exit 124
 elif [ $PROCESS_OUTPUT -ne 0 ]
 then
   exit 1
