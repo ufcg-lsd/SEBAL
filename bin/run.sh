@@ -84,6 +84,8 @@ function executeRScript {
   do
     sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
+
+    echo "executeRScript_process_output=$PROCESS_OUTPUT"
     if [ $PROCESS_OUTPUT -eq 0 ]
     then
       echo "NUMBER OF TRIES $i"

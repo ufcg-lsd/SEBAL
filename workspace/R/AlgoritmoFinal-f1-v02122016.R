@@ -106,7 +106,21 @@ beginCluster(clusters)
 raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 proc.time()
 
-image.rec<- resample(fic.st,raster.elevation,method="ngb")
+# See if timeouts presented here will be the default or distinct between sites
+blockOne <- function() {
+  image.rec<- resample(fic.st,raster.elevation,method="ngb")
+}
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    blockOne();
+  }, timeout=2177.062);
+}, TimeoutException=function(ex) {
+  cat("Block one timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
 Fmask <- resample(Fmask,raster.elevation,method="ngb")
@@ -122,19 +136,58 @@ tal<-0.75+2*10^-5*raster.elevation
 proc.time()
 
 #Processamento da Fase 1
-output<-landsat()
+blockTwo <- function() {
+  output<-landsat()
+}
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    blockTwo();
+  }, timeout=2665.151);
+}, TimeoutException=function(ex) {
+  cat("Block two timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
-beginCluster(clusters)
-output<-mask(output, BoundingBox)
-endCluster()
+blockThree <- function() {
+  beginCluster(clusters)
+  output<-mask(output, BoundingBox)
+  endCluster()
+}
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    blockThree();
+  }, timeout=1716.853);
+}, TimeoutException=function(ex) {
+  cat("Block three timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
-output[Fmask>1]<-NaN
-names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
-output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
-writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
+blockFour <- function() {
+  output[Fmask>1]<-NaN
+  names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
+  output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
+  writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
             longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
+}
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    blockFour();
+  }, timeout=1708.507);
+}, TimeoutException=function(ex) {
+  cat("Block four timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
 #Opening old alb NetCDF
