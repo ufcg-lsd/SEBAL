@@ -17,6 +17,7 @@ library(rgdal)
 library(maptools)
 library(ncdf4)
 library(sp)
+library(R.utils)
 args = commandArgs(trailingOnly=TRUE)
 WD<-args[1]
 setwd(WD) # Working Directory
