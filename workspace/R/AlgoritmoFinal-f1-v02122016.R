@@ -109,17 +109,17 @@ raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 proc.time()
 
 # See if timeouts presented here will be the default or distinct between sites
-blockOne <- function() {
+imageResample <- function() {
   image.rec<- resample(fic.st,raster.elevation,method="ngb")
 }
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    blockOne();
+    imageResample();
   }, timeout=2177.062);
 }, TimeoutException=function(ex) {
-  cat("Block one timedout. Exiting with 124 code...\n");
+  cat("Image resample timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
 })
 
@@ -138,23 +138,23 @@ tal<-0.75+2*10^-5*raster.elevation
 proc.time()
 
 #Processamento da Fase 1
-blockTwo <- function() {
+outputLandsat <- function() {
   output<-landsat()
 }
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    blockTwo();
+    outputLandsat();
   }, timeout=2665.151);
 }, TimeoutException=function(ex) {
-  cat("Block two timedout. Exiting with 124 code...\n");
+  cat("Output landsat timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
 })
 
 proc.time()
 
-blockThree <- function() {
+outputMask <- function() {
   beginCluster(clusters)
   output<-mask(output, BoundingBox)
   endCluster()
@@ -163,16 +163,16 @@ blockThree <- function() {
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    blockThree();
+    outputMask();
   }, timeout=1716.853);
 }, TimeoutException=function(ex) {
-  cat("Block three timedout. Exiting with 124 code...\n");
+  cat("Output Fmask timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
 })
 
 proc.time()
 
-blockFour <- function() {
+outputWriteRaster <- function() {
   output[Fmask>1]<-NaN
   names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
   output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
@@ -183,10 +183,10 @@ blockFour <- function() {
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    blockFour();
+    outputWriteRaster();
   }, timeout=1708.507);
 }, TimeoutException=function(ex) {
-  cat("Block four timedout. Exiting with 124 code...\n");
+  cat("Output write raster timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
 })
 
