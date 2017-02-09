@@ -12,12 +12,12 @@ rm(list=ls())
 install.packages("snow", repos="http://nbcgib.uesc.br/mirrors/cran/")
 install.packages("R.utils", repos="http://nbcgib.uesc.br/mirrors/cran/")
 
+library(R.utils)
 library(raster)
 library(rgdal)
 library(maptools)
 library(ncdf4)
 library(sp)
-library(R.utils)
 args = commandArgs(trailingOnly=TRUE)
 WD<-args[1]
 setwd(WD) # Working Directory
