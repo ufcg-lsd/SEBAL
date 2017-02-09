@@ -10,6 +10,7 @@ rm(list=ls())
 
 # for now, this will be here
 install.packages("snow", repos="http://nbcgib.uesc.br/mirrors/cran/")
+install.packages("R.utils", repos="http://nbcgib.uesc.br/mirrors/cran/")
 
 library(raster)
 library(rgdal)
