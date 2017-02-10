@@ -109,6 +109,7 @@ raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 proc.time()
 
 # See if timeouts presented here will be the default or distinct between sites
+image.rec <- NULL;
 imageResample <- function() {
   image.rec<- resample(fic.st,raster.elevation,method="ngb")
 }
@@ -138,6 +139,7 @@ tal<-0.75+2*10^-5*raster.elevation
 proc.time()
 
 #Processamento da Fase 1
+output <- NULL;
 outputLandsat <- function() {
   output<-landsat()
 }
