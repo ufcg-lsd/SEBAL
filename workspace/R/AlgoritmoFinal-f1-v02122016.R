@@ -109,6 +109,8 @@ raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 proc.time()
 
 # See if timeouts presented here will be the default or distinct between sites
+# timeout before = 2177.062
+# timeout now is 3600 (cause: Azure slowness)
 image.rec <- NULL;
 imageResample <- function() {
   image_resample <- resample(fic.st,raster.elevation,method="ngb")
@@ -119,7 +121,7 @@ res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     image.rec <- imageResample();
-  }, timeout=2177.062);
+  }, timeout=3600);
 }, TimeoutException=function(ex) {
   cat("Image resample timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
@@ -147,12 +149,12 @@ outputLandsat <- function() {
 }
 
 # timeout before = 2665.151
-# timeout now is 3600 (cause: Azure slowness)
+# timeout now is 5400 (cause: Azure slowness)
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     output <- outputLandsat();
-  }, timeout=3600);
+  }, timeout=5400);
 }, TimeoutException=function(ex) {
   cat("Output landsat timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
@@ -168,13 +170,13 @@ outputMask <- function() {
 }
 
 # timeout before = 1716.853
-# timeout now is 7200 (cause: Azure slowness)
+# timeout now is 9000 (cause: Azure slowness)
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     output <- outputMask();
-  }, timeout=7200);
+  }, timeout=9000);
 }, TimeoutException=function(ex) {
   cat("Output Fmask timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
