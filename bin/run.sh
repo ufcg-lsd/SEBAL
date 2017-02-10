@@ -31,6 +31,21 @@ SCRIPTS_DIR=scripts
 SEBAL_DIR_PATH=
 LOG4J_PATH=
 
+# This function untare image and creates an output dir into mounted dir
+function untarImageAndPrepareDirs {
+  cd $IMAGES_DIR_PATH
+
+  echo "Image file name is $IMAGE_NAME"
+
+  # untar image
+  echo "Untaring image $IMAGE_NAME"
+  cd $IMAGES_DIR_PATH/$IMAGE_NAME
+  sudo tar -xvzf $IMAGE_NAME".tar.gz"
+
+  echo "Creating image output directory"
+  sudo mkdir -p $OUTPUT_IMAGE_DIR
+}
+
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
   SANDBOX=$(pwd)
@@ -128,6 +143,8 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
+untarImageAndPrepareDirs
+checkProcessOutput
 preProcessImage
 checkProcessOutput
 creatingDadosCSV
