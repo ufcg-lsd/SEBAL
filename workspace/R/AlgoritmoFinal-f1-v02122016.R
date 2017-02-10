@@ -111,13 +111,14 @@ proc.time()
 # See if timeouts presented here will be the default or distinct between sites
 image.rec <- NULL;
 imageResample <- function() {
-  image.rec<- resample(fic.st,raster.elevation,method="ngb")
+  image_resample <- resample(fic.st,raster.elevation,method="ngb")
+  return(image_resample)
 }
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    imageResample();
+    image.rec <- imageResample();
   }, timeout=2177.062);
 }, TimeoutException=function(ex) {
   cat("Image resample timedout. Exiting with 124 code...\n");
@@ -141,7 +142,8 @@ proc.time()
 #Processamento da Fase 1
 output <- NULL;
 outputLandsat <- function() {
-  output<-landsat()
+  output <- landsat()
+  return(output)
 }
 
 # timeout before = 2665.151
@@ -149,7 +151,7 @@ outputLandsat <- function() {
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    outputLandsat();
+    output <- outputLandsat();
   }, timeout=3600);
 }, TimeoutException=function(ex) {
   cat("Output landsat timedout. Exiting with 124 code...\n");
@@ -162,6 +164,7 @@ outputMask <- function() {
   beginCluster(clusters)
   output<-mask(output, BoundingBox)
   endCluster()
+  return(output)
 }
 
 # timeout before = 1716.853
@@ -170,7 +173,7 @@ outputMask <- function() {
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
-    outputMask();
+    output <- outputMask();
   }, timeout=7200);
 }, TimeoutException=function(ex) {
   cat("Output Fmask timedout. Exiting with 124 code...\n");
