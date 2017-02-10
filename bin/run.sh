@@ -16,6 +16,7 @@ IMAGE_MTL_FMASK_PATH=$6
 IMAGE_STATION_FILE_PATH=$7
 
 # Global variables
+SANDBOX=$(pwd)
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
@@ -44,11 +45,12 @@ function untarImageAndPrepareDirs {
 
   echo "Creating image output directory"
   sudo mkdir -p $OUTPUT_IMAGE_DIR
+
+  cd $SANDBOX
 }
 
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
-  SANDBOX=$(pwd)
   SEBAL_DIR_PATH=$SANDBOX/SEBAL
   R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
   LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
