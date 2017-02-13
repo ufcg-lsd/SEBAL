@@ -149,12 +149,12 @@ outputLandsat <- function() {
 }
 
 # timeout before = 2665.151
-# timeout now is 5400 (cause: Azure slowness)
+# timeout now is 7200 (cause: Azure slowness)
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     output <- outputLandsat();
-  }, timeout=5400);
+  }, timeout=7200);
 }, TimeoutException=function(ex) {
   cat("Output landsat timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
@@ -170,13 +170,13 @@ outputMask <- function() {
 }
 
 # timeout before = 1716.853
-# timeout now is 9000 (cause: Azure slowness)
+# timeout now is 10800 (cause: Azure slowness)
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     output <- outputMask();
-  }, timeout=9000);
+  }, timeout=10800);
 }, TimeoutException=function(ex) {
   cat("Output Fmask timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
@@ -193,13 +193,13 @@ outputWriteRaster <- function() {
 }
 
 # timeout before = 1708.507
-# timeout now is 2400 (cause: Azure slowness)
+# timeout now is 10800 (cause: Azure slowness)
 
 res <- NULL;
 tryCatch({
   res <- evalWithTimeout({
     outputWriteRaster();
-  }, timeout=2400);
+  }, timeout=10800);
 }, TimeoutException=function(ex) {
   cat("Output write raster timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
