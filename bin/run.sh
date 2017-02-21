@@ -37,23 +37,6 @@ LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
 function untarImageAndPrepareDirs {
   cd $IMAGES_DIR_PATH
 
-  echo "Image file name is "$IMAGE_NAME
-
-  # untar image
-  echo "Untaring image $IMAGE_NAME"
-  cd $INPUT_IMAGE_DIR
-  sudo tar -xvzf $IMAGE_NAME".tar.gz"
-
-  echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
-
-  cd $SANDBOX
-}
-
-# This function untare image and creates an output dir into mounted dir
-function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
-
   echo "Image file name is $IMAGE_NAME"
 
   # untar image
@@ -70,9 +53,6 @@ function untarImageAndPrepareDirs {
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
   cd $SEBAL_DIR_PATH
-
-  #echo "Generating app snapshot"
-  #mvn -e install -Dmaven.test.skip=true
 
   sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
@@ -136,9 +116,6 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  #echo "Renaming dados file"
-  #mv dados.csv dados"-${IMAGE_NAME}".csv
-  #sudo mv dados"-${IMAGE_NAME}".csv $OUTPUT_IMAGE_DIR
   sudo mv dados.csv $OUTPUT_IMAGE_DIR
   cd ../..
 }
@@ -154,8 +131,6 @@ function checkProcessOutput {
 
 # This function ends the script
 function finally {
-  # see if this rm will be necessary
-  #rm -r /tmp/Rtmp*
   exit $PROCESS_OUTPUT
 }
 
