@@ -27,18 +27,10 @@ R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=AlgoritmoFinal-f1-v02122016.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 
-INPUT_IMAGE_DIR=$IMAGES_DIR_PATH/$IMAGE_NAME
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 SCRIPTS_DIR=scripts
 SWIFT_CLI_DIR=swift-client
 LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
-
-# This function downloads image inputs and ouputs files
-function downloadInputOutputFiles {
-  cd $SEBAL_DIR_PATH/$SCRIPTS_DIR/$SWIFT_CLI_DIR
-  
-  sudo bash cli.sh DOWNLOAD --image-name $IMAGE_NAME --input-directory $INPUT_IMAGE_DIR --output-directory $OUTPUT_IMAGE_DIR
-}
 
 # This function untare image and creates an output dir into mounted dir
 function untarImageAndPrepareDirs {
@@ -130,8 +122,6 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-downloadInputOutputFiles
-checkProcessOutput
 untarImageAndPrepareDirs
 checkProcessOutput
 preProcessImage
