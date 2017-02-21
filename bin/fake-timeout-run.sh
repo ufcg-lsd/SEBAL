@@ -16,59 +16,28 @@ IMAGE_MTL_FMASK_PATH=$6
 IMAGE_STATION_FILE_PATH=$7
 
 # Global variables
-SANDBOX=$(pwd)
-SEBAL_DIR_PATH=$SANDBOX/SEBAL
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
-R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
+R_EXEC_DIR=
 R_ALGORITHM_VERSION=AlgoritmoFinal-f1-v02122016.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
 OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 SCRIPTS_DIR=scripts
-SWIFT_CLI_DIR=swift-client
-LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
-
-# This function untare image and creates an output dir into mounted dir
-function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
-
-  echo "Image file name is "$IMAGE_NAME
-
-  # untar image
-  echo "Untaring image $IMAGE_NAME"
-  cd $INPUT_IMAGE_DIR
-  sudo tar -xvzf $IMAGE_NAME".tar.gz"
-
-  echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
-
-  cd $SANDBOX
-}
-
-# This function untare image and creates an output dir into mounted dir
-function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
-
-  echo "Image file name is $IMAGE_NAME"
-
-  # untar image
-  echo "Untaring image $IMAGE_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NAME
-  sudo tar -xvzf $IMAGE_NAME".tar.gz"
-
-  echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
-
-  cd $SANDBOX
-}
+SEBAL_DIR_PATH=
+LOG4J_PATH=
 
 # This function calls a pre process java code to prepare a station file of a given image
 function preProcessImage {
+  SANDBOX=$(pwd)
+  SEBAL_DIR_PATH=$SANDBOX/SEBAL
+  R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
+  LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
+
   cd $SEBAL_DIR_PATH
 
   #echo "Generating app snapshot"
@@ -113,10 +82,7 @@ function prepareEnvAndCollectUsage {
 function executeRScript {
   for i in `seq $MAX_TRIES`
   do
-    sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
-    PROCESS_OUTPUT=$?
-
-    echo "executeRScript_process_output=$PROCESS_OUTPUT"
+    PROCESS_OUTPUT=124
     if [ $PROCESS_OUTPUT -eq 0 ]
     then
       echo "NUMBER OF TRIES $i"
@@ -159,8 +125,6 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-untarImageAndPrepareDirs
-checkProcessOutput
 preProcessImage
 checkProcessOutput
 creatingDadosCSV

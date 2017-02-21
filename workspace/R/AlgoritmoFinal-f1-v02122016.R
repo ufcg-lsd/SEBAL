@@ -10,7 +10,9 @@ rm(list=ls())
 
 # for now, this will be here
 install.packages("snow", repos="http://nbcgib.uesc.br/mirrors/cran/")
+install.packages("R.utils", repos="http://nbcgib.uesc.br/mirrors/cran/")
 
+library(R.utils)
 library(raster)
 library(rgdal)
 library(maptools)
@@ -106,7 +108,25 @@ beginCluster(clusters)
 raster.elevation<-resample(raster.elevation,raster.elevation.aux,method="ngb")
 proc.time()
 
-image.rec<- resample(fic.st,raster.elevation,method="ngb")
+# See if timeouts presented here will be the default or distinct between sites
+# timeout before = 2177.062
+# timeout now is 3600 (cause: Azure slowness)
+image.rec <- NULL;
+imageResample <- function() {
+  image_resample <- resample(fic.st,raster.elevation,method="ngb")
+  return(image_resample)
+}
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    image.rec <- imageResample();
+  }, timeout=3600);
+}, TimeoutException=function(ex) {
+  cat("Image resample timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
 Fmask <- resample(Fmask,raster.elevation,method="ngb")
@@ -122,19 +142,69 @@ tal<-0.75+2*10^-5*raster.elevation
 proc.time()
 
 #Processamento da Fase 1
-output<-landsat()
+output <- NULL;
+outputLandsat <- function() {
+  output <- landsat()
+  return(output)
+}
+
+# timeout before = 2665.151
+# timeout now is 7200 (cause: Azure slowness)
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    output <- outputLandsat();
+  }, timeout=7200);
+}, TimeoutException=function(ex) {
+  cat("Output landsat timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
-beginCluster(clusters)
-output<-mask(output, BoundingBox)
-endCluster()
+outputMask <- function() {
+  beginCluster(clusters)
+  output<-mask(output, BoundingBox)
+  endCluster()
+  return(output)
+}
+
+# timeout before = 1716.853
+# timeout now is 10800 (cause: Azure slowness)
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    output <- outputMask();
+  }, timeout=10800);
+}, TimeoutException=function(ex) {
+  cat("Output Fmask timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
-output[Fmask>1]<-NaN
-names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
-output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
-writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
+outputWriteRaster <- function() {
+  output[Fmask>1]<-NaN
+  names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
+  output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
+  writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
             longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
+}
+
+# timeout before = 1708.507
+# timeout now is 10800 (cause: Azure slowness)
+
+res <- NULL;
+tryCatch({
+  res <- evalWithTimeout({
+    outputWriteRaster();
+  }, timeout=10800);
+}, TimeoutException=function(ex) {
+  cat("Output write raster timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
+
 proc.time()
 
 #Opening old alb NetCDF
