@@ -28,6 +28,11 @@ rasterOptions(tmpdir="/mnt/rasterTmp")
 source("landsat.R")
 dados <- read.csv("dados.csv",sep=";", stringsAsFactors=FALSE) # Data
 ####################################constantes##########################################
+k<-0.41        #Von K?rm?n
+g<-9.81        #Gravity
+rho<- 1.15     #Air density
+cp<- 1004      #Specific heat of air
+Gsc<-0.082     #Solar constant (0.0820 MJ m-2 min-1)
 clusters<-7    #Number of clusters used in image processing
 ######################### Reading sensor parameters#####################################
 p.s.TM1<- read.csv("parametros do sensor/parametrosdosensorTM1.csv"
