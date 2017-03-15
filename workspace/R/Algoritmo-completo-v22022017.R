@@ -56,7 +56,7 @@ n.sensor<-as.numeric(substr(fic,3,3))             #Sensor Number
 WRSPR<-substr(fic,4,9)                            #WRSPR
 Ano<-as.numeric(substr(fic,10,13))                #Images year
 Dia.juliano<-as.numeric(substr(fic,14,16))        #Julian Day
-MTL<-read.table(dados$MTL[1],skip=0,nrows=130,sep="=", quote = "''",as.is=TRUE) #MTL File
+MTL<-read.table(dados$MTL[1],skip=0,nrows=140,sep="=", quote = "''",as.is=TRUE) #MTL File
 if (n.sensor==8) MTL<-read.table(dados$MTL[1],skip=0,nrows=180,sep="=", quote = "''",as.is=TRUE)
 sun_elevation<-as.numeric(MTL$V2[MTL$V1==grep(pattern ="SUN_ELEVATION",
                                               MTL$V1, value = TRUE)])
