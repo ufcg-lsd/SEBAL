@@ -189,6 +189,7 @@ tryCatch({
 
 proc.time()
 
+output.path<-NULL;
 outputWriteRaster <- function() {
   output[Fmask>1]<-NaN
   names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
