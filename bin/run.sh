@@ -120,6 +120,12 @@ function mvDadosCSV {
   cd ../..
 }
 
+function killCollectScripts {
+  echo "Killing collect CPU and Memory scripts"
+  ps -ef | grep collect-cpu-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
+  ps -ef | grep collect-memory-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
+}
+
 function checkProcessOutput {
   PROCESS_OUTPUT=$?
 
@@ -144,4 +150,6 @@ prepareEnvAndCollectUsage
 checkProcessOutput
 executeRScript
 checkProcessOutput
+mvDadosCSV
+killCollectScripts
 finally
