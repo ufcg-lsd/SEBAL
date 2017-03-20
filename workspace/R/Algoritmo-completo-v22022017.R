@@ -189,11 +189,10 @@ tryCatch({
 
 proc.time()
 
-output.path<-NULL;
+output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
 outputWriteRaster <- function() {
   output[Fmask>1]<-NaN
   names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
-  output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
   writeRaster(output,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
             longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
 }
