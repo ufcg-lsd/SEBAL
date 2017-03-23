@@ -33,6 +33,15 @@ SCRIPTS_DIR=scripts
 SWIFT_CLI_DIR=swift-client
 LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
 
+# This function clean environment by deleting raster temp dir if exists
+function cleanRasterEnv {
+  if [ -d $R_RASTER_TMP_DIR ]
+  then
+    sudo rm -r $R_RASTER_TMP_DIR
+  fi
+
+}
+
 # This function untare image and creates an output dir into mounted dir
 function untarImageAndPrepareDirs {
   cd $IMAGES_DIR_PATH
