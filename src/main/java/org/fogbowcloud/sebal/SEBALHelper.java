@@ -415,13 +415,7 @@ public class SEBALHelper {
                 geoLoc.setJ(j);
                 geoLoc.setLat(latitude);
                 geoLoc.setLon(longitude);
-                imagePixel.geoLoc(geoLoc);
-               
-				double Ta = station.Ta(latitude, longitude, startTime.getAsDate());
-				imagePixel.Ta(Ta);
-
-				double ux = station.ux(latitude, longitude, startTime.getAsDate());
-				imagePixel.ux(ux);
+                imagePixel.geoLoc(geoLoc);               
 
 				double zx = station.zx(latitude, longitude);
 				imagePixel.zx(zx);

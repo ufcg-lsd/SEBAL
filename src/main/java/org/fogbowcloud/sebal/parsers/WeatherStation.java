@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,16 +23,10 @@ import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -54,7 +47,6 @@ public class WeatherStation {
 	
 	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
-	private HttpClient httpClient;
 	private Properties properties;
 	
 	public WeatherStation() throws URISyntaxException, HttpException, IOException {
@@ -63,7 +55,6 @@ public class WeatherStation {
 	
 	public WeatherStation(Properties properties) throws URISyntaxException, HttpException,
 			IOException {
-		this.httpClient = initClient();
 		this.stations = new JSONArray(IOUtils.toString(
 				new FileInputStream("stations.json")));
 		this.properties = properties;
@@ -125,34 +116,8 @@ public class WeatherStation {
 		}
 		IOUtils.write(stations.toString(2), new FileOutputStream("stations.json"));
 	}
-
-	private HttpClient initClient() throws IOException,
-			ClientProtocolException, UnsupportedEncodingException {
-		BasicCookieStore cookieStore = new BasicCookieStore();
-		HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
-		
-		HttpGet homeGet = new HttpGet(
-				"http://www.inmet.gov.br/projetos/rede/pesquisa/inicio.php");
-		httpClient.execute(homeGet);
-		
-		HttpPost homePost = new HttpPost(
-				"http://www.inmet.gov.br/projetos/rede/pesquisa/inicio.php");
-
-		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-		nvps.add(new BasicNameValuePair("mUsuario", ""));
-		nvps.add(new BasicNameValuePair("mGerModulo", ""));
-		nvps.add(new BasicNameValuePair("mCod", "abmargb@gmail.com"));
-		nvps.add(new BasicNameValuePair("mSenha", "9oo9xyyd"));
-		nvps.add(new BasicNameValuePair("mGerModulo", "PES"));
-		nvps.add(new BasicNameValuePair("btnProcesso", " Acessar "));
-		
-		homePost.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
-		HttpResponse homePostResponse = httpClient.execute(homePost);
-		EntityUtils.toString(homePostResponse.getEntity());
-		return httpClient;
-	}
 	
-	private JSONArray readStation(HttpClient httpClient, String id, String inicio, String fim)
+	private JSONArray readStation(String id, String inicio, String fim)
 			throws Exception {		
 
 		String[] inicioSplit = inicio.split("-");
@@ -162,7 +127,7 @@ public class WeatherStation {
 		File unformattedLocalStationFile = getUnformattedStationFile();		
 		
 		String url = properties.getProperty(PUBLIC_HTML_STATION_REPOSITORY) + File.separator + year + id + "0-99999-" + year;		
-		downloadUnformattedStationFile(httpClient, unformattedLocalStationFile, url);
+		downloadUnformattedStationFile(unformattedLocalStationFile, url);
 		
 		List<String> stationData = new ArrayList<String>();		
 		readStationFile(unformattedLocalStationFile, stationData);
@@ -199,9 +164,11 @@ public class WeatherStation {
 		return unformattedLocalStationFile;
 	}
 
-	private void downloadUnformattedStationFile(HttpClient httpClient,
-			File unformattedLocalStationFile, String url) throws Exception {
+	private void downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
 		try {
+			BasicCookieStore cookieStore = new BasicCookieStore();
+			HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+			
 			HttpGet fileGet = new HttpGet(url);
 			HttpResponse response = httpClient.execute(fileGet);
 
@@ -238,10 +205,31 @@ public class WeatherStation {
 				String stationId = data.substring(4, 9);
 				String date = data.substring(15, 22);
 				String time = data.substring(23, 26);
+				
 				String latitude = data.substring(28, 33);
+				latitude = latitude.substring(0, 4) + "." + latitude.substring(4, latitude.length());
+				StringBuilder sb = new StringBuilder(latitude);
+				sb.deleteCharAt(1);
+				latitude = sb.toString();
+				
 				String longitude = data.substring(34, 40);
+				longitude = longitude.substring(0, 4) + "." + longitude.substring(4, longitude.length());
+				sb = new StringBuilder(longitude);
+				sb.deleteCharAt(1);
+				longitude = sb.toString();
+				
 				String windSpeed = data.substring(65, 68);
+				windSpeed = windSpeed.substring(0, 3) + "." + windSpeed.substring(3, windSpeed.length());
+				
 				String airTemp = data.substring(87, 91);
+				airTemp = airTemp.substring(0, 4) + "." + airTemp.substring(4, airTemp.length());
+				sb = new StringBuilder(airTemp);
+				sb.deleteCharAt(1);
+				airTemp = sb.toString();
+				if(airTemp.startsWith("+")) {
+					airTemp = airTemp.substring(1, airTemp.length());
+				}				
+				
 				String dewTemp = data.substring(93, 97);
 
 				jsonObject.put("Estacao", stationId);
@@ -294,49 +282,13 @@ public class WeatherStation {
 		jsonObject.put("RadiacaoSolar", solarRad);
 	}
 	
-	private JSONObject findClosestRecord(Date date, List<JSONObject> stations) {
-		Date inicio = new Date(date.getTime() - A_DAY);
-		Date fim = new Date(date.getTime() + A_DAY);
-		
-		JSONObject closestRecord = null;
-		Long smallestDiff = Long.MAX_VALUE;
-		
-		for (JSONObject station : stations) {
-			try {
-				JSONArray stationData = readStation(httpClient, station.optString("id"), 
-						DATE_FORMAT.format(inicio), DATE_FORMAT.format(fim));
-				for (int i = 0; i < stationData.length(); i++) {
-					JSONObject stationDataRecord = stationData.optJSONObject(i);
-					String dateValue = stationDataRecord.optString("Data");
-					String timeValue = stationDataRecord.optString("Hora");
-					
-					if (!stationDataRecord.optString("TempBulboSeco").isEmpty() && !stationDataRecord.optString("VelocidadeVento").isEmpty()) {
-						Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";" + timeValue);
-						long diff = Math.abs(recordDate.getTime() - date.getTime());
-						if (diff < smallestDiff) {
-							smallestDiff = diff;
-							closestRecord = stationDataRecord;
-						}						
-					}
-					
-				}
-				
-				return closestRecord;
-			} catch (Exception e) {
-				LOGGER.error("Error while reading station.", e);
-			}
-		}
-		return null;		
-	}
-	
 	private String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
 		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
 		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
 		
 		for (JSONObject station : stations) {
 			try {
-				JSONArray stationData = readStation(httpClient,
-						station.optString("id"), DATE_FORMAT.format(inicio),
+				JSONArray stationData = readStation(station.optString("id"), DATE_FORMAT.format(inicio),
 						DATE_FORMAT.format(fim));
 
 				JSONObject closestRecord = null;
@@ -447,40 +399,6 @@ public class WeatherStation {
 				+ temBulboSeco + ";" + temBulboUmido + ";" + mediaTemp
 				+ ";" + umidadeRelativa + ";" + minTemp + ";" + maxTemp
 				+ ";" + solarRad + ";\n");
-	}
-
-	public double Ta(double lat, double lon, Date date) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		JSONObject record = findClosestRecord(date, station);
-		if (record == null) {
-			return Double.NaN;
-		}
-//		System.out.println("record: " + record);
-		//TODO review it
-//		return Double.parseDouble(record.optString("TempBulboSeco"));
-//		return 32.23;
-//		return 18.21; //Europe
-		if (properties.getProperty("temperatura_ar") != null) {
-			return Double.parseDouble(properties.getProperty("temperatura_ar"));
-		}
-		return Double.parseDouble(record.optString("TempBulboSeco"));	
-	}
-	
-	public double ux(double lat, double lon, Date date) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		JSONObject record = findClosestRecord(date, station);
-		if (record == null) {
-			return Double.NaN;
-		}
-		//TODO review it
-//		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
-//		return 4.388;
-//		return 2.73; //Europe
-//		return Double.parseDouble(properties.getProperty("velocidade_vento"));
-		if (properties.getProperty("velocidade_vento") != null) {
-			return Double.parseDouble(properties.getProperty("velocidade_vento"));
-		}
-		return Math.max(Double.parseDouble(record.optString("VelocidadeVento")), 1.);
 	}
 
 	public double zx(double lat, double lon) {
