@@ -167,7 +167,7 @@ public class WeatherStation {
 		List<String> stationData = new ArrayList<String>();		
 		readStationFile(unformattedLocalStationFile, stationData);
 		
-		JSONArray dataArray = new JSONArray();		
+		JSONArray dataArray = new JSONArray();
 		getHourlyData(day, stationData, dataArray);
 		
 		for (int i = 0; i < dataArray.length(); i++) {
@@ -252,10 +252,46 @@ public class WeatherStation {
 				jsonObject.put("VelocidadeVento", windSpeed);
 				jsonObject.put("TempBulboSeco", airTemp);
 				jsonObject.put("TempBulboUmido", dewTemp);
+				
+				if(data.contains("ADD")) {
+					putAdditionalData(data, jsonObject);
+				}
 
 				dataArray.put(jsonObject);
 			}
 		}
+	}
+
+	private void putAdditionalData(String data, JSONObject jsonObject)
+			throws JSONException {
+		
+		String avgAirTemperature = null;
+		String relativeHumidity = null;
+		String minTemp = null;
+		String maxTemp = null;
+		String solarRad = null;
+		
+		String additionalData = data.substring(data.lastIndexOf("ADD") + 1);
+
+		String additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("AVG_RH_TEMP") + 1);
+		avgAirTemperature = additionalDataSubstring.substring(0, 4);
+		jsonObject.put("MediaTemperatura", avgAirTemperature);
+							
+		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("RELATIVE HUMIDITY/TEMPERATURE") + 1);
+		relativeHumidity = additionalDataSubstring.substring(0, 1);
+		jsonObject.put("UmidadeRelativa", relativeHumidity);
+		
+		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("MIN_RH_TEMP") + 1);
+		minTemp = additionalDataSubstring.substring(0, 4);
+		jsonObject.put("TemperaturaMinima", minTemp);
+		
+		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("MAX_RH_TEMP") + 1);
+		maxTemp = additionalDataSubstring.substring(0, 4);
+		jsonObject.put("TemperaturaMaxima", maxTemp);
+							
+		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("SOLARAD") + 1);
+		solarRad = additionalDataSubstring.substring(0, 4);
+		jsonObject.put("RadiacaoSolar", solarRad);
 	}
 	
 	private JSONObject findClosestRecord(Date date, List<JSONObject> stations) {
@@ -290,8 +326,7 @@ public class WeatherStation {
 				LOGGER.error("Error while reading station.", e);
 			}
 		}
-		return null;
-		
+		return null;		
 	}
 	
 	private String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
