@@ -1,8 +1,13 @@
 package org.fogbowcloud.sebal.parsers;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -31,12 +36,12 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 
 public class WeatherStation {
 
-	private static final String SEP = "--------------------";
 	private static final double R = 6371; // km
 	private static final long A_DAY = 1000 * 60 * 60 * 24;
 	
@@ -44,6 +49,8 @@ public class WeatherStation {
 	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
 	
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
+	private static final String PUBLIC_HTML_STATION_REPOSITORY = "public_html_station_repository";
+	private static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
 	
 	private Map<String, String> cache = new HashMap<String, String>();
 	private JSONArray stations;
@@ -146,51 +153,32 @@ public class WeatherStation {
 	}
 	
 	private JSONArray readStation(HttpClient httpClient, String id, String inicio, String fim)
-			throws Exception {
-		String url = "http://www.inmet.gov.br/projetos/rede/pesquisa/gera_serie_txt.php?"
-						+ "&mRelEstacao=" + id 
-						+ "&btnProcesso=serie"
-						+ "&mRelDtInicio=" + inicio
-						+ "&mRelDtFim=" + fim
-						+ "&mAtributos=1,1,,,1,1,,1,1,,,,,,,,";
-		String data = cache.get(url);
-		if (data == null) {
-			try {
-				HttpGet dataGet = new HttpGet(url);
-				HttpResponse dataResponse = httpClient.execute(dataGet);
-				data = EntityUtils.toString(dataResponse.getEntity());
-				data = data.substring(data.indexOf("<pre>") + 5, data.indexOf("</pre>"));
-				cache.put(url, data);
-			} catch (Exception e) {
-				cache.put(url, "FAILED");
-				LOGGER.error("Setting URL " + url + " as FAILED.");
-				throw e;
-			}
-		} else if (data.equals("FAILED")) {
-			throw new Exception();
-		}
+			throws Exception {		
+
+		String[] inicioSplit = inicio.split("-");
+		String day = inicioSplit[0];
+		String year = inicioSplit[2];
 		
-		String[] meta = data.split(SEP)[4].trim().split("\n");
+		File unformattedLocalStationFile = getUnformattedStationFile();		
 		
-		JSONArray dataArray = new JSONArray();
+		String url = properties.getProperty(PUBLIC_HTML_STATION_REPOSITORY) + File.separator + year + id + "0-99999-" + year;		
+		downloadUnformattedStationFile(httpClient, unformattedLocalStationFile, url);
 		
-		String[] splitHeader = meta[0].split(";");
+		List<String> stationData = new ArrayList<String>();		
+		readStationFile(unformattedLocalStationFile, stationData);
 		
-		for (int i = 1; i < meta.length; i++) {
-			JSONObject jsonObject = new JSONObject();
-			String[] lineSplit = meta[i].split(";");
-			for (int j = 0; j < lineSplit.length; j++) {
-				jsonObject.put(splitHeader[j], lineSplit[j]);
-			}
-			dataArray.put(jsonObject);
-		}
+		JSONArray dataArray = new JSONArray();		
+		getHourlyData(day, stationData, dataArray);
 		
 		for (int i = 0; i < dataArray.length(); i++) {
 			JSONObject stationDataRecord = dataArray.optJSONObject(i);
-			String temp = stationDataRecord.optString("TempBulboSeco");
-			String vel = stationDataRecord.optString("VelocidadeVento");
+			String airTemp = stationDataRecord.optString("TempBulboSeco");
+			String dewTemp = stationDataRecord.optString("TempBulboUmido");
+			String windSpeed = stationDataRecord.optString("VelocidadeVento");
 			
-			if (!temp.isEmpty() && !vel.isEmpty()) {
+			if (!airTemp.isEmpty() && !dewTemp.isEmpty()
+					&& !windSpeed.isEmpty()) {
+				unformattedLocalStationFile.delete();
 				return dataArray;
 			}
 		}
@@ -199,6 +187,77 @@ public class WeatherStation {
 		throw new Exception();
 	}
 
+	private File getUnformattedStationFile() {		
+		String unformattedLocalStationFilePath = properties
+				.getProperty(UNFORMATTED_LOCAL_STATION_FILE_PATH);
+		
+		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
+		if(unformattedLocalStationFile.exists()) {
+			 LOGGER.info("File " + unformattedLocalStationFile + " already exists. Will be removed before repeating download");
+			 unformattedLocalStationFile.delete();
+		}
+		return unformattedLocalStationFile;
+	}
+
+	private void downloadUnformattedStationFile(HttpClient httpClient,
+			File unformattedLocalStationFile, String url) throws Exception {
+		try {
+			HttpGet fileGet = new HttpGet(url);
+			HttpResponse response = httpClient.execute(fileGet);
+
+			OutputStream outStream = new FileOutputStream(
+					unformattedLocalStationFile);
+			IOUtils.copy(response.getEntity().getContent(), outStream);
+			outStream.close();
+			
+			cache.put(url, "SUCCEEDED");
+		} catch (Exception e) {
+			cache.put(url, "FAILED");
+			LOGGER.error("Setting URL " + url + " as FAILED.");
+			throw e;
+		}
+	}
+	
+	private void readStationFile(File unformattedLocalStationFile,
+			List<String> stationData) throws FileNotFoundException, IOException {
+		BufferedReader br = new BufferedReader(new FileReader(unformattedLocalStationFile));
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			stationData.add(line);
+		}
+
+		br.close();
+	}
+
+	private void getHourlyData(String day, List<String> stationData,
+			JSONArray dataArray) throws JSONException {
+		for (String data : stationData) {
+			if (data.contains(day)) {
+				JSONObject jsonObject = new JSONObject();
+
+				String stationId = data.substring(4, 9);
+				String date = data.substring(15, 22);
+				String time = data.substring(23, 26);
+				String latitude = data.substring(28, 33);
+				String longitude = data.substring(34, 40);
+				String windSpeed = data.substring(65, 68);
+				String airTemp = data.substring(87, 91);
+				String dewTemp = data.substring(93, 97);
+
+				jsonObject.put("Estacao", stationId);
+				jsonObject.put("Data", date);
+				jsonObject.put("Hora", time);
+				jsonObject.put("Latitude", latitude);
+				jsonObject.put("Longitude", longitude);
+				jsonObject.put("VelocidadeVento", windSpeed);
+				jsonObject.put("TempBulboSeco", airTemp);
+				jsonObject.put("TempBulboUmido", dewTemp);
+
+				dataArray.put(jsonObject);
+			}
+		}
+	}
+	
 	private JSONObject findClosestRecord(Date date, List<JSONObject> stations) {
 		Date inicio = new Date(date.getTime() - A_DAY);
 		Date fim = new Date(date.getTime() + A_DAY);
@@ -263,6 +322,8 @@ public class WeatherStation {
 					
 					if (!closestRecord.optString("Data").isEmpty()
 							&& !closestRecord.optString("Hora").isEmpty()
+							&& !closestRecord.optString("Latitude").isEmpty()
+							&& !closestRecord.optString("Longitude").isEmpty()
 							&& !closestRecord.optString("TempBulboSeco")
 									.isEmpty()
 							&& !closestRecord.optString("TempBulboUmido")
@@ -270,13 +331,7 @@ public class WeatherStation {
 							&& !closestRecord.optString("VelocidadeVento")
 									.isEmpty()
 							&& Double.parseDouble(closestRecord
-									.optString("VelocidadeVento")) >= 0.3
-							&& !closestRecord.optString("UmidadeRelativa")
-									.isEmpty()
-							&& !closestRecord.optString("DirecaoVento")
-									.isEmpty()
-							&& !closestRecord.optString("PressaoAtmEstacao")
-									.isEmpty()) {
+									.optString("VelocidadeVento")) >= 0.3) {
 						return generateStationData(stationData, closestRecord);
 					} else if(Double.parseDouble(closestRecord
 							.optString("VelocidadeVento")) < 0.3) {
@@ -284,103 +339,79 @@ public class WeatherStation {
 						closestRecord.put("VelocidadeVento", "0.3");
 					}
 				} 
-			} catch(Exception e) {				
-					
+			} catch(Exception e) {
+				LOGGER.error("Error while reading full record", e);
 			}
 		}		
 		
 		return null;
 	}
-	
-	private String readClosestRecord(Date date, List<JSONObject> stations, int numberOfDays) {
-		Date inicio = new Date(date.getTime() - numberOfDays * A_DAY);
-		Date fim = new Date(date.getTime() + numberOfDays * A_DAY);
-		
-		for (JSONObject station : stations) {
-			try {
-				JSONArray stationData = readStation(httpClient,
-						station.optString("id"), DATE_FORMAT.format(inicio),
-						DATE_FORMAT.format(fim));
-
-				JSONObject closestRecord = null;
-				Long smallestDiff = Long.MAX_VALUE;
-
-				for (int i = 0; i < stationData.length(); i++) {
-					JSONObject stationDataRecord = stationData.optJSONObject(i);
-					String dateValue = stationDataRecord.optString("Data");
-					String timeValue = stationDataRecord.optString("Hora");
-
-					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
-							+ timeValue);
-					long diff = Math.abs(recordDate.getTime() - date.getTime());
-					if (diff < smallestDiff) {
-						smallestDiff = diff;
-						closestRecord = stationDataRecord;
-					}
-				}
-			
-				if (!closestRecord.optString("Data").isEmpty()
-						&& !closestRecord.optString("Hora").isEmpty()
-						&& !closestRecord.optString("TempBulboSeco").isEmpty()
-						&& !closestRecord.optString("VelocidadeVento")
-								.isEmpty()) {
-					return generateStationData(stationData, closestRecord);
-				}
-				
-				
-			} catch (Exception e) {
-//				LOGGER.error("Error while reading station.", e);
-//				return null;
-			}
-		}
-		return null;
-		
-	}
 
 	private String generateStationData(JSONArray stationData, JSONObject closestRecord) {
 		StringBuilder toReturn = new StringBuilder();
 		for (int i = 0; i < stationData.length(); i++) {
-			JSONObject stationDataRecord = stationData.optJSONObject(i);
-
-			String dateValue = stationDataRecord.optString("Data");
-			String timeValue = stationDataRecord.optString("Hora");
-			String temBulboSeco = stationDataRecord.optString("TempBulboSeco");
-			String temBulboUmido = stationDataRecord
-					.optString("TempBulboUmido");
-			String estacao = stationDataRecord.optString("Estacao");
-			String umidadeRelativa = stationDataRecord
-					.optString("UmidadeRelativa");
-			String pressaoAtmEstacao = stationDataRecord
-					.optString("PressaoAtmEstacao");
-			String direcaoVento = stationDataRecord.optString("DirecaoVento");
-			String velocidadeVento = stationDataRecord
-					.optString("VelocidadeVento");
-			
-			if(closestRecord.optString("TempBulboSeco").isEmpty()) {
-				temBulboSeco = "NA";
-			}		
-			if(closestRecord.optString("UmidadeRelativa").isEmpty()) {
-				umidadeRelativa = "NA";
-			}			
-			if(closestRecord.optString("TempBulboUmido").isEmpty()) {
-				temBulboUmido = "NA";
-			}			
-			if(closestRecord.optString("PressaoAtmEstacao").isEmpty()) {
-				pressaoAtmEstacao = "NA";
-			}			
-			if(closestRecord.optString("DirecaoVento").isEmpty()) {
-				direcaoVento = "NA";
-			}			
-			if(closestRecord.optString("VelocidadeVento").isEmpty()) {
-				velocidadeVento = "NA";
-			}
-			
-			toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
-					+ temBulboSeco + ";" + temBulboUmido + ";"
-					+ umidadeRelativa + ";" + pressaoAtmEstacao + ";"
-					+ direcaoVento + ";" + velocidadeVento + ";\n");
+			checkVariablesAndBuildString(stationData, closestRecord, toReturn,
+					i);
 		}
 		return toReturn.toString().trim();
+	}
+
+	private void checkVariablesAndBuildString(JSONArray stationData,
+			JSONObject closestRecord, StringBuilder toReturn, int i) {
+		JSONObject stationDataRecord = stationData.optJSONObject(i);
+
+		String estacao = stationDataRecord.optString("Estacao");
+		String dateValue = stationDataRecord.optString("Data");
+		String timeValue = stationDataRecord.optString("Hora");
+		String latitude = stationDataRecord.optString("Latitude");
+		String longitude = stationDataRecord.optString("Longitude");
+		String velocidadeVento = stationDataRecord.optString("VelocidadeVento");
+		String temBulboSeco = stationDataRecord.optString("TempBulboSeco");
+		String temBulboUmido = stationDataRecord.optString("TempBulboUmido");
+		String mediaTemp = stationDataRecord.optString("MediaTemperatura");
+		String umidadeRelativa = stationDataRecord.optString("UmidadeRelativa");
+		String minTemp = stationDataRecord.optString("TemperaturaMinima");
+		String maxTemp = stationDataRecord.optString("TemperaturaMaxima");
+		String solarRad = stationDataRecord.optString("RadiacaoSolar");
+		
+		if (closestRecord.optString("VelocidadeVento").isEmpty()
+				|| closestRecord.optString("VelocidadeVento") == null) {
+			velocidadeVento = "NA";
+		}
+		if (closestRecord.optString("TempBulboSeco").isEmpty()
+				|| closestRecord.optString("TempBulboSeco") == null) {
+			temBulboSeco = "NA";
+		}
+		if (closestRecord.optString("TempBulboUmido").isEmpty()
+				|| closestRecord.optString("TempBulboUmido") == null) {
+			temBulboUmido = "NA";
+		}
+		if (closestRecord.optString("MediaTemperatura").isEmpty()
+				|| closestRecord.optString("MediaTemperatura") == null) {
+			mediaTemp = "NA";
+		}
+		if (closestRecord.optString("UmidadeRelativa").isEmpty()
+				|| closestRecord.optString("UmidadeRelativa") == null) {
+			umidadeRelativa = "NA";
+		}
+		if (closestRecord.optString("TemperaturaMinima").isEmpty()
+				|| closestRecord.optString("TemperaturaMinima") == null) {
+			minTemp = "NA";
+		}
+		if (closestRecord.optString("TemperaturaMaxima").isEmpty()
+				|| closestRecord.optString("TemperaturaMaxima") == null) {
+			maxTemp = "NA";
+		}
+		if (closestRecord.optString("RadiacaoSolar").isEmpty()
+				|| closestRecord.optString("RadiacaoSolar") == null) {
+			solarRad = "NA";
+		}
+		
+		toReturn.append(estacao + ";" + dateValue + ";" + timeValue + ";"
+				+ latitude + ";" + longitude + ";" + velocidadeVento + ";"
+				+ temBulboSeco + ";" + temBulboUmido + ";" + mediaTemp
+				+ ";" + umidadeRelativa + ";" + minTemp + ";" + maxTemp
+				+ ";" + solarRad + ";\n");
 	}
 
 	public double Ta(double lat, double lon, Date date) {
