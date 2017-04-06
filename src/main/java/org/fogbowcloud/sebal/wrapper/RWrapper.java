@@ -138,7 +138,7 @@ public class RWrapper {
         	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
         	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
         	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
-        }             
+        }
         
         // The following will probably change because the elevation data will be downloaded externally
         String stationData = SEBALHelper.getStationData(product, iBegin, iFinal, jBegin,
