@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -597,7 +598,7 @@ public class SEBALHelper {
 		return boundingBoxVertices;
 	}
 
-	public static String getStationData(Product product, int iBegin,
+	public static String getStationData(Properties properties, Product product, int iBegin,
 			int iFinal, int jBegin, int jFinal,
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			BoundingBox boundingBox) throws URISyntaxException, HttpException,
@@ -634,7 +635,7 @@ public class SEBALHelper {
 		double longitude = Double.valueOf(String.format("%.10g%n",
 				geoPos.getLon()));
 
-		WeatherStation station = new WeatherStation();
+		WeatherStation station = new WeatherStation(properties);
 		UTC startTime = product.getStartTime();
 		return station.getStationData(latitude, longitude,
 				startTime.getAsDate());

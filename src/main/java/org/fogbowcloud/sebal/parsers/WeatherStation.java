@@ -39,7 +39,8 @@ public class WeatherStation {
 	private static final long A_DAY = 1000 * 60 * 60 * 24;
 	
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("YYYYMMdd");
-	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
+//	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/YYYY;hhmm");
+	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyyMMdd;hhmm");
 	
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 	private static final String PUBLIC_HTML_STATION_REPOSITORY = "public_html_station_repository";
@@ -118,22 +119,26 @@ public class WeatherStation {
 	}
 	
 	private JSONArray readStation(String id, String inicio, String fim)
-			throws Exception {		
+			throws Exception {
 
-		String[] inicioSplit = inicio.split("-");
-		String day = inicioSplit[0];
-		String year = inicioSplit[2];
+		String year = inicio.substring(0, 4);
 		
-		File unformattedLocalStationFile = getUnformattedStationFile();		
+		String baseUnformattedLocalStationFilePath = properties
+				.getProperty(UNFORMATTED_LOCAL_STATION_FILE_PATH) + File.separator + year;
+		File baseUnformattedLocalStationFile = new File(baseUnformattedLocalStationFilePath);
+		baseUnformattedLocalStationFile.mkdirs();
 		
-		String url = properties.getProperty(PUBLIC_HTML_STATION_REPOSITORY) + File.separator + year + id + "0-99999-" + year;		
-		downloadUnformattedStationFile(unformattedLocalStationFile, url);
+		File unformattedLocalStationFile = getUnformattedStationFile(id, year);				
+		String url = properties.getProperty(PUBLIC_HTML_STATION_REPOSITORY) + File.separator + year + File.separator + id + "0-99999-" + year;
+		if(downloadUnformattedStationFile(unformattedLocalStationFile, url) != 0) {
+			return null;
+		}
 		
 		List<String> stationData = new ArrayList<String>();		
 		readStationFile(unformattedLocalStationFile, stationData);
 		
 		JSONArray dataArray = new JSONArray();
-		getHourlyData(day, stationData, dataArray);
+		getHourlyData(inicio, stationData, dataArray);
 		
 		for (int i = 0; i < dataArray.length(); i++) {
 			JSONObject stationDataRecord = dataArray.optJSONObject(i);
@@ -152,9 +157,9 @@ public class WeatherStation {
 		throw new Exception();
 	}
 
-	private File getUnformattedStationFile() {		
+	private File getUnformattedStationFile(String stationId, String year) {				
 		String unformattedLocalStationFilePath = properties
-				.getProperty(UNFORMATTED_LOCAL_STATION_FILE_PATH);
+				.getProperty(UNFORMATTED_LOCAL_STATION_FILE_PATH) + File.separator + year + File.separator + stationId + "0-99999-" + year;
 		
 		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
 		if(unformattedLocalStationFile.exists()) {
@@ -164,27 +169,33 @@ public class WeatherStation {
 		return unformattedLocalStationFile;
 	}
 
-	private void downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
+	private int downloadUnformattedStationFile(File unformattedLocalStationFile, String url)
+			throws Exception {
 		try {
 			BasicCookieStore cookieStore = new BasicCookieStore();
 			HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
 			
 			HttpGet fileGet = new HttpGet(url);
 			HttpResponse response = httpClient.execute(fileGet);
+			if(response.getStatusLine().getStatusCode() == 404) {
+				return 1;
+			}
 
 			OutputStream outStream = new FileOutputStream(
 					unformattedLocalStationFile);
 			IOUtils.copy(response.getEntity().getContent(), outStream);
 			outStream.close();
-			
+
 			cache.put(url, "SUCCEEDED");
 		} catch (Exception e) {
 			cache.put(url, "FAILED");
 			LOGGER.error("Setting URL " + url + " as FAILED.");
 			throw e;
 		}
+		
+		return 0;
 	}
-	
+
 	private void readStationFile(File unformattedLocalStationFile,
 			List<String> stationData) throws FileNotFoundException, IOException {
 		BufferedReader br = new BufferedReader(new FileReader(unformattedLocalStationFile));
@@ -196,41 +207,30 @@ public class WeatherStation {
 		br.close();
 	}
 
-	private void getHourlyData(String day, List<String> stationData,
+	private void getHourlyData(String inicio, List<String> stationData,
 			JSONArray dataArray) throws JSONException {
 		for (String data : stationData) {
-			if (data.contains(day)) {
-				JSONObject jsonObject = new JSONObject();
+			if (data.contains(inicio)) {
+				JSONObject jsonObject = new JSONObject();				
 
-				String stationId = data.substring(4, 9);
-				String date = data.substring(15, 22);
-				String time = data.substring(23, 26);
+				String stationId = data.substring(4, 10);
+				String date = data.substring(15, 23);
+				String time = data.substring(23, 27);
 				
-				String latitude = data.substring(28, 33);
-				latitude = latitude.substring(0, 4) + "." + latitude.substring(4, latitude.length());
-				StringBuilder sb = new StringBuilder(latitude);
-				sb.deleteCharAt(1);
-				latitude = sb.toString();
+				String latitude = data.substring(28, 34);
+				latitude = dealLatitudeFormat(latitude);
 				
-				String longitude = data.substring(34, 40);
-				longitude = longitude.substring(0, 4) + "." + longitude.substring(4, longitude.length());
-				sb = new StringBuilder(longitude);
-				sb.deleteCharAt(1);
-				longitude = sb.toString();
+				String longitude = data.substring(34, 41);
+				longitude = dealLongitudeFormat(longitude);
 				
-				String windSpeed = data.substring(65, 68);
-				windSpeed = windSpeed.substring(0, 3) + "." + windSpeed.substring(3, windSpeed.length());
+				String windSpeed = data.substring(65, 69);
+				windSpeed = dealWindSpeedFormat(windSpeed);
 				
-				String airTemp = data.substring(87, 91);
-				airTemp = airTemp.substring(0, 4) + "." + airTemp.substring(4, airTemp.length());
-				sb = new StringBuilder(airTemp);
-				sb.deleteCharAt(1);
-				airTemp = sb.toString();
-				if(airTemp.startsWith("+")) {
-					airTemp = airTemp.substring(1, airTemp.length());
-				}				
+				String airTemp = data.substring(87, 92);
+				airTemp = dealAirTempFormat(airTemp);
 				
-				String dewTemp = data.substring(93, 97);
+				String dewTemp = data.substring(93, 98);
+				dewTemp = dealDewTempFormat(dewTemp);
 
 				jsonObject.put("Estacao", stationId);
 				jsonObject.put("Data", date);
@@ -241,45 +241,98 @@ public class WeatherStation {
 				jsonObject.put("TempBulboSeco", airTemp);
 				jsonObject.put("TempBulboUmido", dewTemp);
 				
-				if(data.contains("ADD")) {
-					putAdditionalData(data, jsonObject);
-				}
+//				TODO: confirm this				
+//				if(data.contains("ADD")) {
+//					putAdditionalData(data, jsonObject);
+//				}
 
 				dataArray.put(jsonObject);
 			}
 		}
 	}
 
-	private void putAdditionalData(String data, JSONObject jsonObject)
-			throws JSONException {
-		
-		String avgAirTemperature = null;
-		String relativeHumidity = null;
-		String minTemp = null;
-		String maxTemp = null;
-		String solarRad = null;
-		
-		String additionalData = data.substring(data.lastIndexOf("ADD") + 1);
+	private String dealLatitudeFormat(String latitude) {
+		latitude = latitude.substring(0, 4) + "." + latitude.substring(4, latitude.length());
+		StringBuilder sb = new StringBuilder(latitude);
+		sb.deleteCharAt(1);
+		latitude = sb.toString();
+		return latitude;
+	}
 
-		String additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("AVG_RH_TEMP") + 1);
-		avgAirTemperature = additionalDataSubstring.substring(0, 4);
-		jsonObject.put("MediaTemperatura", avgAirTemperature);
-							
-		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("RELATIVE HUMIDITY/TEMPERATURE") + 1);
-		relativeHumidity = additionalDataSubstring.substring(0, 1);
-		jsonObject.put("UmidadeRelativa", relativeHumidity);
+	private String dealLongitudeFormat(String longitude) {
+		StringBuilder sb;
+		longitude = longitude.substring(0, 4) + "." + longitude.substring(4, longitude.length());
+		sb = new StringBuilder(longitude);
+		sb.deleteCharAt(1);
+		longitude = sb.toString();
+		return longitude;
+	}
+	
+	private String dealWindSpeedFormat(String windSpeed)
+			throws NumberFormatException {
+		if(windSpeed.equals("99999")) {
+			windSpeed = "***";
+		} else {					
+			windSpeed = formatWindSpeed(windSpeed);
+		}
+		return windSpeed;
+	}
+
+	private String dealAirTempFormat(String airTemp)
+			throws NumberFormatException {
+		StringBuilder sb;
+		String airTempSign = airTemp.substring(0, 0);
+		sb = new StringBuilder(airTemp);
+		sb.deleteCharAt(0);
+		airTemp = sb.toString();				
+		if(airTemp.equals("99999")) {
+			airTemp = "****";
+		} else {					
+			airTemp = formatAirTemp(airTemp, airTempSign);
+		}
+		return airTemp;
+	}
+	
+	private String dealDewTempFormat(String dewTemp)
+			throws NumberFormatException {
+		StringBuilder sb;
+		String dewTempSign = dewTemp.substring(0, 0);
+		sb = new StringBuilder(dewTemp);
+		sb.deleteCharAt(0);
+		dewTemp = sb.toString();
+		if(dewTemp.equals("99999")) {
+			dewTemp = "****";
+		} else {
+			dewTemp = formatDewTemp(dewTemp, dewTempSign);
+		}
+		return dewTemp;
+	}
+
+	private String formatWindSpeed(String windSpeed)
+			throws NumberFormatException {
+		double integerConvertion = Integer.parseInt(windSpeed);
+		integerConvertion     = integerConvertion / 10.0;		
+		return String.valueOf(integerConvertion);
+	}
+
+	private String formatAirTemp(String airTemp, String airTempSign) throws NumberFormatException {
+		double integerConvertion = Integer.parseInt(airTemp);
+		if(airTempSign.equals("-")) {
+			integerConvertion*= -1;
+		}
+				
+		integerConvertion = integerConvertion / 10.0;
+		return String.valueOf(integerConvertion);
+	}
+
+	private String formatDewTemp(String dewTemp, String dewTempSign) throws NumberFormatException {		
+		double integerConvertion = Integer.parseInt(dewTemp);
+		if(dewTempSign.equals("-")) {
+			integerConvertion*= -1;
+		}
 		
-		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("MIN_RH_TEMP") + 1);
-		minTemp = additionalDataSubstring.substring(0, 4);
-		jsonObject.put("TemperaturaMinima", minTemp);
-		
-		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("MAX_RH_TEMP") + 1);
-		maxTemp = additionalDataSubstring.substring(0, 4);
-		jsonObject.put("TemperaturaMaxima", maxTemp);
-							
-		additionalDataSubstring = additionalData.substring(additionalData.lastIndexOf("SOLARAD") + 1);
-		solarRad = additionalDataSubstring.substring(0, 4);
-		jsonObject.put("RadiacaoSolar", solarRad);
+		integerConvertion = integerConvertion / 10.0;
+		return String.valueOf(integerConvertion);
 	}
 	
 	private String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
@@ -290,42 +343,49 @@ public class WeatherStation {
 			try {
 				JSONArray stationData = readStation(station.optString("id"), DATE_FORMAT.format(inicio),
 						DATE_FORMAT.format(fim));
+				
+				if (stationData != null) {
+					JSONObject closestRecord = null;
+					Long smallestDiff = Long.MAX_VALUE;
 
-				JSONObject closestRecord = null;
-				Long smallestDiff = Long.MAX_VALUE;
+					for (int i = 0; i < stationData.length(); i++) {
+						JSONObject stationDataRecord = stationData
+								.optJSONObject(i);
+						String dateValue = stationDataRecord.optString("Data");
+						String timeValue = stationDataRecord.optString("Hora");
 
-				for (int i = 0; i < stationData.length(); i++) {
-					JSONObject stationDataRecord = stationData.optJSONObject(i);
-					String dateValue = stationDataRecord.optString("Data");
-					String timeValue = stationDataRecord.optString("Hora");
+						Date recordDate = DATE_TIME_FORMAT.parse(dateValue
+								+ ";" + timeValue);
+						long diff = Math.abs(recordDate.getTime()
+								- date.getTime());
+						if (diff < smallestDiff) {
+							smallestDiff = diff;
+							closestRecord = stationDataRecord;
+						}
 
-					Date recordDate = DATE_TIME_FORMAT.parse(dateValue + ";"
-							+ timeValue);
-					long diff = Math.abs(recordDate.getTime() - date.getTime());
-					if (diff < smallestDiff) {
-						smallestDiff = diff;
-						closestRecord = stationDataRecord;
+						if (!closestRecord.optString("Data").isEmpty()
+								&& !closestRecord.optString("Hora").isEmpty()
+								&& !closestRecord.optString("Latitude")
+										.isEmpty()
+								&& !closestRecord.optString("Longitude")
+										.isEmpty()
+								&& !closestRecord.optString("TempBulboSeco")
+										.isEmpty()
+								&& !closestRecord.optString("TempBulboUmido")
+										.isEmpty()
+								&& !closestRecord.optString("VelocidadeVento")
+										.isEmpty()
+								&& Double.parseDouble(closestRecord
+										.optString("VelocidadeVento")) >= 0.3) {
+							return generateStationData(stationData,
+									closestRecord);
+						} else if (Double.parseDouble(closestRecord
+								.optString("VelocidadeVento")) < 0.3) {
+							closestRecord.remove("VelocidadeVento");
+							closestRecord.put("VelocidadeVento", "0.3");
+						}
 					}
-					
-					if (!closestRecord.optString("Data").isEmpty()
-							&& !closestRecord.optString("Hora").isEmpty()
-							&& !closestRecord.optString("Latitude").isEmpty()
-							&& !closestRecord.optString("Longitude").isEmpty()
-							&& !closestRecord.optString("TempBulboSeco")
-									.isEmpty()
-							&& !closestRecord.optString("TempBulboUmido")
-									.isEmpty()
-							&& !closestRecord.optString("VelocidadeVento")
-									.isEmpty()
-							&& Double.parseDouble(closestRecord
-									.optString("VelocidadeVento")) >= 0.3) {
-						return generateStationData(stationData, closestRecord);
-					} else if(Double.parseDouble(closestRecord
-							.optString("VelocidadeVento")) < 0.3) {
-						closestRecord.remove("VelocidadeVento");
-						closestRecord.put("VelocidadeVento", "0.3");
-					}
-				} 
+				}
 			} catch(Exception e) {
 				LOGGER.error("Error while reading full record", e);
 			}
@@ -426,14 +486,8 @@ public class WeatherStation {
 		return 4.0;
 	}
 	
-	public String getNOAAStationData(double lat, double lon, Date date) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		return readFullRecord(date, station, 0);
-	}
-
 	public String getStationData(double lat, double lon, Date date) {
 		List<JSONObject> station = findNearestStation(lat, lon);
-		//return readClosestRecord(date, station, 0);
 		return readFullRecord(date, station, 0);
 	}
 	
@@ -452,5 +506,6 @@ public class WeatherStation {
 
 		WeatherStation weatherStation = new WeatherStation();		
 		weatherStation.setProperties(properties);
+		weatherStation.readStation("821980", "19840101", "19840101");
 	}
 }
