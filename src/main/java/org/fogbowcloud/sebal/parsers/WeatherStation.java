@@ -144,8 +144,7 @@ public class WeatherStation {
 		baseUnformattedLocalStationFile.mkdirs();
 
 		File unformattedLocalStationFile = getUnformattedStationFile(id, year);
-		String url = properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
-				+ File.separator + year + File.separator + id + "0-99999-" + year;
+		String url = getStationFileUrl(id, year);		
 		if (!downloadUnformattedStationFile(unformattedLocalStationFile, url)) {
 			return null;
 		}
@@ -176,13 +175,19 @@ public class WeatherStation {
 		throw new Exception();
 	}
 
-	private String getBaseUnformattedLocalStationFilePath(String year) {
+	protected String getStationFileUrl(String id, String year) {
+		String url = properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
+				+ File.separator + year + File.separator + id + "0-99999-" + year;
+		return url;
+	}
+
+	protected String getBaseUnformattedLocalStationFilePath(String year) {
 		return properties
 				.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year;
 	}
 
-	private File getUnformattedStationFile(String stationId, String year) {
+	protected File getUnformattedStationFile(String stationId, String year) {
 		String unformattedLocalStationFilePath = properties.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year + File.separator + stationId + "0-99999-" + year;
 
@@ -369,7 +374,7 @@ public class WeatherStation {
 		return String.valueOf(integerConvertion);
 	}
 
-	private String readFullRecord(Date date, List<JSONObject> stations,
+	protected String readFullRecord(Date date, List<JSONObject> stations,
 			int numberOfDays) {
 		Date begindate = new Date(date.getTime() - numberOfDays * A_DAY);
 		Date endDate = new Date(date.getTime() + numberOfDays * A_DAY);
