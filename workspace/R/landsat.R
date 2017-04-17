@@ -52,7 +52,7 @@ landsat<-function(){
   Ea<-0.85*(-1*log(tal))^0.09 # Céu Claro
   
   #Radiação de onda longa emitida pela atmosfera (RLatm)
-  RLatm<-Ea*5.67*10^-8*(table.sw$V4[2]+273.15)^4
+  RLatm<-Ea*5.67*10^-8*(table.sw$V7[2]+273.15)^4
   
   #Saldo de radiação Instantânea (Rn)
   Rn<- Rs-Rs*alb+RLatm-RLsup-(1-Eo)*RLatm
@@ -115,7 +115,7 @@ landsat<-function(){
     Ea<-0.85*(-1*log(tal))^0.09 # Céu Claro
     
     #Radiação de onda longa emitida pela atmosfera (RLatm)
-    RLatm<-Ea*5.67*10^-8*(table.sw$V4[2]+273.15)^4
+    RLatm<-Ea*5.67*10^-8*(table.sw$V7[2]+273.15)^4
     
     #Saldo de radiação Instantânea (Rn)
     Rn<- Rs-Rs*alb+RLatm-RLsup-(1-Eo)*RLatm
