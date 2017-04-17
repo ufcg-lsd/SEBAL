@@ -287,7 +287,7 @@ public class WeatherStation {
 	}
 
 	private String changeToLatitudeFormat(String latitude) {
-		latitude = latitude.substring(0, 4) + "."
+		latitude = latitude.substring(0, 3) + "."
 				+ latitude.substring(4, latitude.length());
 		StringBuilder sb = new StringBuilder(latitude);
 		sb.deleteCharAt(1);
