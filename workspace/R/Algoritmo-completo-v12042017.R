@@ -320,223 +320,234 @@ ncvar_put(newTSNCDF4,"TS",oldTSValues,start=c(1,1,1),count=c(raster.elevation@nc
 nc_close(newTSNCDF4)
 proc.time()
 
-########################Selection of reference pixels###################################
-Rn<-output[[1]]
-TS<-output[[2]]
-NDVI<-output[[3]]
-EVI<-output[[4]]
-LAI<-output[[5]]
-G<-output[[6]]
-alb<-output[[7]]
-
-#Candidates hot Pixel
-Ho<-Rn-G
-y<-Ho[NDVI>0.15 & NDVI<0.19]
-x<-TS[NDVI>0.15 & NDVI<0.19]
-TS.c.hot<-quantile(x[x>273.16],0.8, na.rm = TRUE)
-i<-0.1
-Erro<- TRUE
-while (Erro){
-  Ho.c.hot<-median(y[x>TS.c.hot-i & x<TS.c.hot+i], na.rm = TRUE)
-  Erro<-is.na(Ho.c.hot)
-  i<-i+0.1
-}
-TS.Ho<-abs(TS-TS.c.hot)+abs(Ho-Ho.c.hot)
-Cand.hot<-sort(TS.Ho[])[1:20]
-ll.hot<-numeric()
-for(k in 0:length(Cand.hot)){
-  ll.hot<-c(ll.hot,which(TS.Ho[]==Cand.hot[k]))
-}
-xy.hot <- xyFromCell(TS.Ho, ll.hot)
-beginCluster(clusters)
-NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
-endCluster()
-NDVI.hot.2<-NDVI.hot[!sapply(NDVI.hot, is.null)]
-NDVI.hot.cv <- sapply(NDVI.hot.2,sd, na.rm=TRUE)/sapply(NDVI.hot.2, mean, na.rm=TRUE)
-NDVI.hot.cv.min<-sort(NDVI.hot.cv)
-i.NDVI.hot.cv<-which(NDVI.hot.cv[]==NDVI.hot.cv.min[1])
-beginCluster(clusters)
-TQ.hot<-extract(TS,xy.hot)
-endCluster()
-TQ.hot<-TQ.hot[i.NDVI.hot.cv[1]]
-ll.hot.f<-cbind(as.vector(xy.hot[i.NDVI.hot.cv[1],1]),
-                as.vector(xy.hot[i.NDVI.hot.cv[1],2]))
-proc.time()
-
-#Candidates cold Pixel
-z<-TS[NDVI<0 & TS>273.16]
-TS.c.cold<-quantile(z,0.08, na.rm = TRUE)
-TS.dif<-abs(TS-TS.c.cold)
-Cand.cold<-sort(TS.dif[])[1:20]
-ll.cold<-numeric()
-for(k in 0:length(Cand.cold)){
-  ll.cold<-c(ll.cold,which(TS.dif[]==Cand.cold[k]))
-}
-xy.cold <- xyFromCell(TS.dif, ll.cold)
-beginCluster(clusters)
-NDVI.cold<-extract(NDVI,xy.cold, buffer=120)
-endCluster()
-NDVI.cold.2<-NDVI.cold[!sapply(NDVI.cold, is.null)]
-NDVI.cold.cv<-sapply(NDVI.cold.2, sd, na.rm=TRUE)/sapply(NDVI.cold.2, mean, na.rm=TRUE)
-NDVI.cold.cv.positive<-NDVI.cold.cv[NDVI.cold.cv>0]
-NDVI.cold.cv.min<-sort(NDVI.cold.cv.positive)
-i.NDVI.cold<-which(NDVI.cold.cv[]==NDVI.cold.cv.min[1])
-beginCluster(clusters)
-TQ.cold<-extract(TS,xy.cold)
-endCluster()
-TQ.cold<-TQ.cold[i.NDVI.cold[1]]
-ll.cold.f<-cbind(as.vector(xy.cold[i.NDVI.cold[1],1]),
-                 as.vector(xy.cold[i.NDVI.cold[1],2]))
-proc.time()
-
-#Location of reference pixels (hot and cold)
-ll_ref<-rbind(ll.hot.f[1,],ll.cold.f[1,])
-colnames(ll_ref)<-c("long", "lat")
-rownames(ll_ref)<-c("hot","cold")
-proc.time()
-
-####################################################################################
-
-#Weather station data
-x<-3 # Wind speed sensor Height (meters)
-hc<-0.2 #Vegetation height (meters)
-Lat<-  table.sw$V4  #Station Latitude
-Long<- table.sw$V5 #Station Longitude
-
-#Surface roughness parameters in station
-zom.est<-hc*0.12
-azom<- -3    #Parameter for the Zom image
-bzom<- 6.47  #Parameter for the Zom image
-F_int<-0.16  #internalization factor for Rs 24 calculation (default value)
-proc.time()
-
-#friction velocity at the station (ustar.est)
-ustar.est<-k*table.sw$V6[2]/log((x)/zom.est)
-
-#velocity 200 meters
-u200<-ustar.est/k*log(200/zom.est)
-
-#zom for all pixels
-zom<-exp(azom+bzom*NDVI)
-
-#Initial values
-ustar<-k*u200/(log(200/zom))         # friction velocity for all pixels
-rah<-(log(2/0.1))/(ustar*k)          # aerodynamic resistance for all pixels
-base_ref<-stack(NDVI,TS,Rn,G,ustar,rah)
-nbase<-c("NDVI","TS","Rn","G")
-names(base_ref)<-c(nbase,"ustar","rah")
-value.pixels.ref<-extract(base_ref,ll_ref)
-rownames(value.pixels.ref)<-c("hot","cold")
-H.hot<-value.pixels.ref["hot","Rn"]-value.pixels.ref["hot","G"]  
-value.pixel.rah<-value.pixels.ref["hot","rah"]
-
-i<-1
-Erro<-TRUE
-proc.time()
-
-#Beginning of the cycle stability
-while(Erro){
-  rah.hot.0<-value.pixel.rah[i]
-  #Hot and cold pixels      
-  dt.hot<-H.hot*rah.hot.0/(rho*cp)                  
+phase2 <- function() {
+  ########################Selection of reference pixels###################################
+  Rn<-output[[1]]
+  TS<-output[[2]]
+  NDVI<-output[[3]]
+  EVI<-output[[4]]
+  LAI<-output[[5]]
+  G<-output[[6]]
+  alb<-output[[7]]
+	
+  #Candidates hot Pixel
+  Ho<-Rn-G
+  y<-Ho[NDVI>0.15 & NDVI<0.19]
+  x<-TS[NDVI>0.15 & NDVI<0.19]
+  TS.c.hot<-quantile(x[x>273.16],0.8, na.rm = TRUE)
+  i<-0.1
+  Erro<- TRUE
+  while (Erro){
+    Ho.c.hot<-median(y[x>TS.c.hot-i & x<TS.c.hot+i], na.rm = TRUE)
+	Erro<-is.na(Ho.c.hot)
+	i<-i+0.1
+  }
+  TS.Ho<-abs(TS-TS.c.hot)+abs(Ho-Ho.c.hot)
+  Cand.hot<-sort(TS.Ho[])[1:20]
+  ll.hot<-numeric()
+  for(k in 0:length(Cand.hot)){
+    ll.hot<-c(ll.hot,which(TS.Ho[]==Cand.hot[k]))
+  }
+  xy.hot <- xyFromCell(TS.Ho, ll.hot)
+  beginCluster(clusters)
+  NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
+  endCluster()
+  NDVI.hot.2<-NDVI.hot[!sapply(NDVI.hot, is.null)]
+  NDVI.hot.cv <- sapply(NDVI.hot.2,sd, na.rm=TRUE)/sapply(NDVI.hot.2, mean, na.rm=TRUE)
+  NDVI.hot.cv.min<-sort(NDVI.hot.cv)
+  i.NDVI.hot.cv<-which(NDVI.hot.cv[]==NDVI.hot.cv.min[1])
+  beginCluster(clusters)
+  TQ.hot<-extract(TS,xy.hot)
+  endCluster()
+  TQ.hot<-TQ.hot[i.NDVI.hot.cv[1]]
+  ll.hot.f<-cbind(as.vector(xy.hot[i.NDVI.hot.cv[1],1]),
+    as.vector(xy.hot[i.NDVI.hot.cv[1],2]))
+  proc.time()
+	
+  #Candidates cold Pixel
+  z<-TS[NDVI<0 & TS>273.16]
+  TS.c.cold<-quantile(z,0.08, na.rm = TRUE)
+  TS.dif<-abs(TS-TS.c.cold)
+  Cand.cold<-sort(TS.dif[])[1:20]
+  ll.cold<-numeric()
+  for(k in 0:length(Cand.cold)){
+    ll.cold<-c(ll.cold,which(TS.dif[]==Cand.cold[k]))
+  }
+  xy.cold <- xyFromCell(TS.dif, ll.cold)
+  beginCluster(clusters)
+  NDVI.cold<-extract(NDVI,xy.cold, buffer=120)
+  endCluster()
+  NDVI.cold.2<-NDVI.cold[!sapply(NDVI.cold, is.null)]
+  NDVI.cold.cv<-sapply(NDVI.cold.2, sd, na.rm=TRUE)/sapply(NDVI.cold.2, mean, na.rm=TRUE)
+  NDVI.cold.cv.positive<-NDVI.cold.cv[NDVI.cold.cv>0]
+  NDVI.cold.cv.min<-sort(NDVI.cold.cv.positive)
+  i.NDVI.cold<-which(NDVI.cold.cv[]==NDVI.cold.cv.min[1])
+  beginCluster(clusters)
+  TQ.cold<-extract(TS,xy.cold)
+  endCluster()
+  TQ.cold<-TQ.cold[i.NDVI.cold[1]]
+  ll.cold.f<-cbind(as.vector(xy.cold[i.NDVI.cold[1],1]),
+    as.vector(xy.cold[i.NDVI.cold[1],2]))
+  proc.time()
+	
+  #Location of reference pixels (hot and cold)
+  ll_ref<-rbind(ll.hot.f[1,],ll.cold.f[1,])
+  colnames(ll_ref)<-c("long", "lat")
+  rownames(ll_ref)<-c("hot","cold")
+  proc.time()
+	
+  ####################################################################################
+	
+  #Weather station data
+  x<-3 # Wind speed sensor Height (meters)
+  hc<-0.2 #Vegetation height (meters)
+  Lat<-  table.sw$V4  #Station Latitude
+  Long<- table.sw$V5 #Station Longitude
+	
+  #Surface roughness parameters in station
+  zom.est<-hc*0.12
+  azom<- -3    #Parameter for the Zom image
+  bzom<- 6.47  #Parameter for the Zom image
+  F_int<-0.16  #internalization factor for Rs 24 calculation (default value)
+  proc.time()
+	
+  #friction velocity at the station (ustar.est)
+  ustar.est<-k*table.sw$V6[2]/log((x)/zom.est)
+	
+  #velocity 200 meters
+  u200<-ustar.est/k*log(200/zom.est)
+	
+  #zom for all pixels
+  zom<-exp(azom+bzom*NDVI)
+	
+  #Initial values
+  ustar<-k*u200/(log(200/zom))         # friction velocity for all pixels
+  rah<-(log(2/0.1))/(ustar*k)          # aerodynamic resistance for all pixels
+  base_ref<-stack(NDVI,TS,Rn,G,ustar,rah)
+  nbase<-c("NDVI","TS","Rn","G")
+  names(base_ref)<-c(nbase,"ustar","rah")
+  value.pixels.ref<-extract(base_ref,ll_ref)
+  rownames(value.pixels.ref)<-c("hot","cold")
+  H.hot<-value.pixels.ref["hot","Rn"]-value.pixels.ref["hot","G"]  
+  value.pixel.rah<-value.pixels.ref["hot","rah"]
+	
+  i<-1
+  Erro<-TRUE
+  proc.time()
+	
+  #Beginning of the cycle stability
+  while(Erro){
+    rah.hot.0<-value.pixel.rah[i]
+    #Hot and cold pixels      
+    dt.hot<-H.hot*rah.hot.0/(rho*cp)                  
+	b<-dt.hot/(value.pixels.ref["hot","TS"]-value.pixels.ref["cold","TS"]) 
+	a<- -b*(value.pixels.ref["cold","TS"]-273.15)                          
+	#All pixels
+	H<-rho*cp*(a+b*(TS-273.15))/rah                                   
+	L<- -1*((rho*cp*ustar^3*TS)/(k*g*H))                              
+	y_0.1<-(1-16*0.1/L)^0.25
+	y_2<-(1-16*2/L)^0.25                                              
+	x200<-(1-16*200/L)^0.25                                           
+	psi_0.1<-2*log((1+y_0.1^2)/2)                                     
+	psi_0.1[L>0]<--5*(0.1/L[L>0])
+	psi_2<-2*log((1+y_2^2)/2)
+	psi_2[L>0]<--5*(2/L[L>0])
+    psi_200<-2*log((1+x200)/2)+log((1+x200^2)/2)-2*atan(x200)+0.5*pi  
+	psi_200[L>0]<--5*(2/L[L>0])
+	ustar<-k*u200/(log(200/zom)-psi_200)              # Velocidade de fric??o para todos os pixels
+	rah<-(log(2/0.1)-psi_2+psi_0.1)/(ustar*k)          # Resist?ncia aerodin?mica para todos os pixels
+	rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2))
+	value.pixel.rah<-c(value.pixel.rah,rah.hot)
+	Erro<-(abs(1-rah.hot.0/rah.hot)>=0.05)
+	i<-i+1
+  }
+  proc.time()
+	
+  #End sensible heat flux (H)
+	
+  #Hot and cold pixels
+  dt.hot<-H.hot*rah.hot/(rho*cp)                  
   b<-dt.hot/(value.pixels.ref["hot","TS"]-value.pixels.ref["cold","TS"]) 
   a<- -b*(value.pixels.ref["cold","TS"]-273.15)                          
+  proc.time()
+	
   #All pixels
-  H<-rho*cp*(a+b*(TS-273.15))/rah                                   
-  L<- -1*((rho*cp*ustar^3*TS)/(k*g*H))                              
-  y_0.1<-(1-16*0.1/L)^0.25
-  y_2<-(1-16*2/L)^0.25                                              
-  x200<-(1-16*200/L)^0.25                                           
-  psi_0.1<-2*log((1+y_0.1^2)/2)                                     
-  psi_0.1[L>0]<--5*(0.1/L[L>0])
-  psi_2<-2*log((1+y_2^2)/2)
-  psi_2[L>0]<--5*(2/L[L>0])
-  psi_200<-2*log((1+x200)/2)+log((1+x200^2)/2)-2*atan(x200)+0.5*pi  
-  psi_200[L>0]<--5*(2/L[L>0])
-  ustar<-k*u200/(log(200/zom)-psi_200)              # Velocidade de fric??o para todos os pixels
-  rah<-(log(2/0.1)-psi_2+psi_0.1)/(ustar*k)          # Resist?ncia aerodin?mica para todos os pixels
-  rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2))
-  value.pixel.rah<-c(value.pixel.rah,rah.hot)
-  Erro<-(abs(1-rah.hot.0/rah.hot)>=0.05)
-  i<-i+1
+  H<-rho*cp*(a+b*(TS-273.15))/rah
+  H[H>(Rn-G)]<-(Rn-G)[H>(Rn-G)]
+  proc.time()
+	
+  #Instant latent heat flux (LE)
+  LE<-Rn-G-H
+	
+  #Upscalling temporal
+  dr<-(1/d_sun_earth$dist[Dia.juliano])^2 #Inverse square of the distance on Earth-SOL
+  sigma<-0.409*sin(((2*pi/365)*Dia.juliano)-1.39) # Declination Solar (rad)
+  phi<-(pi/180)*Lat #Solar latitude in degrees
+  omegas<-acos(-tan(phi)*tan(sigma)) #Angle Time for sunsets (rad)
+  Ra24h<-(((24*60/pi)*Gsc*dr)*(omegas*sin(phi)*
+    sin(sigma)+cos(phi)*cos(sigma)*sin(omegas)))*(1000000/86400)
+  proc.time()
+	
+  #Short wave radiation incident in 24 hours (Rs24h)
+  Rs24h<-F_int*sqrt(max(table.sw$V7[])-min(table.sw$V7[]))*Ra24h
+	
+  FL<-110                                
+  Rn24h_dB<-(1-alb)*Rs24h-FL*Rs24h/Ra24h         # Method of Bruin
+	
+  #Evapotranspiration fraction Bastiaanssen
+  EF<-LE/(Rn-G)
+	
+  #Sensible heat flux 24 hours (H24h)
+  H24h_dB<-(1-EF)*Rn24h_dB
+	
+  #Latent Heat Flux 24 hours (LE24h)
+  LE24h_dB<-EF*Rn24h_dB
+	
+  #Evapotranspiration 24 hours (ET24h)
+  ET24h_dB<-LE24h_dB*86400/((2.501-0.00236*
+	                             (max(table.sw$V7[])+min(table.sw$V7[]))/2)*10^6)
+  proc.time()
+	
+  output.evapo<-stack(EF,ET24h_dB)
+  names(output.evapo)<-c('EF','ET24h')
+  writeRaster(output.evapo,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
+	            longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
+  proc.time()
+	
+  #Opening old EF NetCDF
+  var_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
+  nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+	
+  #New EF file name
+  file_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
+  oldEFValues<-ncvar_get(nc,fic)
+  newEFValues<-ncvar_def("EF","daily",list(dimLonDef,dimLatDef,tdim),longname="EF",missval=NaN,prec="double")
+  nc_close(nc)
+  newEFNCDF4<-nc_create(file_output,newEFValues)
+  ncvar_put(newEFNCDF4,"EF",oldEFValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
+  nc_close(newEFNCDF4)
+  proc.time()
+	
+  #Opening old ET24h NetCDF
+  var_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
+  nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
+	
+  #New ET24h file name
+  file_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
+  oldET24hValues<-ncvar_get(nc,fic)
+  newET24hValues<-ncvar_def("ET24h","daily",list(dimLonDef,dimLatDef,tdim),longname="ET24h",missval=NaN,prec="double")
+  nc_close(nc)
+  newET24hNCDF4<-nc_create(file_output,newET24hValues)
+  ncvar_put(newET24hNCDF4,"ET24h",oldET24hValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
+  nc_close(newET24hNCDF4)
+  proc.time()
 }
-proc.time()
 
-#End sensible heat flux (H)
-
-#Hot and cold pixels
-dt.hot<-H.hot*rah.hot/(rho*cp)                  
-b<-dt.hot/(value.pixels.ref["hot","TS"]-value.pixels.ref["cold","TS"]) 
-a<- -b*(value.pixels.ref["cold","TS"]-273.15)                          
-proc.time()
-
-#All pixels
-H<-rho*cp*(a+b*(TS-273.15))/rah
-H[H>(Rn-G)]<-(Rn-G)[H>(Rn-G)]
-proc.time()
-
-#Instant latent heat flux (LE)
-LE<-Rn-G-H
-
-#Upscalling temporal
-dr<-(1/d_sun_earth$dist[Dia.juliano])^2 #Inverse square of the distance on Earth-SOL
-sigma<-0.409*sin(((2*pi/365)*Dia.juliano)-1.39) # Declination Solar (rad)
-phi<-(pi/180)*Lat #Solar latitude in degrees
-omegas<-acos(-tan(phi)*tan(sigma)) #Angle Time for sunsets (rad)
-Ra24h<-(((24*60/pi)*Gsc*dr)*(omegas*sin(phi)*
-        sin(sigma)+cos(phi)*cos(sigma)*sin(omegas)))*(1000000/86400)
-proc.time()
-
-#Short wave radiation incident in 24 hours (Rs24h)
-Rs24h<-F_int*sqrt(max(table.sw$V7[])-min(table.sw$V7[]))*Ra24h
-
-FL<-110                                
-Rn24h_dB<-(1-alb)*Rs24h-FL*Rs24h/Ra24h         # Method of Bruin
-
-#Evapotranspiration fraction Bastiaanssen
-EF<-LE/(Rn-G)
-
-#Sensible heat flux 24 hours (H24h)
-H24h_dB<-(1-EF)*Rn24h_dB
-
-#Latent Heat Flux 24 hours (LE24h)
-LE24h_dB<-EF*Rn24h_dB
-
-#Evapotranspiration 24 hours (ET24h)
-ET24h_dB<-LE24h_dB*86400/((2.501-0.00236*
-                             (max(table.sw$V7[])+min(table.sw$V7[]))/2)*10^6)
-proc.time()
-
-output.evapo<-stack(EF,ET24h_dB)
-names(output.evapo)<-c('EF','ET24h')
-writeRaster(output.evapo,output.path, overwrite=TRUE, format="CDF", varname= fic,varunit="daily",
-            longname=fic, xname="lon",yname="lat",bylayer= TRUE, suffix="names")
-proc.time()
-
-#Opening old EF NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
-nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
-
-#New EF file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_EF.nc",sep="")
-oldEFValues<-ncvar_get(nc,fic)
-newEFValues<-ncvar_def("EF","daily",list(dimLonDef,dimLatDef,tdim),longname="EF",missval=NaN,prec="double")
-nc_close(nc)
-newEFNCDF4<-nc_create(file_output,newEFValues)
-ncvar_put(newEFNCDF4,"EF",oldEFValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
-nc_close(newEFNCDF4)
-proc.time()
-
-#Opening old ET24h NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
-nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
-
-#New ET24h file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_ET24h.nc",sep="")
-oldET24hValues<-ncvar_get(nc,fic)
-newET24hValues<-ncvar_def("ET24h","daily",list(dimLonDef,dimLatDef,tdim),longname="ET24h",missval=NaN,prec="double")
-nc_close(nc)
-newET24hNCDF4<-nc_create(file_output,newET24hValues)
-ncvar_put(newET24hNCDF4,"ET24h",oldET24hValues,start=c(1,1,1),count=c(raster.elevation@ncols,raster.elevation@nrows,1))
-nc_close(newET24hNCDF4)
-proc.time()
+tryCatch({
+  res <- evalWithTimeout({
+    phase2();
+  }, timeout=7200);
+}, TimeoutException=function(ex) {
+  cat("Image phase two processing timedout. Exiting with 124 code...\n");
+  quit("no", 124, FALSE)
+})
