@@ -195,18 +195,17 @@ public class WeatherStation {
 				"stations.json"));
 	}
 
-	private JSONArray readStation(String id, String beginDate, String endDate)
+	private JSONArray readStation(String stationId, String beginDate, String endDate)
 			throws Exception {
 
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
-		File baseUnformattedLocalStationFile = new File(
-				baseUnformattedLocalStationFilePath);
+		File baseUnformattedLocalStationFile = new File(baseUnformattedLocalStationFilePath);
 		baseUnformattedLocalStationFile.mkdirs();
 
-		File unformattedLocalStationFile = getUnformattedStationFile(id, year);
-		String url = getStationFileUrl(id, year);
+		File unformattedLocalStationFile = getUnformattedStationFile(stationId, year);
+		String url = getStationFileUrl(stationId, year);
 		if (!downloadUnformattedStationFile(unformattedLocalStationFile, url)) {
 			return null;
 		}
@@ -237,9 +236,9 @@ public class WeatherStation {
 		throw new Exception();
 	}
 
-	protected String getStationFileUrl(String id, String year) {
+	protected String getStationFileUrl(String stationId, String year) {
 		String url = properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
-				+ File.separator + year + File.separator + id + "0-99999-" + year;
+				+ File.separator + year + File.separator + stationId + "-99999-" + year;
 		return url;
 	}
 
@@ -251,10 +250,9 @@ public class WeatherStation {
 
 	protected File getUnformattedStationFile(String stationId, String year) {
 		String unformattedLocalStationFilePath = properties.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year + File.separator + stationId + "0-99999-" + year;
+				+ File.separator + year + File.separator + stationId + "-99999-" + year;
 
-		File unformattedLocalStationFile = new File(
-				unformattedLocalStationFilePath);
+		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
 		if (unformattedLocalStationFile.exists()) {
 			LOGGER.info("File "
 					+ unformattedLocalStationFile
