@@ -46,7 +46,6 @@ public class WeatherStation {
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 
 	private Map<String, String> cache = new HashMap<String, String>();
-	private JSONArray stations;
 	private Properties properties;
 
 	public WeatherStation() throws URISyntaxException, HttpException,
@@ -56,12 +55,15 @@ public class WeatherStation {
 
 	public WeatherStation(Properties properties) throws URISyntaxException,
 			HttpException, IOException {
-		this.stations = new JSONArray(IOUtils.toString(new FileInputStream(
-				"stations.json")));
 		this.properties = properties;
 	}
 
-	private List<JSONObject> findNearestStation(double lat, double lon) {
+	private List<JSONObject> findNearestStation(Date date, double lat, double lon, int numberOfDays) {
+		Date begindate = new Date(date.getTime() - numberOfDays * A_DAY);
+		String year = DATE_FORMAT.format(begindate).substring(0, 4);
+		
+		JSONArray stations = getStations(year);
+		
 		List<JSONObject> orderedStations = new LinkedList<JSONObject>();
 		double minDistance = Double.MAX_VALUE;
 		for (int i = 0; i < stations.length(); i++) {
@@ -70,9 +72,9 @@ public class WeatherStation {
 					station.optDouble("lon"));
 			if (d < minDistance) {
 				minDistance = d;
+				station.put("d", d);
+				orderedStations.add(station);
 			}
-			station.put("d", d);
-			orderedStations.add(station);
 		}
 
 		Collections.sort(orderedStations, new Comparator<JSONObject>() {
@@ -85,6 +87,66 @@ public class WeatherStation {
 		});
 
 		return orderedStations;
+	}
+
+	private JSONArray getStations(String year) {
+		String localStationsCSVFilePath = getStationCSVFilePath(year);
+		String url = getStationCSVFileURL(year);
+		
+		try {
+			BasicCookieStore cookieStore = new BasicCookieStore();
+			HttpClient httpClient = HttpClientBuilder.create()
+					.setDefaultCookieStore(cookieStore).build();
+
+			HttpGet fileGet = new HttpGet(url);
+			HttpResponse response = httpClient.execute(fileGet);
+			if (response.getStatusLine().getStatusCode() == 404) {
+				return null;
+			}
+
+			OutputStream outStream = new FileOutputStream(
+					localStationsCSVFilePath);
+			IOUtils.copy(response.getEntity().getContent(), outStream);
+			outStream.close();
+		} catch(Exception e) {
+			LOGGER.error("Error while downloading stations cvs file", e);
+			return null;
+		}
+		
+		return readStationCSVFile(localStationsCSVFilePath);
+	}
+
+	private JSONArray readStationCSVFile(String localStationsCSVFilePath) {
+		JSONArray stations = new JSONArray();
+		
+		try {
+			File file = new File(localStationsCSVFilePath);
+			FileReader fileReader = new FileReader(file);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
+				String[] lineSplit = line.split(";");
+				JSONObject station = new JSONObject();
+				station.put("id", lineSplit[0]);
+				station.put("lat", lineSplit[1]);
+				station.put("lon", lineSplit[2]);
+				stations.put(station);
+			}
+			fileReader.close();
+		} catch (IOException e) {
+			LOGGER.error("Error while reading stations csv file", e);
+		}
+		
+		return stations;
+	}
+
+	private String getStationCSVFilePath(String year) {
+		return properties.getProperty(SEBALAppConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH);
+	}
+
+	private String getStationCSVFileURL(String year) {
+		return properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
+				+ File.separator + year + File.separator + year + "-stations.csv";
 	}
 
 	private double d(double lat1, double lon1, double lat2, double lon2) {
@@ -144,7 +206,7 @@ public class WeatherStation {
 		baseUnformattedLocalStationFile.mkdirs();
 
 		File unformattedLocalStationFile = getUnformattedStationFile(id, year);
-		String url = getStationFileUrl(id, year);		
+		String url = getStationFileUrl(id, year);
 		if (!downloadUnformattedStationFile(unformattedLocalStationFile, url)) {
 			return null;
 		}
@@ -287,22 +349,23 @@ public class WeatherStation {
 	}
 
 	private String changeToLatitudeFormat(String latitude) {
-		latitude = latitude.substring(0, 3) + "."
-				+ latitude.substring(4, latitude.length());
 		StringBuilder sb = new StringBuilder(latitude);
-		sb.deleteCharAt(1);
+		if(latitude.contains("+")) {			
+			sb.deleteCharAt(0);
+		}
 		latitude = sb.toString();
-		return latitude;
+		double latitudeValue = Double.valueOf(latitude) / 1000.0;
+		return String.valueOf(latitudeValue);
 	}
-
+	
 	private String changeToLongitudeFormat(String longitude) {
-		StringBuilder sb;
-		longitude = longitude.substring(0, 4) + "."
-				+ longitude.substring(4, longitude.length());
-		sb = new StringBuilder(longitude);
-		sb.deleteCharAt(1);
+		StringBuilder sb = new StringBuilder(longitude);
+		if(longitude.contains("+")) {			
+			sb.deleteCharAt(0);
+		}
 		longitude = sb.toString();
-		return longitude;
+		double longitudeValue = Double.valueOf(longitude) / 1000.0;
+		return String.valueOf(longitudeValue);
 	}
 
 	private String changeToWindSpeedFormat(String windSpeed)
@@ -555,8 +618,8 @@ public class WeatherStation {
 	}
 
 	public String getStationData(double lat, double lon, Date date) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		return readFullRecord(date, station, 0);
+		List<JSONObject> nearStations = findNearestStation(date, lat, lon, 0);
+		return readFullRecord(date, nearStations, 0);
 	}
 
 	public Properties getProperties() {

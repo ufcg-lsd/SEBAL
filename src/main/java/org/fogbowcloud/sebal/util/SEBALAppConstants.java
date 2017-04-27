@@ -7,6 +7,7 @@ public class SEBALAppConstants {
 
 	// File constants
 	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
+	public static final String STATIONS_CSV_FROM_YEAR_FILE_PATH = "stations_csv_from_year_file_path";
 	
 	// JSON constants
 	public static final String JSON_STATION_ID = "Estacao";
@@ -22,4 +23,5 @@ public class SEBALAppConstants {
 	public static final String JSON_MIN_TEMPERATURE = "TemperaturaMinima";
 	public static final String JSON_MAX_TEMPERATURE = "TemperaturaMaxima";
 	public static final String JSON_SOLAR_RADIATION = "RadiacaoSolar";
+
 }
