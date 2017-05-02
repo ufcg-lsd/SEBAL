@@ -287,22 +287,23 @@ public class WeatherStation {
 	}
 
 	private String changeToLatitudeFormat(String latitude) {
-		latitude = latitude.substring(0, 4) + "."
-				+ latitude.substring(4, latitude.length());
 		StringBuilder sb = new StringBuilder(latitude);
-		sb.deleteCharAt(1);
+		if(latitude.contains("+")) {			
+			sb.deleteCharAt(0);
+		}
 		latitude = sb.toString();
-		return latitude;
+		double latitudeValue = Double.valueOf(latitude) / 1000.0;
+		return String.valueOf(latitudeValue);
 	}
 
 	private String changeToLongitudeFormat(String longitude) {
-		StringBuilder sb;
-		longitude = longitude.substring(0, 4) + "."
-				+ longitude.substring(4, longitude.length());
-		sb = new StringBuilder(longitude);
-		sb.deleteCharAt(1);
+		StringBuilder sb = new StringBuilder(longitude);
+		if(longitude.contains("+")) {			
+			sb.deleteCharAt(0);
+		}
 		longitude = sb.toString();
-		return longitude;
+		double longitudeValue = Double.valueOf(longitude) / 1000.0;
+		return String.valueOf(longitudeValue);
 	}
 
 	private String changeToWindSpeedFormat(String windSpeed)
