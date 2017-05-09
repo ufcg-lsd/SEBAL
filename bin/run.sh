@@ -24,7 +24,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
-R_ALGORITHM_VERSION=Algoritmo-completo-v22022017.R
+R_ALGORITHM_VERSION=Algoritmo-completo-v12042017.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
