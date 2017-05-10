@@ -21,16 +21,17 @@ function run {
 }
 
 function generate_fake_data {
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_alb.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_EF.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_ET24h.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_EVI.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_G.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_LAI.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_NDVI.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_Rn.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_TS.nc bs=1m count=159
-  dd if=/dev/urandom of=$IMAGE_STATION_FILE_PATH/$IMAGE_NAME_station.csv bs=1 count=143
+  sudo mkdir $OUTPUT_IMAGE_DIR
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_alb.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_EF.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_ET24h.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_EVI.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_G.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_LAI.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_NDVI.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_Rn.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_TS.nc bs=1m count=159
+  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME_station.csv bs=1 count=143
 }
 
 # This function ends the script
