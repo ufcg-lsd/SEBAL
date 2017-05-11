@@ -22,16 +22,16 @@ function run {
 
 function generate_fake_data {
   sudo mkdir $OUTPUT_IMAGE_DIR
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_alb.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_EF.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_ET24h.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_EVI.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_G.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_LAI.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_NDVI.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_Rn.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_TS.nc" bs=1M count=159
-  dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_station.csv" bs=1 count=143
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_alb.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_EF.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_ET24h.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_EVI.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_G.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_LAI.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_NDVI.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_Rn.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_TS.nc" bs=1M count=159
+  sudo dd if=/dev/urandom of=$OUTPUT_IMAGE_DIR/$IMAGE_NAME"_station.csv" bs=1 count=143
 }
 
 # This function ends the script
