@@ -75,8 +75,14 @@ function creatingDadosCSV {
 
   cd $R_EXEC_DIR
 
-  echo "File images;MTL;File Station Weather;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  if [ $IMAGE_MTL_FMASK_PATH == "None" ]
+  then
+    echo "File images;MTL;File Station Weather;Path Output" > dados.csv
+    echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  else
+    echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
+    echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  fi
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
