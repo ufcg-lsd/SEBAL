@@ -10,10 +10,8 @@ RESULTS_DIR_PATH=$3
 OUTPUT_IMAGE_DIR=$4
 # ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTL.txt"
 IMAGE_MTL_PATH=$5
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTLFmask"
-IMAGE_MTL_FMASK_PATH=$6
 # ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_station.csv"
-IMAGE_STATION_FILE_PATH=$7
+IMAGE_STATION_FILE_PATH=$6
 
 # Global variables
 SANDBOX=$(pwd)
@@ -75,8 +73,8 @@ function creatingDadosCSV {
 
   cd $R_EXEC_DIR
 
-  echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "File images;MTL;File Station Weather;Path Output" > dados.csv
+  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
