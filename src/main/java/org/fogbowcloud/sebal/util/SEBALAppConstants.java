@@ -9,6 +9,13 @@ public class SEBALAppConstants {
 	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
 	public static final String STATIONS_CSV_FROM_YEAR_FILE_PATH = "stations_csv_from_year_file_path";
 	
+	// Swift constants
+	public static final String SWIFT_CLIENT_PATH = "swift_client_path";
+	public static final String SWIFT_URL_EXPIRATION_TIME = "url_expiration_time";
+	public static final String SWIFT_CONTAINER_PREFIX = "swift_container_prefix";
+	public static final String SWIFT_META_AUTH_KEY = "swift_meta_auth_key";
+	public static final String SWIFT_STORAGE_URL = "swift_storage_url";
+
 	// JSON constants
 	public static final String JSON_STATION_ID = "Estacao";
 	public static final String JSON_STATION_DATE = "Data";
@@ -23,5 +30,4 @@ public class SEBALAppConstants {
 	public static final String JSON_MIN_TEMPERATURE = "TemperaturaMinima";
 	public static final String JSON_MAX_TEMPERATURE = "TemperaturaMaxima";
 	public static final String JSON_SOLAR_RADIATION = "RadiacaoSolar";
-
 }

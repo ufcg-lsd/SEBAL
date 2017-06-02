@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -237,9 +238,37 @@ public class WeatherStation {
 	}
 
 	protected String getStationFileUrl(String stationId, String year) {
-		String url = properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
-				+ File.separator + year + File.separator + stationId + "-99999-" + year;
-		return url;
+		String swiftClientPath = properties.getProperty(SEBALAppConstants.SWIFT_CLIENT_PATH);
+		String swiftUrlExpirationTime = properties.getProperty(SEBALAppConstants.SWIFT_URL_EXPIRATION_TIME);
+		String swiftContainerPrefix = properties.getProperty(SEBALAppConstants.SWIFT_CONTAINER_PREFIX);
+		String swiftMetaAuthKey = properties.getProperty(SEBALAppConstants.SWIFT_META_AUTH_KEY);
+		
+		ProcessBuilder builder = new ProcessBuilder(swiftClientPath, "GET",
+				swiftUrlExpirationTime, swiftContainerPrefix + File.separator + year
+						+ File.separator + stationId + "-99999-" + year, swiftMetaAuthKey);
+
+		try {
+			Process p = builder.start();
+			p.waitFor();			
+			String urlEndpoint = getProcessOutput(p);
+			return properties.getProperty(SEBALAppConstants.SWIFT_STORAGE_URL) + File.separator + urlEndpoint;
+		} catch (Exception e) {
+			LOGGER.error("Error while generating url for station", e);
+		}
+		
+		return null;
+	}
+
+	private String getProcessOutput(Process p) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		StringBuilder stringBuilder = new StringBuilder();
+		String line = null;
+		while ((line = reader.readLine()) != null) {
+			stringBuilder.append(line);
+			stringBuilder.append(System.getProperty("line.separator"));
+		}
+		
+		return stringBuilder.toString();
 	}
 
 	protected String getBaseUnformattedLocalStationFilePath(String year) {

@@ -4,6 +4,8 @@
 LOG4J_FILE_PATH=/var/log/sebal/sebal.log
 SEBAL_DIR_PATH=$(pwd)
 TEMP_DIR_PATH=/mnt
+PIP_VERSION=https://bootstrap.pypa.io/get-pip.py
+SWIFT_CLIENT_VERSION=3.1.0
 
 # TODO: fix this
 SEBAL_SNAPSHOT_M2_PATH=/home/fogbow/.m2/repository/org/fogbowcloud/SEBAL/0.0.1-SNAPSHOT/
@@ -26,6 +28,18 @@ function createREnvFile {
   sudo touch $TEMP_DIR_PATH/.Renviron
 }
 
+function installSwiftDependencies {
+  sudo apt update
+  sudo apt install python-virtualenv
+  sudo ln -s /usr/lib/python2.7/plat-*/_sysconfigdata_nd.py /usr/lib/python2.7/
+  mkdir swift-client
+  virtualenv swift-client/
+  . swift-client/bin/activate
+  wget $PIP_VERSION
+  python get-pip.py
+  pip install python-swiftclient==$SWIFT_CLIENT_VERSION
+}
+
 function verifyRScript {
   echo "Verifying dependencies for R script"
   
@@ -34,4 +48,5 @@ function verifyRScript {
 }
 
 gettingSebalSnapshot
+installSwiftDependencies
 verifyRScript
