@@ -75,7 +75,7 @@ public class RWrapper {
 	}
 
 	public RWrapper(String imagesPath, String outputDir, String mtlName, String mtlFile, int iBegin, int iFinal, int jBegin,
-			int jFinal, String fmaskFilePath, String boundingBoxFileName, Properties properties) throws IOException {
+			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
