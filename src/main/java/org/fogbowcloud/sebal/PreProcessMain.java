@@ -32,16 +32,11 @@ public class PreProcessMain {
 		FileInputStream input = new FileInputStream(confFile);
 		properties.load(input);
 
-		String fmaskFilePath = null;
-		if (args.length > 10) {
-			fmaskFilePath = args[11];
-		}
-
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(
 				leftX, rightX, numberOfPartitions, partitionIndex);		
 
 		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, mtlName, mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
-				lowerY, fmaskFilePath, boundingBoxPath, properties);
+				lowerY, boundingBoxPath, properties);
 		rwrapper.doTask(TaskType.PREPROCESS);
 	}
 

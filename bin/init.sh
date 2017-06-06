@@ -32,9 +32,6 @@ function installSwiftDependencies {
   sudo apt update
   sudo apt install python-virtualenv
   sudo ln -s /usr/lib/python2.7/plat-*/_sysconfigdata_nd.py /usr/lib/python2.7/
-  mkdir swift-client
-  virtualenv swift-client/
-  . swift-client/bin/activate
   wget $PIP_VERSION
   python get-pip.py
   pip install python-swiftclient==$SWIFT_CLIENT_VERSION
