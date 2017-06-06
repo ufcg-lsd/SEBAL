@@ -12,24 +12,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpException;
+import org.fogbowcloud.sebal.parsers.plugins.ftp.FTPStationOperator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class TestWeatherStation {
-	
-	private Date date;
-	
-	@Before
-	public void setUp() {
-		long dateInLong = 758257200; // timestamp correspondent to 1994/01/11
-		date = new Date(TimeUnit.SECONDS.toMillis(dateInLong));
-	}
 	
 	@Test
 	public void testFindNearestStationCorrectCalculation() throws URISyntaxException, HttpException, IOException, ParseException {
@@ -67,11 +58,11 @@ public class TestWeatherStation {
 		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
 		expectedStation.add(stationOne);
 		
-		WeatherStation weatherStation = spy(new WeatherStation(properties));
-		doReturn(stations).when(weatherStation).getStations(year);
+		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
+		doReturn(stations).when(stationOperator).getStations(year);
 		
 		// exercise
-		List<JSONObject> chosenStation = weatherStation.findNearestStation(date, lat, lon, numberOfDays);
+		List<JSONObject> chosenStation = stationOperator.findNearestStation(date, lat, lon, numberOfDays);
 		
 		// expect
 		Assert.assertEquals(expectedStation, chosenStation);
