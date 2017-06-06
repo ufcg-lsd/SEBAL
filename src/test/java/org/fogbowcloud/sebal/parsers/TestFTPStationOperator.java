@@ -20,7 +20,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestWeatherStation {
+public class TestFTPStationOperator {
 	
 	@Test
 	public void testFindNearestStationCorrectCalculation() throws URISyntaxException, HttpException, IOException, ParseException {

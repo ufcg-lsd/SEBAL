@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,13 +36,23 @@ import org.json.JSONObject;
 
 public class SwiftStationOperator implements StationOperator{
 
-	private Properties properties;
+	private Properties properties;	
+	private String swiftStorageURL;
+	private String swiftClientPath;
+	private String swiftUrlExpirationTime; 
+	private String swiftContainerPrefix; 
+	private String swiftMetaAuthKey;
 	private Map<String, String> cache = new HashMap<String, String>();
 	
 	private static final Logger LOGGER = Logger.getLogger(SwiftStationOperator.class);
 	
 	public SwiftStationOperator(Properties properties) {
 		this.properties = properties;
+		this.swiftStorageURL = properties.getProperty(StationOperatorConstants.SWIFT_STORAGE_URL);
+		this.swiftClientPath = properties.getProperty(StationOperatorConstants.SWIFT_CLIENT_PATH);
+		this.swiftUrlExpirationTime = properties.getProperty(StationOperatorConstants.SWIFT_URL_EXPIRATION_TIME);
+		this.swiftContainerPrefix = properties.getProperty(StationOperatorConstants.SWIFT_CONTAINER_PREFIX);
+		this.swiftMetaAuthKey = properties.getProperty(StationOperatorConstants.SWIFT_META_AUTH_KEY);
 	}
 
 	@Override
@@ -77,9 +88,34 @@ public class SwiftStationOperator implements StationOperator{
 	}
 
 	private String getStationCSVFileURL(String year) {
-		return properties.getProperty(SEBALAppConstants.STATION_FTP_SERVER_URL)
-				+ File.separator + year + File.separator + year + "-stations.csv";
+		
+		ProcessBuilder builder = new ProcessBuilder(swiftClientPath, "GET",
+				swiftUrlExpirationTime, swiftContainerPrefix + File.separator + year
+						+ File.separator + year + "-stations.csv", swiftMetaAuthKey);
+
+		try {
+			Process p = builder.start();
+			p.waitFor();			
+			String urlEndpoint = getProcessOutput(p);
+			return swiftStorageURL + File.separator + urlEndpoint;
+		} catch (Exception e) {
+			LOGGER.error("Error while generating url for station", e);
+		}
+		
+		return null;
 	}
+	
+	private String getProcessOutput(Process p) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		StringBuilder stringBuilder = new StringBuilder();
+		String line = null;
+		while ((line = reader.readLine()) != null) {
+			stringBuilder.append(line);
+			stringBuilder.append(System.getProperty("line.separator"));
+		}
+		
+		return stringBuilder.toString();
+  	}
 
 	@Override
 	public JSONArray readStationCSVFile(String localStationsCSVFilePath) {
@@ -223,23 +259,26 @@ public class SwiftStationOperator implements StationOperator{
 		return unformattedLocalStationFile;
 	}
 	
-	private boolean downloadUnformattedStationFile(
-			File unformattedLocalStationFile, String url) throws Exception {
-
-		ProcessBuilder builder = new ProcessBuilder("wget", "-P", url);
+	private boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
 
 		try {
-			Process p = builder.start();
-			p.waitFor();
+			BasicCookieStore cookieStore = new BasicCookieStore();
+			HttpClient httpClient = HttpClientBuilder.create()
+					.setDefaultCookieStore(cookieStore).build();
+
+			HttpGet fileGet = new HttpGet(url);
+			HttpResponse response = httpClient.execute(fileGet);
+			if (response.getStatusLine().getStatusCode() == 404) {
+				return false;
+			}
+
+			OutputStream outStream = new FileOutputStream(
+					unformattedLocalStationFile);
+			IOUtils.copy(response.getEntity().getContent(), outStream);
+			outStream.close();
 
 			cache.put(url, "SUCCEEDED");
-		} catch (IOException e) {
-			LOGGER.error("Error while writing file for station", e);
-			cache.put(url, "FAILED");
-			LOGGER.error("Setting URL " + url + " as FAILED.");
-			throw e;
-		} catch (InterruptedException e) {
-			LOGGER.error("Error while downloading file for station", e);
+		} catch (Exception e) {
 			cache.put(url, "FAILED");
 			LOGGER.error("Setting URL " + url + " as FAILED.");
 			throw e;
