@@ -1,4 +1,4 @@
-package org.fogbowcloud.sebal.parsers;
+package org.fogbowcloud.sebal.parsers.plugins.ftp;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -24,6 +24,7 @@ public class TestFTPStationOperator {
 	
 	@Test
 	public void testFindNearestStationCorrectCalculation() throws URISyntaxException, HttpException, IOException, ParseException {
+		
 		// set up
 		Properties properties = mock(Properties.class);
 		String year = "2002";
