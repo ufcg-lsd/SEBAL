@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -20,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
@@ -133,6 +133,7 @@ public class WeatherStation {
 				stations.put(station);
 			}
 			fileReader.close();
+			file.delete();
 		} catch (IOException e) {
 			LOGGER.error("Error while reading stations csv file", e);
 		}
@@ -145,7 +146,7 @@ public class WeatherStation {
 	}
 
 	private String getStationCSVFileURL(String year) {
-		return properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
+		return properties.getProperty(SEBALAppConstants.STATION_FTP_SERVER_URL)
 				+ File.separator + year + File.separator + year + "-stations.csv";
 	}
 
@@ -204,14 +205,20 @@ public class WeatherStation {
 		File baseUnformattedLocalStationFile = new File(baseUnformattedLocalStationFilePath);
 		baseUnformattedLocalStationFile.mkdirs();
 
-		File unformattedLocalStationFile = getUnformattedStationFile(stationId, year);
+		File compressedUnformattedLocalStationFile = getUnformattedStationFile(stationId, year);
 		String url = getStationFileUrl(stationId, year);
-		if (!downloadUnformattedStationFile(unformattedLocalStationFile, url)) {
+		if (!downloadUnformattedStationFile(compressedUnformattedLocalStationFile, url)) {
 			return null;
 		}
 
+		// Uncompressing station file
+		File uncompressedUnformattedStationFile = unGzip(compressedUnformattedLocalStationFile, true);
+
 		List<String> stationData = new ArrayList<String>();
-		readStationFile(unformattedLocalStationFile, stationData);
+		readStationFile(uncompressedUnformattedStationFile, stationData);
+		
+		compressedUnformattedLocalStationFile.delete();
+		uncompressedUnformattedStationFile.delete();
 
 		JSONArray dataArray = new JSONArray();
 		getHourlyData(beginDate, stationData, dataArray);
@@ -227,7 +234,7 @@ public class WeatherStation {
 
 			if (!airTemp.isEmpty() && !dewTemp.isEmpty()
 					&& !windSpeed.isEmpty()) {
-				unformattedLocalStationFile.delete();
+				compressedUnformattedLocalStationFile.delete();
 				return dataArray;
 			}
 		}
@@ -236,44 +243,16 @@ public class WeatherStation {
 		throw new Exception();
 	}
 
-	protected String getStationFileUrl(String stationId, String year) {
-		String swiftClientPath = properties.getProperty(SEBALAppConstants.SWIFT_CLIENT_PATH);
-		String swiftUrlExpirationTime = properties.getProperty(SEBALAppConstants.SWIFT_URL_EXPIRATION_TIME);
-		String swiftContainerPrefix = properties.getProperty(SEBALAppConstants.SWIFT_CONTAINER_PREFIX);
-		String swiftMetaAuthKey = properties.getProperty(SEBALAppConstants.SWIFT_META_AUTH_KEY);
-		
-		ProcessBuilder builder = new ProcessBuilder(swiftClientPath, "GET",
-				swiftUrlExpirationTime, swiftContainerPrefix + File.separator + year
-						+ File.separator + stationId + "-99999-" + year, swiftMetaAuthKey);
-
-		try {
-			Process p = builder.start();
-			p.waitFor();			
-			String urlEndpoint = getProcessOutput(p);
-			return properties.getProperty(SEBALAppConstants.SWIFT_STORAGE_URL) + File.separator + urlEndpoint;
-		} catch (Exception e) {
-			LOGGER.error("Error while generating url for station", e);
-		}
-		
-		return null;
-	}
-
-	private String getProcessOutput(Process p) throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		StringBuilder stringBuilder = new StringBuilder();
-		String line = null;
-		while ((line = reader.readLine()) != null) {
-			stringBuilder.append(line);
-			stringBuilder.append(System.getProperty("line.separator"));
-		}
-		
-		return stringBuilder.toString();
-	}
-
 	protected String getBaseUnformattedLocalStationFilePath(String year) {
 		return properties
 				.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year;
+	}
+
+	protected String getStationFileUrl(String stationId, String year) {
+		return properties.getProperty(SEBALAppConstants.STATION_FTP_SERVER_URL)
+				+ File.separator + year + File.separator + stationId
+				+ "-99999-" + year + ".tar.gz";
 	}
 
 	protected File getUnformattedStationFile(String stationId, String year) {
@@ -292,30 +271,54 @@ public class WeatherStation {
 
 	private boolean downloadUnformattedStationFile(
 			File unformattedLocalStationFile, String url) throws Exception {
+
+		ProcessBuilder builder = new ProcessBuilder("wget", "-P", url);
+
 		try {
-			BasicCookieStore cookieStore = new BasicCookieStore();
-			HttpClient httpClient = HttpClientBuilder.create()
-					.setDefaultCookieStore(cookieStore).build();
-
-			HttpGet fileGet = new HttpGet(url);
-			HttpResponse response = httpClient.execute(fileGet);
-			if (response.getStatusLine().getStatusCode() == 404) {
-				return false;
-			}
-
-			OutputStream outStream = new FileOutputStream(
-					unformattedLocalStationFile);
-			IOUtils.copy(response.getEntity().getContent(), outStream);
-			outStream.close();
+			Process p = builder.start();
+			p.waitFor();
 
 			cache.put(url, "SUCCEEDED");
-		} catch (Exception e) {
+		} catch (IOException e) {
+			LOGGER.error("Error while writing file for station", e);
+			cache.put(url, "FAILED");
+			LOGGER.error("Setting URL " + url + " as FAILED.");
+			throw e;
+		} catch (InterruptedException e) {
+			LOGGER.error("Error while downloading file for station", e);
 			cache.put(url, "FAILED");
 			LOGGER.error("Setting URL " + url + " as FAILED.");
 			throw e;
 		}
 
 		return true;
+	}
+	
+	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
+	    GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
+	    FileOutputStream fos = null;
+	    try {
+	        File outFile = new File(file.getParent(), file.getName().replaceAll("\\.gz$", ""));
+	        fos = new FileOutputStream(outFile);
+	        byte[] buf = new byte[100000];
+	        int len;
+	        while ((len = gin.read(buf)) > 0) {
+	            fos.write(buf, 0, len);
+	        }
+
+	        fos.close();
+	        if (deleteGzipfileOnSuccess) {
+	            file.delete();
+	        }
+	        return outFile; 
+	    } finally {
+	        if (gin != null) {
+	            gin.close();    
+	        }
+	        if (fos != null) {
+	            fos.close();    
+	        }
+	    }       
 	}
 
 	private void readStationFile(File unformattedLocalStationFile,
