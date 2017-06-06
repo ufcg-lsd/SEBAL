@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -187,8 +188,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 
 	@Override
-	public JSONArray readStation(String stationId, String beginDate,
-			String endDate) throws Exception {
+	public JSONArray readStation(String stationId, String beginDate, String endDate) throws Exception {
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
@@ -209,6 +209,7 @@ public class SwiftStationOperator implements StationOperator{
 		
 		compressedUnformattedLocalStationFile.delete();
 		uncompressedUnformattedStationFile.delete();
+		FileUtils.deleteDirectory(baseUnformattedLocalStationFile);
 
 		JSONArray dataArray = new JSONArray();
 		getHourlyData(beginDate, stationData, dataArray);

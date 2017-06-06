@@ -4,6 +4,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -67,5 +68,33 @@ public class TestFTPStationOperator {
 		
 		// expect
 		Assert.assertEquals(expectedStation, chosenStation);
+	}
+	
+	@Test
+	public void testReadStation() throws Exception {
+		// set up
+		String year = "2002";
+		String baseUnformattedLocalStationFilePath = "/tmp/2002";
+		String compressedUnformattedStationFilePath = "/tmp/2002/822940-99999-2002.tar.gz";
+		String uncrompressedUnformattedStationFilePath = "/tmp/2002/822940-99999-2002";
+		String stationFileUrl = "fake-station-file-url";
+		File compressedUnformattedStationFile = new File(compressedUnformattedStationFilePath);
+		File uncompressedUnformattedStationFile = new File(uncrompressedUnformattedStationFilePath);
+		Properties properties = mock(Properties.class);
+		
+		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
+		doReturn(baseUnformattedLocalStationFilePath).when(stationOperator).getBaseUnformattedLocalStationFilePath(year);
+		doReturn(compressedUnformattedStationFilePath).when(stationOperator).getUnformattedStationFile("82294", year);
+		doReturn(stationFileUrl).when(stationOperator).getStationFileUrl("82294", year);
+		doReturn(true).when(stationOperator).downloadUnformattedStationFile(compressedUnformattedStationFile, stationFileUrl);
+		doReturn(uncompressedUnformattedStationFile).when(stationOperator).unGzip(compressedUnformattedStationFile, true);
+		
+		// TODO: put here the expected JSONArray containing station data
+		
+		// exercise
+		JSONArray stationData = stationOperator.readStation("82294", "20020126", "20020126");
+		
+		// expect
+		Assert.assertEquals("", "");
 	}
 }

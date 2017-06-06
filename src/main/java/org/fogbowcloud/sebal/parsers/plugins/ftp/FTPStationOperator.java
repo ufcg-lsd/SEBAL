@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -151,8 +152,7 @@ public class FTPStationOperator implements StationOperator {
 	}
 
 	@Override
-	public JSONArray readStation(String stationId, String beginDate,
-			String endDate) throws Exception {
+	public JSONArray readStation(String stationId, String beginDate, String endDate) throws Exception {
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
@@ -173,6 +173,7 @@ public class FTPStationOperator implements StationOperator {
 		
 		compressedUnformattedLocalStationFile.delete();
 		uncompressedUnformattedStationFile.delete();
+		FileUtils.deleteDirectory(baseUnformattedLocalStationFile);
 
 		JSONArray dataArray = new JSONArray();
 		getHourlyData(beginDate, stationData, dataArray);
@@ -223,7 +224,7 @@ public class FTPStationOperator implements StationOperator {
 		return unformattedLocalStationFile;
 	}
 	
-	private boolean downloadUnformattedStationFile(
+	protected boolean downloadUnformattedStationFile(
 			File unformattedLocalStationFile, String url) throws Exception {
 
 		ProcessBuilder builder = new ProcessBuilder("wget", "-P", url);
