@@ -1,15 +1,21 @@
 package org.fogbowcloud.sebal.parsers;
 
-import java.io.FileInputStream;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,11 +32,19 @@ public class TestWeatherStation {
 	}
 	
 	@Test
-	public void testReadFullRecordProperly() throws URISyntaxException, HttpException, IOException {
+	public void testFindNearestStationCorrectCalculation() throws URISyntaxException, HttpException, IOException, ParseException {
 		// set up
-		Properties properties = new Properties();
-		FileInputStream input = new FileInputStream("sebal.conf");
-		properties.load(input);
+		Properties properties = mock(Properties.class);
+		String year = "2002";
+		int numberOfDays = 0;
+		double lat = -3.40;
+		double lon = -45.20;
+		
+		String stringDate = "26-01-2002";		
+		SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
+		Date d = f.parse(stringDate);
+		long milliseconds = d.getTime();
+		Date date = new Date(milliseconds);
 		
 		JSONObject stationOne = new JSONObject();
 		stationOne.put("id", "82294");
@@ -40,22 +54,26 @@ public class TestWeatherStation {
 		stationOne.put("lat", "-2.88333333");
 		
 		JSONObject stationTwo = new JSONObject();
-		stationOne.put("id", "83096");
-		stationOne.put("lon", "-37.05");
-		stationOne.put("altitude", "4.72");
-		stationOne.put("name", "ARACAJU - SE");
-		stationOne.put("lat", "-10.95");
+		stationTwo.put("id", "83096");
+		stationTwo.put("lon", "-37.05");
+		stationTwo.put("altitude", "4.72");
+		stationTwo.put("name", "ARACAJU - SE");
+		stationTwo.put("lat", "-10.95");
 		
-		List<JSONObject> stations = new ArrayList<JSONObject>();
-		stations.add(stationOne);
-		stations.add(stationTwo);
+		JSONArray stations = new JSONArray();
+		stations.put(stationOne);
+		stations.put(stationTwo);
 		
-		WeatherStation weatherStation = new WeatherStation(properties);
+		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
+		expectedStation.add(stationOne);
+		
+		WeatherStation weatherStation = spy(new WeatherStation(properties));
+		doReturn(stations).when(weatherStation).getStations(year);
 		
 		// exercise
-		String actualStationData = weatherStation.readFullRecord(date, stations, 0);
-				
+		List<JSONObject> chosenStation = weatherStation.findNearestStation(date, lat, lon, numberOfDays);
+		
 		// expect
-		Assert.assertNotNull(actualStationData);
+		Assert.assertEquals(expectedStation, chosenStation);
 	}
 }

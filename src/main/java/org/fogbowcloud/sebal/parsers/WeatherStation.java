@@ -59,7 +59,7 @@ public class WeatherStation {
 		this.properties = properties;
 	}
 
-	private List<JSONObject> findNearestStation(Date date, double lat, double lon, int numberOfDays) {
+	protected List<JSONObject> findNearestStation(Date date, double lat, double lon, int numberOfDays) {
 		Date begindate = new Date(date.getTime() - numberOfDays * A_DAY);
 		String year = DATE_FORMAT.format(begindate).substring(0, 4);
 		
@@ -69,8 +69,7 @@ public class WeatherStation {
 		double minDistance = Double.MAX_VALUE;
 		for (int i = 0; i < stations.length(); i++) {
 			JSONObject station = stations.optJSONObject(i);
-			double d = d(lat, lon, station.optDouble("lat"),
-					station.optDouble("lon"));
+			double d = d(lat, lon, station.optDouble("lat"), station.optDouble("lon"));
 			if (d < minDistance) {
 				minDistance = d;
 				station.put("d", d);
@@ -90,7 +89,7 @@ public class WeatherStation {
 		return orderedStations;
 	}
 
-	private JSONArray getStations(String year) {
+	protected JSONArray getStations(String year) {
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
