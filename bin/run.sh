@@ -2,16 +2,16 @@
 
 # ${IMAGE_NAME}
 IMAGE_NAME=$1
+# ${IMAGE_NEW_COLLECTION_NAME}
+IMAGE_NEW_COLLECTION_NAME=$2
 # ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/
-IMAGES_DIR_PATH=$2
+IMAGES_DIR_PATH=$3
 # ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/
-RESULTS_DIR_PATH=$3
+RESULTS_DIR_PATH=$4
 # ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}
-OUTPUT_IMAGE_DIR=$4
+OUTPUT_IMAGE_DIR=$5
 # ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTL.txt"
-IMAGE_MTL_PATH=$5
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTLFmask"
-IMAGE_MTL_FMASK_PATH=$6
+IMAGE_MTL_PATH=$6
 # ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_station.csv"
 IMAGE_STATION_FILE_PATH=$7
 
@@ -51,7 +51,7 @@ function untarImageAndPrepareDirs {
   # untar image
   echo "Untaring image $IMAGE_NAME"
   cd $IMAGES_DIR_PATH/$IMAGE_NAME
-  sudo tar -xvzf $IMAGE_NAME".tar.gz"
+  sudo tar -xvzf $IMAGE_NEW_COLLECTION_NAME".tar.gz"
 
   echo "Creating image output directory"
   sudo mkdir -p $OUTPUT_IMAGE_DIR
@@ -63,7 +63,7 @@ function untarImageAndPrepareDirs {
 function preProcessImage {
   cd $SEBAL_DIR_PATH
 
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
+  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
   echo -e "\n" >> $IMAGE_STATION_FILE_PATH
   cd ..
@@ -75,8 +75,8 @@ function creatingDadosCSV {
 
   cd $R_EXEC_DIR
 
-  echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "File images;MTL;File Station Weather;Path Output" > dados.csv
+  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
