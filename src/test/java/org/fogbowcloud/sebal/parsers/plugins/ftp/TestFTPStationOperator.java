@@ -6,6 +6,7 @@ import static org.mockito.Mockito.spy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -115,28 +116,25 @@ public class TestFTPStationOperator {
 	@Test
 	public void testGetStations() throws IOException {
 		// set up
-		Properties properties = new Properties();
-		properties.put("station_ftp_server_url", "http://www2.lsd.ufcg.edu.br/~esdras"); // TODO: transfer station csv file from resource to this path
-		
-		String originalStationCSVFilePath = "src/test/resource/2002-stations.csv";
-		File originalStationCSVFile = new File(originalStationCSVFilePath);
-		
-		String destinyStationCSVFilePath = "/tmp/2002/2002-stations.csv";
-		File destinyStationCSVFile = new File(destinyStationCSVFilePath);
-		
-		FileUtils.copyFile(originalStationCSVFile, destinyStationCSVFile);
-		
 		String year = "2002";
-		String localStationsCSVFilePath = "/tmp/2002";
-		File localStationsCSVDir = new File(localStationsCSVFilePath);
-		localStationsCSVDir.mkdirs();
+		String fakeUrl = "fake-url";
+		Properties properties = mock(Properties.class);
+				
+		String localStationCSVFilePath = "src/test/resource/2002-stations.csv";				
+				
+		PrintWriter writer = new PrintWriter(localStationCSVFilePath, "UTF-8");
+		writer.println("827910;-7.10;-37.26");
+		writer.close();
 		
 		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
-		doReturn(localStationsCSVFilePath).when(stationOperator).getStationCSVDirPath(year);
+		doReturn(localStationCSVFilePath).when(stationOperator).getStationCSVFilePath(year);
+		doReturn(fakeUrl).when(stationOperator).getStationCSVFileURL(year);
+		doReturn(true).when(stationOperator).doDownloadStationCSVFile(localStationCSVFilePath, fakeUrl);
 		
 		// exercise
 		JSONArray stations = stationOperator.getStations(year);
-		FileUtils.deleteDirectory(localStationsCSVDir);
+		File localStationCSVFile = new File(localStationCSVFilePath);
+		localStationCSVFile.delete();
 		
 		// expect
 		Assert.assertNotNull(stations);

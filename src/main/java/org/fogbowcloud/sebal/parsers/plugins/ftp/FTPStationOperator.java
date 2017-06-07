@@ -42,10 +42,20 @@ public class FTPStationOperator implements StationOperator {
 	@Override
 	public JSONArray getStations(String year) {
 		
-		String localStationsCSVFilePath = getStationCSVDirPath(year);
+		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
-		ProcessBuilder builder = new ProcessBuilder("wget", url);
+		if(doDownloadStationCSVFile(localStationsCSVFilePath, url)) {			
+			return readStationCSVFile(localStationsCSVFilePath);
+		}
+		
+		return null;
+	}
+
+	protected boolean doDownloadStationCSVFile(String localStationsCSVFilePath,
+			String url) {
+		
+		ProcessBuilder builder = new ProcessBuilder("wget", "-O", localStationsCSVFilePath, url);
 
 		try {
 			Process p = builder.start();
@@ -56,22 +66,23 @@ public class FTPStationOperator implements StationOperator {
 			LOGGER.error("Error while writing file for station csv", e);
 			cache.put(url, "FAILED");
 			LOGGER.error("Setting URL " + url + " as FAILED.");
-			return null;
+			return false;
 		} catch (InterruptedException e) {
 			LOGGER.error("Error while downloading file for station csv", e);
 			cache.put(url, "FAILED");
 			LOGGER.error("Setting URL " + url + " as FAILED.");
-			return null;
+			return false;
 		}
 		
-		return readStationCSVFile(localStationsCSVFilePath);
+		return true;
 	}
 	
-	protected String getStationCSVDirPath(String year) {
-		return properties.getProperty(StationOperatorConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH);
+	protected String getStationCSVFilePath(String year) {
+		return properties.getProperty(StationOperatorConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH)
+				+ File.separator + year + "-stations.csv";
 	}
 
-	private String getStationCSVFileURL(String year) {
+	protected String getStationCSVFileURL(String year) {
 		return properties.getProperty(StationOperatorConstants.STATION_FTP_SERVER_URL)
 				+ File.separator + year + File.separator + year + "-stations.csv";
 	}
