@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,12 +19,6 @@ import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.parsers.plugins.StationOperator;
 import org.fogbowcloud.sebal.parsers.plugins.StationOperatorConstants;
@@ -50,23 +43,22 @@ public class FTPStationOperator implements StationOperator {
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
+		ProcessBuilder builder = new ProcessBuilder("wget", url);
+
 		try {
-			BasicCookieStore cookieStore = new BasicCookieStore();
-			HttpClient httpClient = HttpClientBuilder.create()
-					.setDefaultCookieStore(cookieStore).build();
+			Process p = builder.start();
+			p.waitFor();
 
-			HttpGet fileGet = new HttpGet(url);
-			HttpResponse response = httpClient.execute(fileGet);
-			if (response.getStatusLine().getStatusCode() == 404) {
-				return null;
-			}
-
-			OutputStream outStream = new FileOutputStream(
-					localStationsCSVFilePath);
-			IOUtils.copy(response.getEntity().getContent(), outStream);
-			outStream.close();
-		} catch(Exception e) {
-			LOGGER.error("Error while downloading stations cvs file", e);
+			cache.put(url, "SUCCEEDED");
+		} catch (IOException e) {
+			LOGGER.error("Error while writing file for station csv", e);
+			cache.put(url, "FAILED");
+			LOGGER.error("Setting URL " + url + " as FAILED.");
+			return null;
+		} catch (InterruptedException e) {
+			LOGGER.error("Error while downloading file for station csv", e);
+			cache.put(url, "FAILED");
+			LOGGER.error("Setting URL " + url + " as FAILED.");
 			return null;
 		}
 		
@@ -224,10 +216,9 @@ public class FTPStationOperator implements StationOperator {
 		return unformattedLocalStationFile;
 	}
 	
-	protected boolean downloadUnformattedStationFile(
-			File unformattedLocalStationFile, String url) throws Exception {
+	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
 
-		ProcessBuilder builder = new ProcessBuilder("wget", "-P", url);
+		ProcessBuilder builder = new ProcessBuilder("wget", url);
 
 		try {
 			Process p = builder.start();

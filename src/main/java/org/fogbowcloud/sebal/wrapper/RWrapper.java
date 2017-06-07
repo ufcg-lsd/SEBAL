@@ -124,11 +124,16 @@ public class RWrapper {
         
         String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox);
-        LOGGER.debug("stationData: " + stationData);               
-        LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
-        saveWeatherStationInfo(stationData);              
-        LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+        if(stationData != null) {        	
+        	LOGGER.debug("stationData: " + stationData);               
+        	LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
+        	
+        	saveWeatherStationInfo(stationData);              
+        	LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+        } else {
+        	LOGGER.error("Error while getting station data");
+        }
     }
 	
 	private void saveWeatherStationInfo(String stationData) {

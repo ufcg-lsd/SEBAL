@@ -308,7 +308,11 @@ public class WeatherStation {
 
 	public String getStationData(double lat, double lon, Date date) {
 		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon, 0);
-		return readFullRecord(date, nearStations, 0);
+		if(nearStations != null) {			
+			return readFullRecord(date, nearStations, 0);
+		}
+		
+		return null;
 	}
 
 	public Properties getProperties() {
