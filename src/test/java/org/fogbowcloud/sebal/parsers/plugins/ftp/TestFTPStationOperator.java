@@ -116,7 +116,15 @@ public class TestFTPStationOperator {
 	public void testGetStations() throws IOException {
 		// set up
 		Properties properties = new Properties();
-		properties.put("station_ftp_server_url", "http://www2.lsd.ufcg.edu.br/~esdras");
+		properties.put("station_ftp_server_url", "http://www2.lsd.ufcg.edu.br/~esdras"); // TODO: transfer station csv file from resource to this path
+		
+		String originalStationCSVFilePath = "src/test/resource/2002-stations.csv";
+		File originalStationCSVFile = new File(originalStationCSVFilePath);
+		
+		String destinyStationCSVFilePath = "/tmp/2002/2002-stations.csv";
+		File destinyStationCSVFile = new File(destinyStationCSVFilePath);
+		
+		FileUtils.copyFile(originalStationCSVFile, destinyStationCSVFile);
 		
 		String year = "2002";
 		String localStationsCSVFilePath = "/tmp/2002";
@@ -128,7 +136,6 @@ public class TestFTPStationOperator {
 		
 		// exercise
 		JSONArray stations = stationOperator.getStations(year);
-		
 		FileUtils.deleteDirectory(localStationsCSVDir);
 		
 		// expect
