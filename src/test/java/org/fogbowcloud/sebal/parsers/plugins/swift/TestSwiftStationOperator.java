@@ -4,6 +4,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -13,7 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpException;
+import org.fogbowcloud.sebal.parsers.plugins.StationOperatorConstants;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -66,5 +69,46 @@ public class TestSwiftStationOperator {
 		
 		// expect
 		Assert.assertEquals(expectedStation, chosenStation);
+	}
+	
+	@Test
+	public void testReadStation() throws Exception {
+		// set up
+		String stringDate = "26-01-2002";		
+		SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
+		Date d = f.parse(stringDate);
+		long milliseconds = d.getTime();
+		Date date = new Date(milliseconds);		
+		
+		// Establishing local fixed attributes
+		String year = "2002";
+		String compressedUnformattedStationFilePath = "/tmp/2002/827910-99999-2002.gz";
+		String stationFileUrl = "fake-station-file-url";
+		File compressedUnformattedStationFile = new File(compressedUnformattedStationFilePath);
+		Properties properties = mock(Properties.class);
+
+		// Creating temporary year directory
+		String baseUnformattedLocalStationFilePath = "/tmp/2002";
+		File baseUnformattedLocalStationDir = new File(baseUnformattedLocalStationFilePath);
+		baseUnformattedLocalStationDir.mkdirs();
+		
+		// Copying station file to be used from resource to /tmp
+		String originalCompressedFilePath = "src/test/resource/827910-99999-2002.gz";
+		File originalCompressedFile = new File(originalCompressedFilePath);
+		FileUtils.copyFile(originalCompressedFile, compressedUnformattedStationFile);
+		
+		SwiftStationOperator stationOperator = spy(new SwiftStationOperator(properties));
+		doReturn(baseUnformattedLocalStationFilePath).when(stationOperator).getBaseUnformattedLocalStationFilePath(year);
+		doReturn(compressedUnformattedStationFile).when(stationOperator).getUnformattedStationFile("82791", year);
+		doReturn(stationFileUrl).when(stationOperator).getStationFileUrl("82791", year);
+		doReturn(true).when(stationOperator).downloadUnformattedStationFile(compressedUnformattedStationFile, stationFileUrl);
+		
+		// exercise
+		JSONArray stationData = stationOperator.readStation("82791",
+				StationOperatorConstants.DATE_FORMAT.format(date),
+				StationOperatorConstants.DATE_FORMAT.format(date));
+		
+		// expect
+		Assert.assertNotNull(stationData);
 	}
 }

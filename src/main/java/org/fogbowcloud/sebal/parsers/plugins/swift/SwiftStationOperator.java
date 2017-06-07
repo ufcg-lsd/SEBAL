@@ -260,7 +260,7 @@ public class SwiftStationOperator implements StationOperator{
 		return unformattedLocalStationFile;
 	}
 	
-	private boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
+	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
 
 		try {
 			BasicCookieStore cookieStore = new BasicCookieStore();
