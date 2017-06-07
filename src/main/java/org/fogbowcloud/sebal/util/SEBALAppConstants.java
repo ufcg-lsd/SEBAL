@@ -1,13 +1,6 @@
 package org.fogbowcloud.sebal.util;
 
 public class SEBALAppConstants {
-	
-	// URL constants
-	public static final String STATION_FTP_SERVER_URL = "station_ftp_server_url";
-
-	// File constants
-	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
-	public static final String STATIONS_CSV_FROM_YEAR_FILE_PATH = "stations_csv_from_year_file_path";
 
 	// JSON constants
 	public static final String JSON_STATION_ID = "Estacao";

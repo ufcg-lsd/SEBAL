@@ -111,4 +111,27 @@ public class TestFTPStationOperator {
 		// expect
 		Assert.assertNotNull(stationData);
 	}
+	
+	@Test
+	public void testGetStations() throws IOException {
+		// set up
+		Properties properties = new Properties();
+		properties.put("station_ftp_server_url", "http://www2.lsd.ufcg.edu.br/~esdras");
+		
+		String year = "2002";
+		String localStationsCSVFilePath = "/tmp/2002";
+		File localStationsCSVDir = new File(localStationsCSVFilePath);
+		localStationsCSVDir.mkdirs();
+		
+		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
+		doReturn(localStationsCSVFilePath).when(stationOperator).getStationCSVDirPath(year);
+		
+		// exercise
+		JSONArray stations = stationOperator.getStations(year);
+		
+		FileUtils.deleteDirectory(localStationsCSVDir);
+		
+		// expect
+		Assert.assertNotNull(stations);
+	}
 }

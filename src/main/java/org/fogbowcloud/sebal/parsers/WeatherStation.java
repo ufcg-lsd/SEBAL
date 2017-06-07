@@ -1,6 +1,5 @@
 package org.fogbowcloud.sebal.parsers;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -8,7 +7,6 @@ import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
@@ -71,59 +69,6 @@ public class WeatherStation {
 		}
 		IOUtils.write(stations.toString(2), new FileOutputStream(
 				"stations.json"));
-	}
-
-	protected String getBaseUnformattedLocalStationFilePath(String year) {
-		return properties
-				.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year;
-	}
-
-	protected String getStationFileUrl(String stationId, String year) {
-		return properties.getProperty(SEBALAppConstants.STATION_FTP_SERVER_URL)
-				+ File.separator + year + File.separator + stationId
-				+ "-99999-" + year + ".tar.gz";
-	}
-
-	protected File getUnformattedStationFile(String stationId, String year) {
-		String unformattedLocalStationFilePath = properties.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year + File.separator + stationId + "-99999-" + year;
-
-		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
-		if (unformattedLocalStationFile.exists()) {
-			LOGGER.info("File "
-					+ unformattedLocalStationFile
-					+ " already exists. Will be removed before repeating download");
-			unformattedLocalStationFile.delete();
-		}
-		return unformattedLocalStationFile;
-	}
-	
-	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
-	    GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
-	    FileOutputStream fos = null;
-	    try {
-	        File outFile = new File(file.getParent(), file.getName().replaceAll("\\.gz$", ""));
-	        fos = new FileOutputStream(outFile);
-	        byte[] buf = new byte[100000];
-	        int len;
-	        while ((len = gin.read(buf)) > 0) {
-	            fos.write(buf, 0, len);
-	        }
-
-	        fos.close();
-	        if (deleteGzipfileOnSuccess) {
-	            file.delete();
-	        }
-	        return outFile; 
-	    } finally {
-	        if (gin != null) {
-	            gin.close();    
-	        }
-	        if (fos != null) {
-	            fos.close();    
-	        }
-	    }       
 	}
 
 	protected String readFullRecord(Date date, List<JSONObject> stations,

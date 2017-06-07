@@ -58,6 +58,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	@Override
 	public JSONArray getStations(String year) {
+		
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
@@ -85,7 +86,8 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	private String getStationCSVFilePath(String year) {
-		return properties.getProperty(SEBALAppConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH);
+		
+		return properties.getProperty(StationOperatorConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH);
 	}
 
 	private String getStationCSVFileURL(String year) {
@@ -107,6 +109,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	private String getProcessOutput(Process p) throws IOException {
+		
 		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		StringBuilder stringBuilder = new StringBuilder();
 		String line = null;
@@ -120,6 +123,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	@Override
 	public JSONArray readStationCSVFile(String localStationsCSVFilePath) {
+		
 		JSONArray stations = new JSONArray();
 		
 		try {
@@ -147,6 +151,7 @@ public class SwiftStationOperator implements StationOperator{
 	@Override
 	public List<JSONObject> findNearestStation(Date date, double lat,
 			double lon, int numberOfDays) {
+		
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		String year = StationOperatorConstants.DATE_FORMAT.format(begindate).substring(0, 4);
 		
@@ -177,6 +182,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	private double d(double lat1, double lon1, double lat2, double lon2) {
+		
 		double dLat = Math.toRadians(lat2 - lat1);
 		double dLon = Math.toRadians(lon2 - lon1);
 		lat1 = Math.toRadians(lat1);
@@ -189,6 +195,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	@Override
 	public JSONArray readStation(String stationId, String beginDate, String endDate) throws Exception {
+		
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
@@ -235,19 +242,22 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	protected String getBaseUnformattedLocalStationFilePath(String year) {
+		
 		return properties
-				.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
+				.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year;
 	}
 
 	protected String getStationFileUrl(String stationId, String year) {
-		return properties.getProperty(SEBALAppConstants.STATION_FTP_SERVER_URL)
+		
+		return properties.getProperty(StationOperatorConstants.STATION_FTP_SERVER_URL)
 				+ File.separator + year + File.separator + stationId
 				+ "-99999-" + year + ".tar.gz";
 	}
 
 	protected File getUnformattedStationFile(String stationId, String year) {
-		String unformattedLocalStationFilePath = properties.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
+		
+		String unformattedLocalStationFilePath = properties.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year + File.separator + stationId + "-99999-" + year;
 
 		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
@@ -289,6 +299,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
+		
 	    GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
 	    FileOutputStream fos = null;
 	    try {
@@ -317,6 +328,7 @@ public class SwiftStationOperator implements StationOperator{
 	
 	private void readStationFile(File unformattedLocalStationFile,
 			List<String> stationData) throws FileNotFoundException, IOException {
+		
 		BufferedReader br = new BufferedReader(new FileReader(
 				unformattedLocalStationFile));
 		String line = null;
@@ -329,6 +341,7 @@ public class SwiftStationOperator implements StationOperator{
 	
 	private void getHourlyData(String beginDate, List<String> stationData,
 			JSONArray dataArray) throws JSONException {
+		
 		for (String data : stationData) {
 			if (data.contains(beginDate)) {
 				JSONObject jsonObject = new JSONObject();
@@ -371,6 +384,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	private String changeToLatitudeFormat(String latitude) {
+		
 		StringBuilder sb = new StringBuilder(latitude);
 		if(latitude.contains("+")) {			
 			sb.deleteCharAt(0);
@@ -381,6 +395,7 @@ public class SwiftStationOperator implements StationOperator{
 	}
 	
 	private String changeToLongitudeFormat(String longitude) {
+		
 		StringBuilder sb = new StringBuilder(longitude);
 		if(longitude.contains("+")) {			
 			sb.deleteCharAt(0);
@@ -392,6 +407,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String changeToWindSpeedFormat(String windSpeed)
 			throws NumberFormatException {
+		
 		if (windSpeed.equals("99999")) {
 			windSpeed = "***";
 		} else {
@@ -402,6 +418,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String changeToAirTempFormat(String airTemp)
 			throws NumberFormatException {
+		
 		StringBuilder sb;
 		String airTempSign = airTemp.substring(0, 0);
 		sb = new StringBuilder(airTemp);
@@ -417,6 +434,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String changeToDewTempFormat(String dewTemp)
 			throws NumberFormatException {
+		
 		StringBuilder sb;
 		String dewTempSign = dewTemp.substring(0, 0);
 		sb = new StringBuilder(dewTemp);
@@ -432,6 +450,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String formatWindSpeed(String windSpeed)
 			throws NumberFormatException {
+		
 		double integerConvertion = Integer.parseInt(windSpeed);
 		integerConvertion = integerConvertion / 10.0;
 		return String.valueOf(integerConvertion);
@@ -439,6 +458,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String formatAirTemp(String airTemp, String airTempSign)
 			throws NumberFormatException {
+		
 		double integerConvertion = Integer.parseInt(airTemp);
 		if (airTempSign.equals("-")) {
 			integerConvertion *= -1;
@@ -450,6 +470,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	private String formatDewTemp(String dewTemp, String dewTempSign)
 			throws NumberFormatException {
+		
 		double integerConvertion = Integer.parseInt(dewTemp);
 		if (dewTempSign.equals("-")) {
 			integerConvertion *= -1;

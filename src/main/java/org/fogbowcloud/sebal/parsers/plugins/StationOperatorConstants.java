@@ -14,6 +14,13 @@ public class StationOperatorConstants {
 	public static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat(
 			"yyyyMMdd;hhmm");
 	
+	// URL constants
+	public static final String STATION_FTP_SERVER_URL = "station_ftp_server_url";
+
+	// File constants
+	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
+	public static final String STATIONS_CSV_FROM_YEAR_FILE_PATH = "stations_csv_from_year_dir_path";
+	
 	// Properties constants
 	public static final String SWIFT_CLIENT_PATH = "swift_client_path";
 	public static final String SWIFT_URL_EXPIRATION_TIME = "url_expiration_time";
