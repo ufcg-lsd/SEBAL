@@ -14,8 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpException;
-import org.fogbowcloud.sebal.parsers.plugins.ftp.FTPStationOperator;
+import org.fogbowcloud.sebal.parsers.plugins.StationOperatorConstants;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -73,28 +74,41 @@ public class TestFTPStationOperator {
 	@Test
 	public void testReadStation() throws Exception {
 		// set up
+		String stringDate = "26-01-2002";		
+		SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
+		Date d = f.parse(stringDate);
+		long milliseconds = d.getTime();
+		Date date = new Date(milliseconds);		
+		
+		// Establishing local fixed attributes
 		String year = "2002";
-		String baseUnformattedLocalStationFilePath = "/tmp/2002";
-		String compressedUnformattedStationFilePath = "/tmp/2002/822940-99999-2002.tar.gz";
-		String uncrompressedUnformattedStationFilePath = "/tmp/2002/822940-99999-2002";
+		String compressedUnformattedStationFilePath = "/tmp/2002/827910-99999-2002.gz";
 		String stationFileUrl = "fake-station-file-url";
 		File compressedUnformattedStationFile = new File(compressedUnformattedStationFilePath);
-		File uncompressedUnformattedStationFile = new File(uncrompressedUnformattedStationFilePath);
 		Properties properties = mock(Properties.class);
+
+		// Creating temporary year directory
+		String baseUnformattedLocalStationFilePath = "/tmp/2002";
+		File baseUnformattedLocalStationDir = new File(baseUnformattedLocalStationFilePath);
+		baseUnformattedLocalStationDir.mkdirs();
+		
+		// Copying station file to be used from resource to /tmp
+		String originalCompressedFilePath = "src/test/resource/827910-99999-2002.gz";
+		File originalCompressedFile = new File(originalCompressedFilePath);
+		FileUtils.copyFile(originalCompressedFile, compressedUnformattedStationFile);
 		
 		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
 		doReturn(baseUnformattedLocalStationFilePath).when(stationOperator).getBaseUnformattedLocalStationFilePath(year);
-		doReturn(compressedUnformattedStationFilePath).when(stationOperator).getUnformattedStationFile("82294", year);
-		doReturn(stationFileUrl).when(stationOperator).getStationFileUrl("82294", year);
+		doReturn(compressedUnformattedStationFile).when(stationOperator).getUnformattedStationFile("82791", year);
+		doReturn(stationFileUrl).when(stationOperator).getStationFileUrl("82791", year);
 		doReturn(true).when(stationOperator).downloadUnformattedStationFile(compressedUnformattedStationFile, stationFileUrl);
-		doReturn(uncompressedUnformattedStationFile).when(stationOperator).unGzip(compressedUnformattedStationFile, true);
-		
-		// TODO: put here the expected JSONArray containing station data
 		
 		// exercise
-		JSONArray stationData = stationOperator.readStation("82294", "20020126", "20020126");
+		JSONArray stationData = stationOperator.readStation("82791",
+				StationOperatorConstants.DATE_FORMAT.format(date),
+				StationOperatorConstants.DATE_FORMAT.format(date));
 		
 		// expect
-		Assert.assertEquals("", "");
+		Assert.assertNotNull(stationData);
 	}
 }
