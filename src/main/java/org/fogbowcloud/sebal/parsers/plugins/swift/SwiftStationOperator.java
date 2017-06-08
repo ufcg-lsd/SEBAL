@@ -62,6 +62,15 @@ public class SwiftStationOperator implements StationOperator{
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
+		if(doDownloadStationCSVFile(localStationsCSVFilePath, url)) {			
+			return readStationCSVFile(localStationsCSVFilePath);
+		}
+		
+		return null;
+	}
+
+	protected boolean doDownloadStationCSVFile(String localStationsCSVFilePath,
+			String url) {
 		try {
 			BasicCookieStore cookieStore = new BasicCookieStore();
 			HttpClient httpClient = HttpClientBuilder.create()
@@ -70,7 +79,7 @@ public class SwiftStationOperator implements StationOperator{
 			HttpGet fileGet = new HttpGet(url);
 			HttpResponse response = httpClient.execute(fileGet);
 			if (response.getStatusLine().getStatusCode() == 404) {
-				return null;
+				return false;
 			}
 
 			OutputStream outStream = new FileOutputStream(
@@ -79,18 +88,18 @@ public class SwiftStationOperator implements StationOperator{
 			outStream.close();
 		} catch(Exception e) {
 			LOGGER.error("Error while downloading stations cvs file", e);
-			return null;
+			return false;
 		}
 		
-		return readStationCSVFile(localStationsCSVFilePath);
+		return true;
 	}
 	
-	private String getStationCSVFilePath(String year) {
+	protected String getStationCSVFilePath(String year) {
 		
 		return properties.getProperty(StationOperatorConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH);
 	}
 
-	private String getStationCSVFileURL(String year) {
+	protected String getStationCSVFileURL(String year) {
 		
 		ProcessBuilder builder = new ProcessBuilder(swiftClientPath, "GET",
 				swiftUrlExpirationTime, swiftContainerPrefix + File.separator + year

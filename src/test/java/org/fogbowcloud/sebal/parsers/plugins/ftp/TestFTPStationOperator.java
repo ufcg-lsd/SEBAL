@@ -132,9 +132,7 @@ public class TestFTPStationOperator {
 		doReturn(true).when(stationOperator).doDownloadStationCSVFile(localStationCSVFilePath, fakeUrl);
 		
 		// exercise
-		JSONArray stations = stationOperator.getStations(year);
-		File localStationCSVFile = new File(localStationCSVFilePath);
-		localStationCSVFile.delete();
+		JSONArray stations = stationOperator.getStations(year);	
 		
 		// expect
 		Assert.assertNotNull(stations);

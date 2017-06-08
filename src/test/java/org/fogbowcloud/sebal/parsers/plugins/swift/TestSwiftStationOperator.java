@@ -6,6 +6,7 @@ import static org.mockito.Mockito.spy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -110,5 +111,30 @@ public class TestSwiftStationOperator {
 		
 		// expect
 		Assert.assertNotNull(stationData);
+	}
+	
+	@Test
+	public void testGetStations() throws IOException {
+		// set up
+		String year = "2002";
+		String fakeUrl = "fake-url";
+		Properties properties = mock(Properties.class);
+				
+		String localStationCSVFilePath = "src/test/resource/2002-stations.csv";				
+				
+		PrintWriter writer = new PrintWriter(localStationCSVFilePath, "UTF-8");
+		writer.println("827910;-7.10;-37.26");
+		writer.close();
+		
+		SwiftStationOperator stationOperator = spy(new SwiftStationOperator(properties));
+		doReturn(localStationCSVFilePath).when(stationOperator).getStationCSVFilePath(year);
+		doReturn(fakeUrl).when(stationOperator).getStationCSVFileURL(year);
+		doReturn(true).when(stationOperator).doDownloadStationCSVFile(localStationCSVFilePath, fakeUrl);
+		
+		// exercise
+		JSONArray stations = stationOperator.getStations(year);	
+		
+		// expect
+		Assert.assertNotNull(stations);
 	}
 }
