@@ -112,12 +112,14 @@ function executeRScript {
       break
     elif [ $PROCESS_OUTPUT -eq 124 ] && [ $i -ge $MAX_TRIES ]
     then
-      exit 124
+      # was 124
+      exit 1
     else
       if [ $i -ge $MAX_TRIES ]
       then
 	echo "NUMBER OF TRIES $i"
-        exit 1
+	# was 1
+        exit 124
       fi
     fi
   done
