@@ -9,8 +9,8 @@ options(echo=TRUE)
 rm(list=ls())
 
 # for now, this will be here
-install.packages("snow", repos="http://nbcgib.uesc.br/mirrors/cran/")
-install.packages("R.utils", repos="http://nbcgib.uesc.br/mirrors/cran/")
+install.packages("snow", repos="https://vps.fmvz.usp.br/CRAN/")
+install.packages("R.utils", repos="https://vps.fmvz.usp.br/CRAN/")
 
 library(R.utils)
 library(raster)
