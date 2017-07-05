@@ -18,7 +18,7 @@ import org.fogbowcloud.sebal.model.image.BoundingBox;
 public class RWrapper {
 	
 	private Properties properties;
-	private String mtlFile;
+	private String mtlFilePath;
     private int iBegin;
     private int iFinal;
     private int jBegin;
@@ -35,7 +35,7 @@ public class RWrapper {
 			LOGGER.error("Property mtl_file_path must be set.");
 			throw new IllegalArgumentException("Property mtl_file_path must be set.");
 		}
-		this.mtlFile = mtlFilePath;
+		this.mtlFilePath = mtlFilePath;
 		this.properties = properties;
 
 		String iBeginStr = properties.getProperty("i_begin_interval");
@@ -60,23 +60,23 @@ public class RWrapper {
 
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
 
-		String fileName = new File(mtlFile).getName();
-		String mtlName = fileName.substring(0, fileName.indexOf("_"));
+		File mtlFile = new File(mtlFilePath);
+		String imageName = mtlFile.getParentFile().getName();
 		String outputDir = properties.getProperty("output_dir_path");
 
 		if (outputDir == null || outputDir.isEmpty()) {
-			this.outputDir = mtlName;
+			this.outputDir = imageName;
 		} else {
 			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
 				new File(outputDir).mkdirs();
 			}
-			this.outputDir = outputDir + "/" + mtlName;
+			this.outputDir = outputDir + "/" + imageName;
 		}
 	}
 
-	public RWrapper(String imagesPath, String outputDir, String mtlName, String mtlFile, int iBegin, int iFinal, int jBegin,
+	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
-		this.mtlFile = mtlFile;
+		this.mtlFilePath = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
 		this.jBegin = jBegin;
@@ -84,12 +84,12 @@ public class RWrapper {
 		this.properties = properties;
 		
 		if (outputDir == null) {
-			this.outputDir = mtlName;
+			this.outputDir = imageName;
 		} else {
 			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
 				new File(outputDir).mkdirs();
 			}
-			this.outputDir = outputDir + mtlName;
+			this.outputDir = outputDir + imageName;
 		}
 		
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
@@ -113,7 +113,7 @@ public class RWrapper {
     	LOGGER.info("Pre processing pixels...");
     	
     	long now = System.currentTimeMillis();
-        Product product = SEBALHelper.readProduct(mtlFile, boundingBoxVertices);
+        Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
                 
         BoundingBox boundingBox = null;
         if (boundingBoxVertices.size() > 3) {
@@ -147,7 +147,7 @@ public class RWrapper {
 	}
 	
     private String getWeatherFileName() {
-    	String fileName = new File(mtlFile).getName();
+    	String fileName = new File(mtlFilePath).getName();
         String imageFileName = fileName.substring(0, fileName.indexOf("_"));
     	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName);
     }

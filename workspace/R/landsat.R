@@ -43,7 +43,7 @@ landsat<-function(){
   #Temperatura de Superfície em Kelvin (TS)
   if (n.sensor==5) k1<-607.76 else k1<-666.09   #Constante Temperatura de superfície
   if (n.sensor==5) k2<-1260.56 else k2<-1282.71 #Constante Temperatura de superfície
-  TS<-k2/log((Enb*k1/rad[[6]])+1)
+  if (n.sensor==5) TS<-k2/log((Enb*k1/rad[[6]])+1) else TS<-k2/log((Enb*k1/rad[[7]])+1)
   
   #Radiação de onda longa emitida pela superfície (RLsup)
   RLsup<-Eo*5.67*10^-8*TS^4
@@ -52,7 +52,7 @@ landsat<-function(){
   Ea<-0.85*(-1*log(tal))^0.09 # Céu Claro
   
   #Radiação de onda longa emitida pela atmosfera (RLatm)
-  RLatm<-Ea*5.67*10^-8*(table.sw$V4[2]+273.15)^4
+  RLatm<-Ea*5.67*10^-8*(table.sw$V7[2]+273.15)^4
   
   #Saldo de radiação Instantânea (Rn)
   Rn<- Rs-Rs*alb+RLatm-RLsup-(1-Eo)*RLatm
@@ -115,7 +115,7 @@ landsat<-function(){
     Ea<-0.85*(-1*log(tal))^0.09 # Céu Claro
     
     #Radiação de onda longa emitida pela atmosfera (RLatm)
-    RLatm<-Ea*5.67*10^-8*(table.sw$V4[2]+273.15)^4
+    RLatm<-Ea*5.67*10^-8*(table.sw$V7[2]+273.15)^4
     
     #Saldo de radiação Instantânea (Rn)
     Rn<- Rs-Rs*alb+RLatm-RLsup-(1-Eo)*RLatm

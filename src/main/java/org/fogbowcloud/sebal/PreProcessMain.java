@@ -12,9 +12,8 @@ public class PreProcessMain {
 	public static void main(String[] args) throws Exception {
 		String imagesPath = args[0];
 		String mtlFilePath = args[1];
-		String fileName = new File(mtlFilePath).getName();
-		String mtlName = fileName.substring(0, fileName.indexOf("_"));
-
+		File mtlFile = new File(mtlFilePath);
+		String imageName = mtlFile.getParentFile().getName();
 		String outputDir = args[2];
 
 		int leftX = Integer.parseInt(args[3]);
@@ -35,7 +34,7 @@ public class PreProcessMain {
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(
 				leftX, rightX, numberOfPartitions, partitionIndex);		
 
-		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, mtlName, mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
+		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, imageName, mtlFilePath, imagePartition.getIBegin(), imagePartition.getIFinal(), upperY,
 				lowerY, boundingBoxPath, properties);
 		rwrapper.doTask(TaskType.PREPROCESS);
 	}
