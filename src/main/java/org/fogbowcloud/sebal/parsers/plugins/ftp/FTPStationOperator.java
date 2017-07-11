@@ -197,7 +197,6 @@ public class FTPStationOperator implements StationOperator {
 
 			if (!airTemp.isEmpty() && !dewTemp.isEmpty()
 					&& !windSpeed.isEmpty()) {
-				compressedUnformattedLocalStationFile.delete();
 				return dataArray;
 			}
 		}
