@@ -15,7 +15,8 @@ public class StationOperatorConstants {
 			"yyyyMMdd;hhmm");
 	
 	// URL constants
-	public static final String STATION_FTP_SERVER_URL = "station_ftp_server_url";
+	public static final String STATION_CSV_SERVER_URL = "station_csv_server_url";
+	public static final String NOAA_FTP_SERVER_URL = "noaa_ftp_server_url";
 
 	// File constants
 	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
@@ -27,4 +28,5 @@ public class StationOperatorConstants {
 	public static final String SWIFT_CONTAINER_PREFIX = "swift_container_prefix";
 	public static final String SWIFT_META_AUTH_KEY = "swift_meta_auth_key";
 	public static final String SWIFT_STORAGE_URL = "swift_storage_url";
+
 }

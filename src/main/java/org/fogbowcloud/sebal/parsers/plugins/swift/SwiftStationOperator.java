@@ -259,7 +259,7 @@ public class SwiftStationOperator implements StationOperator{
 
 	protected String getStationFileUrl(String stationId, String year) {
 		
-		return properties.getProperty(StationOperatorConstants.STATION_FTP_SERVER_URL)
+		return properties.getProperty(StationOperatorConstants.STATION_CSV_SERVER_URL)
 				+ File.separator + year + File.separator + stationId
 				+ "-99999-" + year + ".tar.gz";
 	}

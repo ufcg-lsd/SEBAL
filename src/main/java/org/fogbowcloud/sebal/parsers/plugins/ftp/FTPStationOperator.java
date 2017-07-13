@@ -83,7 +83,7 @@ public class FTPStationOperator implements StationOperator {
 	}
 
 	protected String getStationCSVFileURL(String year) {
-		return properties.getProperty(StationOperatorConstants.STATION_FTP_SERVER_URL)
+		return properties.getProperty(StationOperatorConstants.STATION_CSV_SERVER_URL)
 				+ File.separator + year + File.separator + year + "-stations.csv";
 	}
 
@@ -179,7 +179,6 @@ public class FTPStationOperator implements StationOperator {
 		List<String> stationData = new ArrayList<String>();
 		readStationFile(uncompressedUnformattedStationFile, stationData);
 		
-		compressedUnformattedLocalStationFile.delete();
 		uncompressedUnformattedStationFile.delete();
 		FileUtils.deleteDirectory(baseUnformattedLocalStationFile);
 
@@ -214,21 +213,19 @@ public class FTPStationOperator implements StationOperator {
 
 	protected String getStationFileUrl(String stationId, String year) {
 		
-		return properties.getProperty(StationOperatorConstants.STATION_FTP_SERVER_URL)
+		return properties.getProperty(StationOperatorConstants.NOAA_FTP_SERVER_URL)
 				+ File.separator + year + File.separator + stationId
-				+ "-99999-" + year + ".tar.gz";
+				+ "-99999-" + year + ".gz";
 	}
 
 	protected File getUnformattedStationFile(String stationId, String year) {
 		
 		String unformattedLocalStationFilePath = properties.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year + File.separator + stationId + "-99999-" + year;
+				+ File.separator + year + File.separator + stationId + "-99999-" + year + ".gz";
 
 		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
 		if (unformattedLocalStationFile.exists()) {
-			LOGGER.info("File "
-					+ unformattedLocalStationFile
-					+ " already exists. Will be removed before repeating download");
+			LOGGER.info("File " + unformattedLocalStationFile + " already exists. Will be removed before repeating download");
 			unformattedLocalStationFile.delete();
 		}
 		return unformattedLocalStationFile;
@@ -236,7 +233,7 @@ public class FTPStationOperator implements StationOperator {
 	
 	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
 
-		ProcessBuilder builder = new ProcessBuilder("wget", url);
+		ProcessBuilder builder = new ProcessBuilder("wget", "-O", unformattedLocalStationFile.getAbsolutePath(), url);
 
 		try {
 			Process p = builder.start();
