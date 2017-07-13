@@ -9,7 +9,7 @@ import org.fogbowcloud.sebal.wrapper.TaskType;
 public class PreProcessMain {
 
 	public static void main(String[] args) throws Exception {
-		String oldImageName = args[0];
+		String imageName = args[0];
 		String imagesPath = args[1];
 		String mtlFilePath = args[2];
 		String outputDir = args[3];
@@ -32,7 +32,7 @@ public class PreProcessMain {
 		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(
 				leftX, rightX, numberOfPartitions, partitionIndex);		
 
-		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, oldImageName,
+		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, imageName,
 				mtlFilePath, imagePartition.getIBegin(),
 				imagePartition.getIFinal(), upperY, lowerY, boundingBoxPath,
 				properties);
