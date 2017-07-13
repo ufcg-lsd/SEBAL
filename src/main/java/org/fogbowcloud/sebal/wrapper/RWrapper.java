@@ -74,7 +74,7 @@ public class RWrapper {
 		}
 	}
 
-	public RWrapper(String imagesPath, String outputDir, String mtlName, String mtlFile, int iBegin, int iFinal, int jBegin,
+	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
 		this.mtlFile = mtlFile;
 		this.iBegin = iBegin;
@@ -84,12 +84,12 @@ public class RWrapper {
 		this.properties = properties;
 		
 		if (outputDir == null) {
-			this.outputDir = mtlName;
+			this.outputDir = imageName;
 		} else {
 			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
 				new File(outputDir).mkdirs();
 			}
-			this.outputDir = outputDir + mtlName;
+			this.outputDir = outputDir + imageName;
 		}
 		
 		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
