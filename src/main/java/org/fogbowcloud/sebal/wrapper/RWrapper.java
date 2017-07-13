@@ -76,6 +76,7 @@ public class RWrapper {
 
 	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
+		
 		this.mtlFilePath = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
@@ -124,11 +125,16 @@ public class RWrapper {
         
         String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
                 jFinal, pixelQuenteFrioChooser, boundingBox);
-        LOGGER.debug("stationData: " + stationData);               
-        LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
         
-        saveWeatherStationInfo(stationData);              
-        LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+        if(stationData != null) {        	
+        	LOGGER.debug("stationData: " + stationData);               
+        	LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
+        	
+        	saveWeatherStationInfo(stationData);              
+        	LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+        } else {
+        	LOGGER.error("Error while getting station data");
+        }
     }
 	
 	private void saveWeatherStationInfo(String stationData) {
