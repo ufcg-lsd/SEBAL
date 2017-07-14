@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# ${IMAGE_NAME}
-IMAGE_NAME=$1
 # ${IMAGE_NEW_COLLECTION_NAME}
 IMAGE_NEW_COLLECTION_NAME=$2
 # ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/
@@ -28,7 +26,7 @@ R_ALGORITHM_VERSION=Algoritmo-completo-v26062017.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
-OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
+OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
 SCRIPTS_DIR=scripts
 SWIFT_CLI_DIR=swift-client
 LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
@@ -46,11 +44,11 @@ function cleanRasterEnv {
 function untarImageAndPrepareDirs {
   cd $IMAGES_DIR_PATH
 
-  echo "Image file name is $IMAGE_NAME"
+  echo "Image file name is $IMAGE_NEW_COLLECTION_NAME"
 
   # untar image
-  echo "Untaring image $IMAGE_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NAME
+  echo "Untaring image $IMAGE_NEW_COLLECTION_NAME"
+  cd $IMAGES_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
   sudo tar -xvzf $IMAGE_NEW_COLLECTION_NAME".tar.gz"
 
   echo "Creating image output directory"
@@ -71,7 +69,7 @@ function preProcessImage {
 
 # This function prepare a dados.csv file
 function creatingDadosCSV {
-  echo "Creating dados.csv for image $IMAGE_NAME"
+  echo "Creating dados.csv for image $IMAGE_NEW_COLLECTION_NAME"
 
   cd $R_EXEC_DIR
 
