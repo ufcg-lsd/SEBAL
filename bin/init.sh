@@ -28,15 +28,6 @@ function createREnvFile {
   sudo touch $TEMP_DIR_PATH/.Renviron
 }
 
-function installSwiftDependencies {
-  sudo apt update
-  sudo apt install python-virtualenv
-  sudo ln -s /usr/lib/python2.7/plat-*/_sysconfigdata_nd.py /usr/lib/python2.7/
-  wget $PIP_VERSION
-  python get-pip.py
-  pip install python-swiftclient==$SWIFT_CLIENT_VERSION
-}
-
 function verifyRScript {
   echo "Verifying dependencies for R script"
   
@@ -45,5 +36,4 @@ function verifyRScript {
 }
 
 gettingSebalSnapshot
-installSwiftDependencies
 verifyRScript
