@@ -554,9 +554,9 @@ public class SEBALHelper {
 	
 	public static String getWeatherFilePath(String outputDir, String mtlName, String imageFileName) {
 		if (mtlName == null || mtlName.isEmpty()) {
-			return outputDir + "/" + imageFileName + "_station.csv";
+			return outputDir + File.separator + imageFileName + "_station.csv";
 		} else {
-			return outputDir + "/" + mtlName + "/" + imageFileName + "_station.csv";
+			return outputDir + File.separator + mtlName + File.separator + imageFileName + "_station.csv";
 		}
 	}
 	

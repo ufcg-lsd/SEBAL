@@ -18,6 +18,7 @@ import org.fogbowcloud.sebal.model.image.BoundingBox;
 public class RWrapper {
 	
 	private Properties properties;
+	private String imageName;
 	private String mtlFilePath;
     private int iBegin;
     private int iFinal;
@@ -35,8 +36,9 @@ public class RWrapper {
 			LOGGER.error("Property mtl_file_path must be set.");
 			throw new IllegalArgumentException("Property mtl_file_path must be set.");
 		}
-		this.mtlFilePath = mtlFilePath;
 		this.properties = properties;
+		this.mtlFilePath = mtlFilePath;
+		this.imageName = properties.getProperty("image_name");
 
 		String iBeginStr = properties.getProperty("i_begin_interval");
 		String iFinalStr = properties.getProperty("i_final_interval");
@@ -77,6 +79,7 @@ public class RWrapper {
 	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
 		
+		this.imageName = imageName;
 		this.mtlFilePath = mtlFile;
 		this.iBegin = iBegin;
 		this.iFinal = iFinal;
@@ -153,9 +156,7 @@ public class RWrapper {
 	}
 	
     private String getWeatherFileName() {
-    	String fileName = new File(mtlFilePath).getName();
-        String imageFileName = fileName.substring(0, fileName.indexOf("_"));
-    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageFileName);
+    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageName);
     }
 
 }
