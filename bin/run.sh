@@ -100,6 +100,7 @@ function prepareEnvAndCollectUsage {
 function executeRScript {
   for i in `seq $MAX_TRIES`
   do
+    cleanRasterEnv
     sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
 
