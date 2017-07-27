@@ -33,5 +33,7 @@ function verifyRScript {
   bash -x ${SEBAL_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh ${SEBAL_DIR_PATH}/SEBAL/scripts
 }
 
+sudo apt-get install sysstat
+
 gettingSebalSnapshot
 verifyRScript

@@ -94,9 +94,9 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.txt" > /dev/null &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.csv" 2> /tmp/cpu &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.csv" 2> /tmp/mem &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.csv" 2> /tmp/disk &
 }
 
 # This function executes R script
