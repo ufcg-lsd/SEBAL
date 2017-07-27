@@ -128,7 +128,7 @@ function executeRScript {
 
 function collectRScriptProcTimes {
  echo "Colleting RScript proc times"
- grep -A1 "elapsed" $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt" | grep ['0123456789'] | awk '{print $3}' | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"proc_times.txt" > dev/null
+ grep -A1 "elapsed" $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt" | grep ['0123456789'] | awk '{print $3}' | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"proc_times.txt" > /dev/null
 }
 
 # This function moves dados.csv to image results dir
