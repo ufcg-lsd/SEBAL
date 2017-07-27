@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#date kb_read/s kb_write/s
 export LC_NUMERIC="C"
 TIME_BETWEEN_COMMANDS=1
 echo TIMESTAMP, PID, COMMAND, KB_READ/S, KB_WRITE/S
