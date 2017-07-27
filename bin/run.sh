@@ -94,8 +94,9 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.txt" > /dev/null &
 }
 
 # This function executes R script
@@ -113,13 +114,11 @@ function executeRScript {
       break
     elif [ $PROCESS_OUTPUT -eq 124 ] && [ $i -ge $MAX_TRIES ]
     then
-      killCollectScripts
       exit 124
     else
       if [ $i -ge $MAX_TRIES ]
       then
 	echo "NUMBER OF TRIES $i"
-        killCollectScripts
         exit 1
       fi
     fi
@@ -135,12 +134,6 @@ function collectRScriptProcTimes {
 function mvDadosCSV {
   sudo mv dados.csv $OUTPUT_IMAGE_DIR
   cd ../..
-}
-
-function killCollectScripts {
-  echo "Killing collect CPU and Memory scripts"
-  ps -ef | grep collect-cpu-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
-  ps -ef | grep collect-memory-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
 }
 
 function checkProcessOutput {
@@ -169,5 +162,4 @@ executeRScript
 checkProcessOutput
 mvDadosCSV
 collectRScriptProcTimes
-killCollectScripts
 finally
