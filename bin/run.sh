@@ -24,7 +24,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
-R_ALGORITHM_VERSION=Algoritmo-f1-v12052017.R
+R_ALGORITHM_VERSION=Algoritmo-completo-v12042017.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
@@ -102,8 +102,9 @@ function prepareEnvAndCollectUsage {
 function executeRScript {
   for i in `seq $MAX_TRIES`
   do
-    sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
-    PROCESS_OUTPUT=$?
+
+    (sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH ; echo $?) | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt"
+    PROCESS_OUTPUT=$(tail -1 $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt")
 
     echo "executeRScript_process_output=$PROCESS_OUTPUT"
     if [ $PROCESS_OUTPUT -eq 0 ]
@@ -112,15 +113,22 @@ function executeRScript {
       break
     elif [ $PROCESS_OUTPUT -eq 124 ] && [ $i -ge $MAX_TRIES ]
     then
+      killCollectScripts
       exit 124
     else
       if [ $i -ge $MAX_TRIES ]
       then
 	echo "NUMBER OF TRIES $i"
+        killCollectScripts
         exit 1
       fi
     fi
   done
+}
+
+function collectRScriptProcTimes {
+ echo "Colleting RScript proc times"
+ grep -A1 "elapsed" $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt" | grep ['0123456789'] | awk '{print $3}' | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"proc_times.txt" > dev/null
 }
 
 # This function moves dados.csv to image results dir
@@ -160,5 +168,6 @@ checkProcessOutput
 executeRScript
 checkProcessOutput
 mvDadosCSV
+collectRScriptProcTimes
 killCollectScripts
 finally
