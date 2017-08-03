@@ -53,7 +53,7 @@ fic.dir<-dados$File.images[1]                     #Images file reading
 MTL<-read.table(dados$MTL[1],skip=0,nrows=140,sep="=", quote = "''",as.is=TRUE) #MTL File
 fic<-substr(MTL$V2[MTL$V1==grep(pattern ="LANDSAT_SCENE_ID",MTL$V1, value = T)],3,23)
 n.sensor<-as.numeric(substr(fic,3,3))             #Sensor Number
-if (n.sensor==8) MTL<-read.table(dados$MTL[1],skip=0,nrows=180,sep="=", quote = "''",as.is=TRUE)
+if (n.sensor==8) MTL<-read.table(dados$MTL[1],skip=0,nrows=190,sep="=", quote = "''",as.is=TRUE)
 WRSPR<-substr(fic,4,9)                            #WRSPR
 Ano<-as.numeric(substr(fic,10,13))                #Images year
 Dia.juliano<-as.numeric(substr(fic,14,16))        #Julian Day
