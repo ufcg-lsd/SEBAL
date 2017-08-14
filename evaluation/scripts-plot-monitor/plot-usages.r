@@ -66,61 +66,55 @@ for(i in 1:dim(proctimes)[1])
 }
 
 
-pplot = ggplot(cpu_usage, aes(x=TIMESTAMP, y=USAGE, group=TYPE, colour=TYPE, show.)) + geom_line(size=0.3) + xlab("TIME (s)") + ylab("USAGE (%)")
-
-pplot = pplot + geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15)
-
-pplot = pplot + annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2)
-
-pplot = pplot + scale_colour_manual(values=c("#FF7777"))
-
-pplot = pplot + theme_bw()
-
-pplot = pplot + guides(fill=guide_legend(title=NULL)) + theme(legend.title=element_blank())
+pplot = ggplot(cpu_usage, aes(x=TIMESTAMP, y=USAGE, group=TYPE, colour=TYPE)) +
+	geom_line(size=0.3) + xlab("TIME (s)") + 
+	ylab("USAGE (%)") + 
+	geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15) +
+	annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2) + 
+	scale_colour_manual(values=c("#FF7777")) + 
+	theme_bw() + 
+	guides(fill=guide_legend(title=NULL)) + 
+	theme(legend.title=element_blank())
 
 ggsave("usage_cpu.png", pplot, width=14)
 
 
-pplot = ggplot(mem_usage, aes(x=TIMESTAMP, y=USAGE, group=TYPE, colour=TYPE)) + geom_line(size=0.3) + xlab("TIME (s)") + ylab("USAGE (%)")
-
-pplot = pplot + geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15)
-
-pplot = pplot + annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2)
-
-pplot = pplot + scale_colour_manual(values=c("#0066CC"))
-
-pplot = pplot + theme_bw()
-
-pplot = pplot + guides(fill=guide_legend(title=NULL)) + theme(legend.title=element_blank())
+pplot = ggplot(mem_usage, aes(x=TIMESTAMP, y=USAGE, group=TYPE, colour=TYPE)) + 
+	geom_line(size=0.3) + xlab("TIME (s)") + 
+	ylab("USAGE (%)") + 
+	geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15) + 
+	annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2) + 
+	scale_colour_manual(values=c("#0066CC")) + 
+	theme_bw() + 
+	guides(fill=guide_legend(title=NULL)) + 
+	theme(legend.title=element_blank())
 
 ggsave("usage_mem.png", pplot, width=14)
 
 
-pplot = ggplot(data_cpu_mem, aes(x=TIMESTAMP, y=USAGE, color=TYPE)) + geom_line(size=0.3) + xlab("TIME (s)") + ylab("USAGE (%)")
-
-pplot = pplot + geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15)
-
-pplot = pplot + annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2)
-
-pplot = pplot + scale_colour_manual(values=c("#FF7777", "#0066CC"))
-
-pplot = pplot + theme_bw()
-
-pplot = pplot + guides(fill=guide_legend(title=NULL)) + theme(legend.title=element_blank())
+pplot = ggplot(data_cpu_mem, aes(x=TIMESTAMP, y=USAGE, color=TYPE)) + 
+	geom_line(size=0.3) + 
+	xlab("TIME (s)") + 
+	ylab("USAGE (%)") + 
+	geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15) + 
+	annotate("text", x = med_proctimes, y=0.0, label = proctimes$V2) + 
+	scale_colour_manual(values=c("#FF7777", "#0066CC")) + 
+	theme_bw() + 
+	guides(fill=guide_legend(title=NULL)) + 
+	theme(legend.title=element_blank())
 
 ggsave("usage_cpu_mem.png", pplot, width=14)
 
 
-pplot = ggplot(data_disk, aes(x=TIMESTAMP, y=MB.S, color=TYPE)) + geom_line(size=0.3) + xlab("TIME (s)") + ylab("MB/S")
-
-pplot = pplot + geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15)
-
-pplot = pplot + annotate("text", x = med_proctimes, y=-10.0, label = proctimes$V2)
-
-pplot = pplot + scale_colour_manual(values=c("#FF7777", "#0066CC"))
-
-pplot = pplot + theme_bw()
-
-pplot = pplot + guides(fill=guide_legend(title=NULL)) + theme(legend.title=element_blank())
+pplot = ggplot(data_disk, aes(x=TIMESTAMP, y=MB.S, color=TYPE)) + 
+	geom_line(size=0.3) + 
+	xlab("TIME (s)") + 
+	ylab("MB/S") + 
+	geom_vline(xintercept = proctimes$V1, linetype=2, size=0.15) + 
+	annotate("text", x = med_proctimes, y=-10.0, label = proctimes$V2) + 
+	scale_colour_manual(values=c("#FF7777", "#0066CC")) + 
+	theme_bw() + 
+	guides(fill=guide_legend(title=NULL)) + 
+	theme(legend.title=element_blank())
 
 ggsave("usage_disk.png", pplot, width=14)
