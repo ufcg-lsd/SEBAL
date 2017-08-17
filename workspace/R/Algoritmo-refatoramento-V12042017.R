@@ -249,7 +249,8 @@ read_station_weather_data <- function(dados) {
 station_weather_table <- read_station_weather_data(dados) #linha 143
 
 calc_transmissivity <- function(elevation) {
-    tal <- 0.75 + 2 * 10 ^ -5 * elevation
+    tal <- elevation
+    tal[] <- 0.75 + 2 * 10 ^ -5 * elevation[]
     return(tal)
 }
 #Transmissivity 
@@ -267,23 +268,26 @@ get_satelite_information <- function(
         swt,
         sun_dist
     ) {
+    raster_reference <- images[[1]]
     if (sensors < 8){
         # Radi�ncia
-        rad <- list()
+        rad_data <- list()
         if (sensors == 5) r <- 7 else r <- 8
-        for (i in 1:r){
-            rad[[i]] <- image.rec[[i]] *
+        for (i in 1:r) {
+            rad_data[[i]] <- images[[i]][] *
                 sensors_param$Grescale[i] +
                 sensors_param$Brescale[i]
-            rad[[i]][rad[[i]] < 0] <- 0
+            rad_data[[i]][rad_data[[i]] < 0] <- 0
         }
-        rad7 <- rad[[6]]
+        rad7 <- rad_data[[6]]
 
         #Reflect�ncia
-        ref < -list()
-        for (i in 1:r){
-            ref[[i]] <- pi * rad[[i]] * sun_dist ^ 2 /
-                        (sensors_param$ESUN[i] * costheta)
+        ref_data <- list()
+        for (i in 1:r) {
+            ref_data[[i]] <- pi *
+                rad_data[[i]] *
+                sun_dist ^ 2 /
+                (sensors_param$ESUN[i] * costheta)
         }
 
         if (sensors == 5) {
@@ -310,76 +314,104 @@ get_satelite_information <- function(
             ]
         )
         # Radi�ncia
-        rad <- images[[7]] * multiplicative + additive
-        rad7 <- rad
+        rad_data <- images[[7]][] * multiplicative + additive
+        rad7 <- rad_data
 
         #Reflect�ncia
-        ref <- list()
+        ref_data <- list()
         for (i in 1:6) {
-            ref[[i]] <- (images[[i]] * 0.00002 - 0.1) / costheta
+            ref_data[[i]] <- (images[[i]][] * 0.00002 - 0.1) / costheta
         }
 
         k1 <- 774.8853
         k2 <- 1321.0789
     }
+    tal_data <- tal[]
 
     #Albedo de superf�cie
-    alb <- ref[[1]] * sensors_param$wb[1] +
-           ref[[2]] * sensors_param$wb[2] +
-           ref[[3]] * sensors_param$wb[3] +
-           ref[[4]] * sensors_param$wb[4] +
-           ref[[5]] * sensors_param$wb[5] +
-           ref[[r]] * sensors_param$wb[r]
-    alb <- (alb - 0.03) / tal ^ 2
+    alb_data <- ref_data[[1]] * sensors_param$wb[1] +
+           ref_data[[2]] * sensors_param$wb[2] +
+           ref_data[[3]] * sensors_param$wb[3] +
+           ref_data[[4]] * sensors_param$wb[4] +
+           ref_data[[5]] * sensors_param$wb[5] +
+           ref_data[[r]] * sensors_param$wb[r]
+    alb_data <- (alb_data - 0.03) / tal_data ^ 2
 
     #Radia��o de onda curta incidente (Rs)
-    Rs <- (1367 * costheta * tal) / (sun_dist ^ 2)
+    Rs_data <- (1367 * costheta * tal_data) / (sun_dist ^ 2)
 
     #NDVI,SAVI,LAI e EVI
-    NDVI <- (ref[[4]] - ref[[3]]) / (ref[[4]] + ref[[3]])
-    EVI <- 2.5 * (
-        (ref[[4]] - ref[[3]]) /
-        (ref[[4]] + (6 * ref[[3]]) - (7.5 * ref[[1]]) + 1)
+    NDVI_data <- (ref_data[[4]] - ref_data[[3]]) /
+                 (ref_data[[4]] + ref_data[[3]])
+    EVI_data <- 2.5 * (
+        (ref_data[[4]] - ref_data[[3]]) /
+        (ref_data[[4]] + (6 * ref_data[[3]]) - (7.5 * ref_data[[1]]) + 1)
     )
-    SAVI <- ( (1 + 0.05) * (ref[[4]] - ref[[3]]) ) /
-        (0.05 + ref[[4]] + ref[[3]])
-    LAI <- SAVI
-    LAI[SAVI > 0.687] <- 6
-    LAI[SAVI <= 0.687] <- -log( (0.69 - SAVI[SAVI <= 0.687]) / 0.59) / 0.91
-    LAI[SAVI < 0.1] <- 0
+    SAVI_data <- ( (1 + 0.05) * (ref_data[[4]] - ref_data[[3]]) ) /
+        (0.05 + ref_data[[4]] + ref_data[[3]])
+
+    LAI_data <- SAVI_data
+    SAVI_subset1 <- SAVI_data > 0.687 & !is.na(SAVI_data)
+    SAVI_subset2 <- SAVI_data <= 0.687 & !is.na(SAVI_data)
+    SAVI_subset3 <- SAVI_data < 0.1 & !is.na(SAVI_data)
+    LAI_data[SAVI_subset1] <- 6
+    LAI_data[SAVI_subset2] <- -log(
+                                (0.69 - SAVI_data[SAVI_subset2]) / 0.59
+                            ) / 0.91
+    LAI_data[SAVI_subset3] <- 0
 
     #Emissividade Enb
-    Enb <- 0.97 + 0.0033 * LAI
-    Enb[NDVI < 0 | LAI > 2.99] <- 0.98
+    Enb_data <- 0.97 + 0.0033 * LAI_data
+    NDVI_subset_1 <- NDVI_data < 0 & !is.na(NDVI_data)
+    LAI_subset_1 <- LAI_data > 2.99 & !is.na(LAI_data)
+    Enb_data[NDVI_subset_1 | LAI_subset_1] <- 0.98
 
     #Emissividade Eo
-    Eo <- 0.95 + 0.01 * LAI
-    Eo[NDVI < 0 | LAI > 2.99] <- 0.98
+    Eo_data <- 0.95 + 0.01 * LAI_data
+    Eo_data[NDVI_subset_1 | LAI_subset_1] <- 0.98
 
     #Temperatura de Superf�cie em Kelvin (TS)
-    TS <- k2 / log( (Enb * k1 / rad7) + 1)
+    TS_data <- k2 / log( (Enb_data * k1 / rad7) + 1)
 
     #Radia��o de onda longa emitida pela superf�cie (RLsup)
-    RLsup <- Eo * 5.67 * 10 ^ -8 * TS ^ 4
+    RLsup_data <- Eo_data * 5.67 * 10 ^ -8 * TS_data ^ 4
 
     #Emissividade atmosf�rica (Ea)
-    Ea <- 0.85 * ( -1 * log(tal)) ^ 0.09
+    Ea_data <- 0.85 * ( -1 * log(tal_data)) ^ 0.09
 
     #Radia��o de onda longa emitida pela atmosfera (RLatm)
-    RLatm <- Ea * 5.67 * 10 ^ -8 *
+    RLatm_data <- Ea_data * 5.67 * 10 ^ -8 *
             (swt$V4[2] + 273.15) ^ 4
 
     #Saldo de radia��o Instant�nea (Rn)
-    Rn <- Rs - Rs * alb + RLatm - RLsup - (1 - Eo) * RLatm
-    Rn[Rn < 0] <- 0
+    Rn_data <- Rs_data - Rs_data * alb_data + RLatm_data -
+                RLsup_data - (1 - Eo_data) * RLatm_data
+    Rn_subset <- Rn_data < 0 & !is.na(Rn_data)
+    Rn_data[Rn_subset] <- 0
 
     #Fluxo de Calor no Solo (G)
-    G <- ( (TS - 273.15) *
-            (0.0038  + 0.0074  * alb) *
-            (1 - 0.98 * NDVI ^ 4)) * Rn
-    G[NDVI < 0] <- 0.5 * Rn[NDVI < 0]
-    G[G < 0] <- 0
+    G_data <- ( (TS_data - 273.15) *
+                (0.0038 + 0.0074 * alb_data) *
+                (1 - 0.98 * NDVI_data ^ 4)) * Rn_data
+    NDVI_subset <- NDVI_data < 0 & !is.na(NDVI_data)
+    G_data[NDVI_subset] <- 0.5 * Rn_data[NDVI_subset]
+    G_subset <- G_data < 0 & !is.na(G_data)
+    G_data[G_subset] <- 0
 
+    Rn <- raster_reference
+    Rn[] <- Rn_data
+    TS <- raster_reference
+    TS[] <- TS_data
+    NDVI <- raster_reference
+    NDVI[] <- NDVI_data
+    EVI <- raster_reference
+    EVI[] <- EVI_data
+    LAI <- raster_reference
+    LAI[] <- LAI_data
+    G <- raster_reference
+    G[] <- G_data
+    alb <- raster_reference
+    alb[] <- alb_data
     return(stack(Rn, TS, NDVI, EVI, LAI, G, alb))
 }
 tryCatch({
@@ -422,12 +454,22 @@ tryCatch({
 )
 
 clear_unnecessary_cells <- function(st, fmask) {
-    st[fmask > 1] <- NaN
+    mask <- fmask[]
+    for (i in 1:nlayers(st)) {
+        m <- st[[i]][]
+        m[mask > 1] <- NaN
+        st[[i]][] <- m
+    }
     return(st)
 }
 raster_stack <- clear_unnecessary_cells(raster_stack, fmask)
 proc.time()
 print("MASK")
+
+rm(transmissivity)
+rm(elevation_aux)
+rm(bounding_box)
+rm(fmask)
 
 get_latitude_and_longitude <- function(dados, fic, elevation) {
     var_output <- paste(dados$Path.Output[1], "/", fic, "_alb.nc", sep = "")
@@ -503,10 +545,6 @@ update_file <- function(dados, layer, fic, elevation, tdim, lat_lon) {
     nc_close(new_NCDF4)
 }
 
-rm(transmissivity)
-rm(elevation_aux)
-rm(bounding_box)
-rm(fmask)
 write_raster <- function(dados, output, fic, na, elevation, tdim) {
     output_path <- paste(dados$Path.Output[1], "/", fic, ".nc", sep = "")
     names(output) <- na
@@ -544,13 +582,18 @@ print("WRITE-1")
 
 phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     ##################Selection of reference pixels##################
-    Rn <- stack[[1]]
-    TS <- stack[[2]]
-    NDVI <- stack[[3]]
+    raster_Rn <- stack[[1]]
+    Rn <- raster_Rn[]
+    raster_TS <- stack[[2]]
+    TS <- raster_TS[]
+    raster_NDVI <- stack[[3]]
+    NDVI <- raster_NDVI[]
     # EVI <- stack[[4]] # never used
     # LAI <- stack[[5]] # never used
-    G <- stack[[6]]
-    alb <- stack[[7]]
+    raster_G <- stack[[6]]
+    G <- raster_G[]
+    raster_alb <- stack[[7]]
+    alb <- raster_alb[]
 
     #Candidates hot Pixel
     Ho <- Rn - G
@@ -573,9 +616,11 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
         ll_hot <- c(ll_hot, which(TS_Ho[] == Cand_hot[k]))
     }
 
+    raster_TS_Ho <- stack[[1]]
+    raster_TS_Ho[] <- TS_Ho
     beginCluster(constantes$clusters)
-    xy_hot <- xyFromCell(TS_Ho, ll_hot)
-    NDVI_hot <- extract(NDVI, xy_hot, buffer = 105)
+    xy_hot <- xyFromCell(raster_TS_Ho, ll_hot)
+    NDVI_hot <- extract(raster_NDVI, xy_hot, buffer = 105)
     endCluster()
 
     NDVI_hot_2 <- NDVI_hot[!sapply(NDVI_hot, is.null)]
@@ -585,7 +630,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     i_NDVI_hot_cv <- which(NDVI_hot_cv[] == NDVI_hot_cv_min[1])
 
     beginCluster(constantes$clusters)
-    TQ_hot <- extract(TS, xy_hot)
+    TQ_hot <- extract(raster_TS, xy_hot)
     endCluster()
 
     TQ_hot <- TQ_hot[i_NDVI_hot_cv[1]]
@@ -597,15 +642,17 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     TS_cold <- quantile(z, 0.08, na.rm = TRUE)
     TS_dif <- abs(TS - TS_cold)
     Cand_cold <- sort(TS_dif[])[1:20]
-
+    
     ll_cold <- numeric()
     for (k in 0:length(Cand_cold)) {
         ll_cold <- c(ll_cold, which(TS_dif[] == Cand_cold[k]))
     }
 
+    raster_TS_dif <- stack[[1]]
+    raster_TS_dif[] <- TS_dif
     beginCluster(constantes$clusters)
-    xy_cold <- xyFromCell(TS_dif, ll_cold)
-    NDVI_cold <- extract(NDVI, xy_cold, buffer = 120)
+    xy_cold <- xyFromCell(raster_TS_dif, ll_cold)
+    NDVI_cold <- extract(raster_NDVI, xy_cold, buffer = 120)
     endCluster()
 
     NDVI_cold_2 <- NDVI_cold[!sapply(NDVI_cold, is.null)]
@@ -616,7 +663,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     i_NDVI_cold <- which(NDVI_cold_cv[] == NDVI_cold_cv_min[1])
 
     beginCluster(constantes$clusters)
-    TQ_cold <- extract(TS, xy_cold)
+    TQ_cold <- extract(raster_TS, xy_cold)
     endCluster()
 
     TQ_cold <- TQ_cold[i_NDVI_cold[1]]
@@ -655,7 +702,11 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     ustar <- constantes$k * u200 / log(200 / zom)
     # aerodynamic resistance for all pixels
     rah <- log(2 / 0.1) / (ustar * constantes$k)
-    base_ref <- stack(NDVI, TS, Rn, G, ustar, rah)
+    raster_ustar <- stack[[1]]
+    raster_ustar[] <- ustar
+    raster_rah <- stack[[1]]
+    raster_rah[] <- rah
+    base_ref <- stack(raster_NDVI, raster_TS, raster_Rn, raster_G, raster_ustar, raster_rah)
     nbase <- c("NDVI", "TS", "Rn", "G", "ustar", "rah")
     names(base_ref) <- nbase
     beginCluster(constantes$clusters)
@@ -663,7 +714,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     endCluster()
     rownames(value_pixels_ref) <- c("hot", "cold")
     H_hot <- value_pixels_ref["hot", "Rn"] -
-             value_pixels_ref["hot", "G"]  
+             value_pixels_ref["hot", "G"]
     value_pixel_rah <- value_pixels_ref["hot", "rah"]
 
     i <- 1
@@ -687,22 +738,25 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
         y_2 <- (1 - 16 * 2 / L) ^ 0.25
         x200 <- (1 - 16 * 200 / L) ^ 0.25
 
+        L_subset <- L < 0 & !is.na(L)
         psi_0_1 <- 2 * log( (1 + y_0_1 ^ 2) / 2)
-        psi_0_1[L > 0] <- -5 * (0.1 / L[L > 0])
+        psi_0_1[L_subset] <- -5 * (0.1 / L[L_subset])
 
         psi_2 <- 2 * log( (1 + y_2 ^ 2) / 2)
-        psi_2[L > 0] <- -5 * (2 / L[L > 0])
+        psi_2[L_subset] <- -5 * (2 / L[L_subset])
 
         psi_200 <- 2 * log( (1 + x200) / 2) + log( (1 + x200 ^ 2) / 2) -
                    2 * atan(x200) + 0.5 * pi
-        psi_200[L > 0] <- -5 * (2 / L[L > 0])
+        psi_200[L_subset] <- -5 * (2 / L[L_subset])
 
         # Velocidade de fric??o para todos os pixels
         ustar <- k * u200 / (log(200 / zom) - psi_200)
         # Resist?ncia aerodin?mica para todos os pixels
         rah <- (log(2 / 0.1) - psi_2 + psi_0_1) / (ustar * k)
+        raster_rah <- stack[[1]]
+        raster_rah[] <- rah
         beginCluster(constantes$clusters)
-        rah_hot <- extract(rah, matrix(ll_ref["hot", ], 1, 2))
+        rah_hot <- extract(raster_rah, matrix(ll_ref["hot", ], 1, 2))
         endCluster()
         value_pixel_rah <- c(value_pixel_rah, rah_hot)
         Erro <- (abs(1 - rah_hot_0 / rah_hot) >= 0.05)
@@ -718,8 +772,10 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     a <- -b * (value_pixels_ref["cold", "TS"] - 273.15)
 
     #All pixels
+    RNG <- Rn - G
     H <- constantes$rho * constantes$cp * (a + b * (TS - 273.15)) / rah
-    H[H > (Rn - G)] <- (Rn - G)[H > (Rn - G)]
+    H_subset <- H > RNG & !is.na(H)
+    H[H_subset] <- RNG[H_subset]
 
     #Instant latent heat flux (LE)
     LE <- Rn - G - H
@@ -755,7 +811,11 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     ET24h_dB <- LE24h_dB * 86400 / ( (2.501 - 0.00236 *
                     (max(swt$V7[]) + min(swt$V7[])) / 2) * 10 ^ 6)
 
-    evapo_trans <- stack(EF, ET24h_dB)
+    real_EF <- stack[[1]]
+    real_EF[] <- EF
+    real_ET24h_dB <- stack[[1]]
+    real_ET24h_dB[] <- EF
+    evapo_trans <- stack(real_EF, real_ET24h_dB)
     return(evapo_trans)
 }
 
