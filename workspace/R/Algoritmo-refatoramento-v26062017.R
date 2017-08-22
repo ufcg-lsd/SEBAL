@@ -8,6 +8,10 @@
 options(echo = TRUE)
 rm(list = ls())
 
+# for now, this will be here
+install.packages("snow", repos = "https://vps.fmvz.usp.br/CRAN/")
+install.packages("R.utils", repos = "https://vps.fmvz.usp.br/CRAN/")
+
 library(R.utils)
 library(raster)
 library(rgdal)
@@ -18,16 +22,14 @@ args <- commandArgs(trailingOnly = TRUE)
 WD <- args[1]
 setwd(WD) # Working Directory
 
-tmpdir_name <- paste(c("", "tmp", "rasterTmp"), collapse = "/")
 # changing raster tmpdir
-rasterOptions(
-    tmpdir = tmpdir_name
-)
-removeTmpFiles(h = 0)
+rasterOptions(tmpdir = paste("", "tmp", "rasterTmp", sep = "/"))
 
-load("d_sun_earth.RData")             # Ler dist?ncia realtiva Sol a Terra
-dados <- read.csv("dados.csv", sep = ";", stringsAsFactors = FALSE) # Data
-
+source("landsat.R")
+# Ler dist?ncia realtiva Sol a Terra
+load("d_sun_earth.RData")
+# Data
+dados <- read.csv("dados.csv", sep = ";", stringsAsFactors=FALSE)
 ####################################constantes##########################################
 #Von K?rm?n
 constantes <- list("k" = 0.41)
@@ -43,15 +45,33 @@ constantes <- c(constantes, "gsc" = 0.082)
 constantes <- c(constantes, "clusters" = 7)
 #Set projection and spatial resolution
 constantes <- c(constantes, "WGS84" = "+proj=longlat +datum=WGS84 +ellps=WGS84")
-######################### Reading sensor parameters#####################################
 
 get_file_informations <- function(dados) {
     #Images file reading
     dir <- dados$File.images[1]
-    #Number of file characters
-    m <- nchar(dados$File.images)
+    #MTL File
+    rows <- 140
+    if (sensors == 8) rows <- 190
+    MTL <- read.table(
+        dados$MTL[1],
+        skip = 0,
+        nrows = rows,
+        sep = "=",
+        quote = "''",
+        as.is = TRUE
+    )
     #Image name that will be processed
-    fic <- substring(dir, m[1] - 20)
+    fic <- substr(
+        MTL$V2[
+            MTL$V1 == grep(
+                pattern = "LANDSAT_SCENE_ID",
+                MTL$V1,
+                value = T
+            )
+        ],
+        3,
+        23
+    )
     #Sensor Number
     sensors <- as.numeric(substr(fic, 3, 3))
     #WRSPR
@@ -60,37 +80,37 @@ get_file_informations <- function(dados) {
     year <- as.numeric(substr(fic, 10, 13))
     #Julian Day
     julian_day <- as.numeric(substr(fic, 14, 16))
+    sun_elevation <- as.numeric(
+        MTL$V2[
+            MTL$V1 == grep(
+                pattern = "SUN_ELEVATION",
+                MTL$V1,
+                value = TRUE
+            )
+        ]
+    )
+    #From SUN ELEVATION
+    costheta <- sin( sun_elevation * pi / 180)
     #Reading image file
-    fichs.imagens <- list.files(
+    fichs_imagens <- list.files(
         path = dir,
         pattern = "*.TIF",
         full.names = TRUE
     )
-    if (sensors == 8) st <- stack(as.list(fichs.imagens[c(4:9, 2)]))
-    if (sensors == 7) st <- stack(as.list(fichs.imagens[1:8]))
-    if (sensors == 5) st <- stack(as.list(fichs.imagens[1:7]))
+    if (sensors == 8) st <- stack(as.list(fichs_imagens[c(4:9, 2)]))
+    if (sensors == 7) st <- stack(as.list(fichs_imagens[1:8]))
+    if (sensors == 5) st <- stack(as.list(fichs_imagens[1:7]))
 
-    rows <- 140
-    if (sensors == 8) rows <- 180
-    MTL <- read.table(dados$MTL[1],
-                      skip = 0,
-                      nrows = rows,
-                      sep = "=",
-                      quote = "''",
-                      as.is = TRUE)
-    sun_elevation <- as.numeric(MTL$V2[MTL$V1 == grep(
-        pattern = "SUN_ELEVATION",
-        MTL$V1,
-        value = TRUE)
-    ])
-    costheta <- sin( sun_elevation * pi / 180)
-    acquired_date <- as.Date(MTL$V2[MTL$V1 == grep(
-        pattern = "DATE_ACQUIRED",
-        MTL$V1,
-        value = TRUE)]
+    acquired_date <- as.Date(
+        MTL$V2[
+            MTL$V1 == grep(
+                pattern = "DATE_ACQUIRED",
+                MTL$V1,
+                value = TRUE
+            )
+        ]
     )
-    date1970 <- as.Date("1970-01-01")
-    days_since_1970 <- as.numeric(acquired_date) - as.numeric(date1970)
+    days_since_1970 <- as.numeric(acquired_date)
     tdim <- ncdim_def(
         "time",
         "days since 1970-1-1",
@@ -123,6 +143,9 @@ get_file_informations <- function(dados) {
         stringsAsFactors = FALSE
     )
 
+    n_fmask <- length(fichs_imagens)
+    Fmask <- raster(fichs_imagens[[n_fmask]])
+
     return(list(
         "sensors" = sensors,
         "wrspr" = wrspr,
@@ -133,7 +156,8 @@ get_file_informations <- function(dados) {
         "costheta" = costheta,
         "tdim" = tdim,
         "mtl" = MTL,
-        "sensor_parameters" = s_p
+        "sensor_parameters" = s_p,
+        "Fmask" = Fmask
     ))
 }
 returned_values <- get_file_informations(dados)
@@ -149,6 +173,8 @@ year <- returned_values$year
 julian_day <- returned_values$julian_day
 #Reading image file
 raster_stack <- returned_values$raster_stack
+#Fmask
+Fmask <- returned_values$Fmask
 #From SUN ELEVATION
 costheta <- returned_values$costheta
 #Time image
@@ -159,6 +185,13 @@ sensor_parameters <- returned_values$sensor_parameters
 rm(returned_values)
 proc.time()
 print("DATA")
+
+identify_clouds <- function(rast, mask, sensors) {
+    if (sensors != 8) threshold <- 672 else threshold <- 2720
+    rast[mask != threshold] <- NaN
+    return(rast)
+}
+raster_stack <- identify_clouds(raster_stack, Fmask, sensors)
 
 change_raster_projection <- function(rast, constantes) {
     beginCluster(constantes$clusters)
@@ -180,17 +213,14 @@ get_bounding_box <- function(constantes, wrspr) {
 #Reading Bounding Box
 bounding_box <- get_bounding_box(constantes, wrspr)
 
-#Reading Fmask
-fmask <- change_raster_projection(raster(dados$File.Fmask[1]), constantes)
-
-get_elevation_raster <- function(file, bounding_box, fmask, constantes) {
+get_elevation_raster <- function(file, bounding_box, ele_res, constantes) {
     fic <- paste(file)
     elevation <- raster(fic)
     beginCluster(constantes$clusters)
     elevation <- crop(elevation, extent(bounding_box))
     endCluster()
     elevation_aux <- raster(elevation)
-    res(elevation_aux) <- res(fmask)
+    res(elevation_aux) <- ele_res
     return(list(
         "elevation" = elevation,
         "elevation_aux" = elevation_aux
@@ -199,7 +229,7 @@ get_elevation_raster <- function(file, bounding_box, fmask, constantes) {
 returned_values <- get_elevation_raster(
     "Elevation/srtm_29_14.tif",
     bounding_box,
-    fmask,
+    res(raster_stack),
     constantes
 )
 #Reading Elevation
@@ -229,7 +259,6 @@ resample_image <- function(fic1, fic2, method, constantes) {
 # Resample images
 elevation <- resample_image(elevation, elevation_aux, "ngb", constantes)
 raster_stack <- resample_image(raster_stack, elevation, "ngb", constantes)
-fmask <- resample_image(fmask, elevation, "ngb", constantes)
 proc.time()
 print("RESAMPLING")
 
@@ -418,12 +447,6 @@ tryCatch({
         quit("no", 124, FALSE)
     }
 )
-
-clear_unnecessary_cells <- function(st, fmask) {
-    st[fmask > 1] <- NaN
-    return(st)
-}
-raster_stack <- clear_unnecessary_cells(raster_stack, fmask)
 proc.time()
 print("MASK")
 
@@ -541,6 +564,53 @@ write_raster(
 proc.time()
 print("WRITE-1")
 
+get_candidate_pixel <- function(Ho, TS, NDVI, cold = FALSE) {
+    if (cold) {
+        x <- TS[NDVI < 0 & !is.na(Ho)]
+	    x <- x[x > 273.16]
+	    TS_cand <- sort(x)[round(0.5 * length(x))]
+	    Ho_cand <- Ho[NDVI < 0 & TS == TS_cand & !is.na(Ho)]
+    } else {
+        x <- TS[NDVI > 0.15 & NDVI < 0.20]
+	    x <- x[x > 273.16]
+	    TS_cand <- sort(x)[round(0.95 * length(x))]
+	    Ho_cand <- Ho[NDVI > 0.15 & NDVI < 0.20 & TS == TS_cand]
+    }
+
+    if (length(Ho_cand) == 1) {
+	    ll_cand <- which(TS[] == TS_cand & Ho[] == Ho_cand)
+	    xy_cand <- xyFromCell(TS, ll_cand)
+	    ll_cand_f <- cbind(as.vector(xy_cand[1, 1]),
+	                       as.vector(xy_cand[1, 2]))
+	} else {
+        Ho_cand_sorted <- sort(Ho_cand)
+	    Ho_cand_min <- Ho_cand_sorted[round(0.25 * length(Ho_cand))]
+	    Ho_cand_max <- Ho_cand_sorted[round(0.75 * length(Ho_cand))]
+	    ll_cand <- which(TS[] == TS_cand & Ho[] > Ho_cand_min & Ho[] < Ho_cand_max)
+	    xy_cand <- xyFromCell(TS, ll_cand)
+	    NDVI_cand <- extract(NDVI, xy_cand, buffer = 105)
+	    NDVI_cand_2 <- NDVI_cand[!sapply(NDVI_cand, is.null)]
+
+        if (cold) {
+            #Maximum number of neighboring pixels with $NVDI < 0$
+	        t <- function(x) {
+                sum(x < 0, na.rm = TRUE)
+            }
+	        n_neg_NDVI <- sapply(NDVI_cand_2, t)
+	        i_NDVI_cand <- which.max(n_neg_NDVI)
+	        ll_cand_f <- cbind(as.vector(xy_cand[i_NDVI_cand, 1]),
+	                           as.vector(xy_cand[i_NDVI_cand, 2]))
+        } else {
+	        NDVI_cand_cv <- sapply(NDVI_cand_2, sd  , na.rm = TRUE) /
+                            sapply(NDVI_cand_2, mean, na.rm = TRUE)
+	        i_NDVI_cand_cv <- which.min(NDVI_cand_cv)
+	        ll_cand_f <- cbind(as.vector(xy_cand[i_NDVI_cand_cv, 1]),
+	                           as.vector(xy_cand[i_NDVI_cand_cv, 2]))
+        }
+	}
+    return(ll_cand_f)
+}
+
 phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     ##################Selection of reference pixels##################
     Rn <- stack[[1]]
@@ -551,76 +621,12 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     G <- stack[[6]]
     alb <- stack[[7]]
 
-    #Candidates hot Pixel
     Ho <- Rn - G
-    y <- Ho[NDVI > 0.15 & NDVI < 0.19]
-    x <- TS[NDVI > 0.15 & NDVI < 0.19]
-    TS_hot <- quantile(x[x > 273.16], 0.8, na.rm = TRUE)
 
-    i <- 0.1
-    Erro <- TRUE
-    while (Erro){
-        Ho_hot <- median(y[x > TS_hot - i & x < TS_hot + i], na.rm = TRUE)
-        Erro <- is.na(Ho_hot)
-        i <- i + 0.1
-    }
-
-    TS_Ho <- abs(TS - TS_hot) + abs(Ho - Ho_hot)
-    Cand_hot <- sort(TS_Ho[])[1:20]
-    ll_hot <- numeric()
-    for (k in 0:length(Cand_hot)) {
-        ll_hot <- c(ll_hot, which(TS_Ho[] == Cand_hot[k]))
-    }
-
-    beginCluster(constantes$clusters)
-    xy_hot <- xyFromCell(TS_Ho, ll_hot)
-    NDVI_hot <- extract(NDVI, xy_hot, buffer = 105)
-    endCluster()
-
-    NDVI_hot_2 <- NDVI_hot[!sapply(NDVI_hot, is.null)]
-    NDVI_hot_cv <- sapply(NDVI_hot_2, sd, na.rm = TRUE) /
-                   sapply(NDVI_hot_2, mean, na.rm = TRUE)
-    NDVI_hot_cv_min <- sort(NDVI_hot_cv)
-    i_NDVI_hot_cv <- which(NDVI_hot_cv[] == NDVI_hot_cv_min[1])
-
-    beginCluster(constantes$clusters)
-    TQ_hot <- extract(TS, xy_hot)
-    endCluster()
-
-    TQ_hot <- TQ_hot[i_NDVI_hot_cv[1]]
-    ll_hot_f <- cbind(as.vector(xy_hot[i_NDVI_hot_cv[1], 1]),
-                      as.vector(xy_hot[i_NDVI_hot_cv[1], 2]))
-
+    #Candidates hot Pixel
+    ll_hot_f  <- get_candidate_pixel(Ho, TS, NDVI)
     #Candidates cold Pixel
-    z <- TS[NDVI < 0 & TS > 273.16]
-    TS_cold <- quantile(z, 0.08, na.rm = TRUE)
-    TS_dif <- abs(TS - TS_cold)
-    Cand_cold <- sort(TS_dif[])[1:20]
-
-    ll_cold <- numeric()
-    for (k in 0:length(Cand_cold)) {
-        ll_cold <- c(ll_cold, which(TS_dif[] == Cand_cold[k]))
-    }
-
-    beginCluster(constantes$clusters)
-    xy_cold <- xyFromCell(TS_dif, ll_cold)
-    NDVI_cold <- extract(NDVI, xy_cold, buffer = 120)
-    endCluster()
-
-    NDVI_cold_2 <- NDVI_cold[!sapply(NDVI_cold, is.null)]
-    NDVI_cold_cv <- sapply(NDVI_cold_2, sd, na.rm = TRUE) /
-                    sapply(NDVI_cold_2, mean, na.rm = TRUE)
-    NDVI_cold_cv_positive <- NDVI_cold_cv[NDVI_cold_cv > 0]
-    NDVI_cold_cv_min <- sort(NDVI_cold_cv_positive)
-    i_NDVI_cold <- which(NDVI_cold_cv[] == NDVI_cold_cv_min[1])
-
-    beginCluster(constantes$clusters)
-    TQ_cold <- extract(TS, xy_cold)
-    endCluster()
-
-    TQ_cold <- TQ_cold[i_NDVI_cold[1]]
-    ll_cold_f <- cbind(as.vector(xy_cold[i_NDVI_cold[1], 1]),
-                       as.vector(xy_cold[i_NDVI_cold[1], 2]))
+    ll_cold_f <- get_candidate_pixel(Ho, TS, NDVI, cold = TRUE)
 
     #Location of reference pixels (hot and cold)
     ll_ref <- rbind(ll_hot_f[1, ], ll_cold_f[1, ])
@@ -631,8 +637,8 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     #Weather station data
     x <- 3 # Wind speed sensor Height (meters)
     hc <- 0.2 #Vegetation height (meters)
-    Lat <-  swt$V4 #Station Latitude
-    # Long <- swt$V5 #Station Longitude # never used
+    Lat <-  swt$V4[1] #Station Latitude
+    # Long <- swt$V5[1] #Station Longitude # never used
 
     #Surface roughness parameters in station
     zom_est <- hc * 0.12
@@ -700,9 +706,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
         ustar <- k * u200 / (log(200 / zom) - psi_200)
         # Resist?ncia aerodin?mica para todos os pixels
         rah <- (log(2 / 0.1) - psi_2 + psi_0_1) / (ustar * k)
-        beginCluster(constantes$clusters)
         rah_hot <- extract(rah, matrix(ll_ref["hot", ], 1, 2))
-        endCluster()
         value_pixel_rah <- c(value_pixel_rah, rah_hot)
         Erro <- (abs(1 - rah_hot_0 / rah_hot) >= 0.05)
         i <- i + 1
@@ -724,15 +728,17 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     LE <- Ho - H
 
     #Upscalling temporal
-    dr <- (1 / sun_dist) ^ 2 #Inverse square of the distance on Earth-SOL
+    #Inverse square of the distance on Earth-SOL
+    dr <- (1 / sun_dist) ^ 2
     # Declination Solar (rad)
     sigma <- 0.409 * sin( ( (2 * pi / 365) * julian_day) - 1.39)
-    phi <- (pi / 180) * Lat #Solar latitude in degrees
+    #Solar latitude in degrees
+    phi <- (pi / 180) * Lat
     #Angle Time for sunsets (rad)
     omegas <- acos( -tan(phi) * tan(sigma))
     Ra24h <- ( ( (24 * 60 / pi) * constantes$gsc * dr) * (omegas * sin(phi) *
             sin(sigma) + cos(phi) * cos(sigma) * sin(omegas))) *
-            (1000000 / 86400)
+            (10000 / 864)
 
     #Short wave radiation incident in 24 hours (Rs24h)
     Rs24h <- F_int * sqrt(max(swt$V7[]) - min(swt$V7[])) * Ra24h
