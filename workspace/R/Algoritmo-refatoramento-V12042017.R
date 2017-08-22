@@ -101,40 +101,6 @@ get_file_informations <- function(dados) {
         "time"
     )
 
-    return(list(
-        "sensors" = sensors,
-        "wrspr" = wrspr,
-        "files" = fic,
-        "year" = year,
-        "julian_day" = julian_day,
-        "raster_stack" = st,
-        "costheta" = costheta,
-        "tdim" = tdim,
-        "mtl" = MTL
-    ))
-}
-returned_values <- get_file_informations(dados)
-#Sensor Number
-sensors <- returned_values$sensors
-#WRSPR
-wrspr <- returned_values$wrspr
-#Image name that will be processed
-files <- returned_values$files
-#Images year
-year <- returned_values$year
-#Julian Day
-julian_day <- returned_values$julian_day
-#Reading image file
-raster_stack <- returned_values$raster_stack
-#From SUN ELEVATION
-costheta <- returned_values$costheta
-#Time image
-tdim <- returned_values$tdim
-#MTL File
-mtl <- returned_values$mtl
-rm(returned_values)
-
-get_sensors_parameters <- function(sensors, year) {
     s_p <- NULL
     if (sensors == 8) s_p <- read.csv(
         "parametros do sensor/parametrosdosensorLC.csv",
@@ -156,9 +122,41 @@ get_sensors_parameters <- function(sensors, year) {
         sep = ";",
         stringsAsFactors = FALSE
     )
-    return(s_p)
+
+    return(list(
+        "sensors" = sensors,
+        "wrspr" = wrspr,
+        "files" = fic,
+        "year" = year,
+        "julian_day" = julian_day,
+        "raster_stack" = st,
+        "costheta" = costheta,
+        "tdim" = tdim,
+        "mtl" = MTL,
+        "sensor_parameters" = s_p
+    ))
 }
-sensor_parameters <- get_sensors_parameters(sensors, year)
+returned_values <- get_file_informations(dados)
+#Sensor Number
+sensors <- returned_values$sensors
+#WRSPR
+wrspr <- returned_values$wrspr
+#Image name that will be processed
+files <- returned_values$files
+#Images year
+year <- returned_values$year
+#Julian Day
+julian_day <- returned_values$julian_day
+#Reading image file
+raster_stack <- returned_values$raster_stack
+#From SUN ELEVATION
+costheta <- returned_values$costheta
+#Time image
+tdim <- returned_values$tdim
+#MTL File
+mtl <- returned_values$mtl
+sensor_parameters <- returned_values$sensor_parameters
+rm(returned_values)
 proc.time()
 print("DATA")
 
@@ -642,7 +640,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     TS_cold <- quantile(z, 0.08, na.rm = TRUE)
     TS_dif <- abs(TS - TS_cold)
     Cand_cold <- sort(TS_dif[])[1:20]
-    
+
     ll_cold <- numeric()
     for (k in 0:length(Cand_cold)) {
         ll_cold <- c(ll_cold, which(TS_dif[] == Cand_cold[k]))
