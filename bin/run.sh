@@ -22,6 +22,7 @@ CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
+IMAGE_MTL_FILE_PATH=$SANDBOX/$IMAGE_NAME/$IMAGE_NAME"_MTL.txt"
 
 R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-f1-v12052017.R
@@ -44,13 +45,13 @@ function cleanRasterEnv {
 
 # This function untare image and creates an output dir into mounted dir
 function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
+  cp -r $IMAGES_DIR_PATH/$IMAGE_NAME $SANDBOX
 
   echo "Image file name is $IMAGE_NAME"
 
   # untar image
   echo "Untaring image $IMAGE_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NAME
+  cd $SANDBOX/$IMAGE_NAME
   sudo tar -xvzf $IMAGE_NAME".tar.gz"
 
   echo "Creating image output directory"
@@ -63,7 +64,7 @@ function untarImageAndPrepareDirs {
 function preProcessImage {
   cd $SEBAL_DIR_PATH
 
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
+  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $SANDBOX/ $IMAGE_MTL_FILE_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
   echo -e "\n" >> $IMAGE_STATION_FILE_PATH
   cd ..
@@ -76,7 +77,7 @@ function creatingDadosCSV {
   cd $R_EXEC_DIR
 
   echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "$SANDBOX/$IMAGE_NAME;$IMAGE_MTL_FILE_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
