@@ -55,7 +55,7 @@ get_file_informations <- function(dados) {
     MTL <- read.table(
         dados$MTL[1],
         skip = 0,
-        nrows = rows,
+        nrows = 140,
         sep = "=",
         quote = "''",
         as.is = TRUE
@@ -74,6 +74,17 @@ get_file_informations <- function(dados) {
     )
     #Sensor Number
     sensors <- as.numeric(substr(fic, 3, 3))
+    #MTL File
+    if (sensors == 8) {
+        MTL <- read.table(
+            dados$MTL[1],
+            skip = 0,
+            nrows = 190,
+            sep = "=",
+            quote = "''",
+            as.is = TRUE
+        )
+    }
     #WRSPR
     wrspr <- substr(fic, 4, 9)
     #Images year
@@ -304,7 +315,7 @@ get_satelite_information <- function(
                 sensors_param$Brescale[i]
             rad[[i]][rad[[i]] < 0] <- 0
         }
-        rad7 <- rad[[6]]
+        rad_ts <- rad[[6]]
 
         #Reflect�ncia
         ref < -list()
@@ -338,7 +349,7 @@ get_satelite_information <- function(
         )
         # Radi�ncia
         rad <- images[[7]] * multiplicative + additive
-        rad7 <- rad
+        rad_ts <- rad
 
         #Reflect�ncia
         ref <- list()
@@ -384,7 +395,7 @@ get_satelite_information <- function(
     Eo[NDVI < 0 | LAI > 2.99] <- 0.98
 
     #Temperatura de Superf�cie em Kelvin (TS)
-    TS <- k2 / log( (Enb * k1 / rad7) + 1)
+    TS <- k2 / log( (Enb * k1 / rad_ts) + 1)
 
     #Radia��o de onda longa emitida pela superf�cie (RLsup)
     RLsup <- Eo * 5.67 * 10 ^ -8 * TS ^ 4
@@ -394,7 +405,7 @@ get_satelite_information <- function(
 
     #Radia��o de onda longa emitida pela atmosfera (RLatm)
     RLatm <- Ea * 5.67 * 10 ^ -8 *
-            (swt$V4[2] + 273.15) ^ 4
+            (swt$V7[2] + 273.15) ^ 4
 
     #Saldo de radia��o Instant�nea (Rn)
     Rn <- Rs - Rs * alb + RLatm - RLsup - (1 - Eo) * RLatm

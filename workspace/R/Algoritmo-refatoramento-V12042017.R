@@ -275,7 +275,7 @@ get_satelite_information <- function(
                 sensors_param$Brescale[i]
             rad[[i]][rad[[i]] < 0] <- 0
         }
-        rad7 <- rad[[6]]
+        rad_ts <- rad[[6]]
 
         #Reflect�ncia
         ref < -list()
@@ -309,7 +309,7 @@ get_satelite_information <- function(
         )
         # Radi�ncia
         rad <- images[[7]] * multiplicative + additive
-        rad7 <- rad
+        rad_ts <- rad
 
         #Reflect�ncia
         ref <- list()
@@ -355,7 +355,7 @@ get_satelite_information <- function(
     Eo[NDVI < 0 | LAI > 2.99] <- 0.98
 
     #Temperatura de Superf�cie em Kelvin (TS)
-    TS <- k2 / log( (Enb * k1 / rad7) + 1)
+    TS <- k2 / log( (Enb * k1 / rad_ts) + 1)
 
     #Radia��o de onda longa emitida pela superf�cie (RLsup)
     RLsup <- Eo * 5.67 * 10 ^ -8 * TS ^ 4
@@ -365,7 +365,7 @@ get_satelite_information <- function(
 
     #Radia��o de onda longa emitida pela atmosfera (RLatm)
     RLatm <- Ea * 5.67 * 10 ^ -8 *
-            (swt$V4[2] + 273.15) ^ 4
+            (swt$V7[2] + 273.15) ^ 4
 
     #Saldo de radia��o Instant�nea (Rn)
     Rn <- Rs - Rs * alb + RLatm - RLsup - (1 - Eo) * RLatm
@@ -551,8 +551,9 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     G <- stack[[6]]
     alb <- stack[[7]]
 
-    #Candidates hot Pixel
     Ho <- Rn - G
+
+    #Candidates hot Pixel
     y <- Ho[NDVI > 0.15 & NDVI < 0.19]
     x <- TS[NDVI > 0.15 & NDVI < 0.19]
     TS_hot <- quantile(x[x > 273.16], 0.8, na.rm = TRUE)
