@@ -189,7 +189,8 @@ tryCatch({
 
 proc.time()
 
-output.path<-paste(dados$Path.Output[1],"/",fic,".nc",sep = "")
+currentImage<-dados$Current.image[1]
+output.path<-paste(dados$Path.Output[1],"/",currentImage,".nc",sep = "")
 outputWriteRaster <- function() {
   output[Fmask>1]<-NaN
   names(output)<-c("Rn","TS","NDVI","EVI","LAI","G","alb")
@@ -213,7 +214,7 @@ tryCatch({
 proc.time()
 
 #Opening old alb NetCDF
-var_output<-paste(dados$Path.Output,"/",fic,"_alb.nc",sep="")
+var_output<-paste(dados$Path.Output,"/",currentImage,"_alb.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 proc.time()
 
@@ -227,7 +228,7 @@ dimLonDef<-ncdim_def("lon","degrees",oldLon,unlim=FALSE,longname="longitude")
 proc.time()
 
 #New alb file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_alb.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_alb.nc",sep="")
 oldAlbValues<-ncvar_get(nc,fic)
 newAlbValues<-ncvar_def("alb","daily",list(dimLonDef,dimLatDef,tdim),longname="alb",missval=NaN, prec="double")
 nc_close(nc)
@@ -237,11 +238,11 @@ nc_close(newAlbNCDF4)
 proc.time()
 
 #Opening old EVI NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_EVI.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_EVI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New EVI file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_EVI.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_EVI.nc",sep="")
 oldEVIValues<-ncvar_get(nc,fic)
 newEVIValues<-ncvar_def("EVI","daily",list(dimLonDef,dimLatDef,tdim),longname="EVI",missval=NaN,prec="double")
 nc_close(nc)
@@ -251,11 +252,11 @@ nc_close(newEVINCDF4)
 proc.time()
 
 #Opening old G NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_G.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_G.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New G file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_G.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_G.nc",sep="")
 oldGValues<-ncvar_get(nc,fic)
 newGValues<-ncvar_def("G","daily",list(dimLonDef,dimLatDef,tdim),longname="G",missval=NaN,prec="double")
 nc_close(nc)
@@ -265,11 +266,11 @@ nc_close(newGNCDF4)
 proc.time()
 
 #Opening old LAI NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_LAI.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_LAI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New LAI file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_LAI.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_LAI.nc",sep="")
 oldLAIValues<-ncvar_get(nc,fic)
 newLAIValues<-ncvar_def("LAI","daily",list(dimLonDef,dimLatDef,tdim),longname="LAI",missval=NaN,prec="double")
 nc_close(nc)
@@ -279,11 +280,11 @@ nc_close(newLAINCDF4)
 proc.time()
 
 #Opening old NDVI NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_NDVI.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_NDVI.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New NDVI file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_NDVI.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_NDVI.nc",sep="")
 oldNDVIValues<-ncvar_get(nc,fic)
 newNDVIValues<-ncvar_def("NDVI","daily",list(dimLonDef,dimLatDef,tdim),longname="NDVI",missval=NaN,prec="double")
 nc_close(nc)
@@ -293,11 +294,11 @@ nc_close(newNDVINCDF4)
 proc.time()
 
 #Opening old Rn NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_Rn.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_Rn.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New Rn file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_Rn.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_Rn.nc",sep="")
 oldRnValues<-ncvar_get(nc,fic)
 newRnValues<-ncvar_def("Rn","daily",list(dimLonDef,dimLatDef,tdim),longname="Rn",missval=NaN,prec="double")
 nc_close(nc)
@@ -307,11 +308,11 @@ nc_close(newRnNCDF4)
 proc.time()
 
 #Opening old TS NetCDF
-var_output<-paste(dados$Path.Output[1],"/",fic,"_TS.nc",sep="")
+var_output<-paste(dados$Path.Output[1],"/",currentImage,"_TS.nc",sep="")
 nc<-nc_open(var_output, write=TRUE,readunlim=FALSE,verbose=TRUE,auto_GMT=FALSE,suppress_dimvals=FALSE)
 
 #New TS file name
-file_output<-paste(dados$Path.Output[1],"/",fic,"_TS.nc",sep="")
+file_output<-paste(dados$Path.Output[1],"/",currentImage,"_TS.nc",sep="")
 oldTSValues<-ncvar_get(nc,fic)
 newTSValues<-ncvar_def("TS","daily",list(dimLonDef,dimLatDef,tdim),longname="TS",missval=NaN,prec="double")
 nc_close(nc)

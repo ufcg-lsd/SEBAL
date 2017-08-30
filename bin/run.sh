@@ -64,7 +64,7 @@ function untarImageAndPrepareDirs {
 function preProcessImage {
   cd $SEBAL_DIR_PATH
 
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $SANDBOX/ $IMAGE_MTL_FILE_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
+  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain nfs/fixed-image/ /nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTL.txt" $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE /nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTLFmask"
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
   echo -e "\n" >> $IMAGE_STATION_FILE_PATH
   cd ..
@@ -76,8 +76,12 @@ function creatingDadosCSV {
 
   cd $R_EXEC_DIR
 
-  echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
-  echo "$SANDBOX/$IMAGE_NAME;$IMAGE_MTL_FILE_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  MTL_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTL.txt"
+  FMASK_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTLFmask"
+  STATION_FILE_PATH=/nfs/results/$IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
+
+  echo "File images;MTL;File Station Weather;File Fmask;Path Output;Current image" > dados.csv
+  echo "/nfs/fixed-image/$FIXED_IMAGE_NAME;$MTL_FILE_PATH;$STATION_FILE_PATH;$FMASK_FILE_PATH;$OUTPUT_IMAGE_DIR;$IMAGE_NAME" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
@@ -126,7 +130,10 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
+  STATION_FILE_PATH=/nfs/results/$IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
+
   sudo mv dados.csv $OUTPUT_IMAGE_DIR
+  sudo mv $STATION_FILE_PATH $IMAGE_STATION_FILE_PATH
   cd ../..
 }
 
@@ -150,8 +157,8 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-untarImageAndPrepareDirs
-checkProcessOutput
+#untarImageAndPrepareDirs
+#checkProcessOutput
 preProcessImage
 checkProcessOutput
 creatingDadosCSV
