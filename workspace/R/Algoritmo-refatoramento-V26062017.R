@@ -157,6 +157,14 @@ get_file_informations <- function(dados) {
     n_fmask <- length(fichs_imagens)
     Fmask <- raster(fichs_imagens[[n_fmask]])
 
+    sw <- dados$File.Station.Weather[1]
+    table <- (read.csv(
+        sw,
+        sep = ";",
+        header = FALSE,
+        stringsAsFactors = FALSE)
+    )
+
     return(list(
         "sensors" = sensors,
         "wrspr" = wrspr,
@@ -168,7 +176,8 @@ get_file_informations <- function(dados) {
         "tdim" = tdim,
         "mtl" = MTL,
         "sensor_parameters" = s_p,
-        "Fmask" = Fmask
+        "Fmask" = Fmask,
+        "swt" = table
     ))
 }
 returned_values <- get_file_informations(dados)
@@ -193,6 +202,8 @@ tdim <- returned_values$tdim
 #MTL File
 mtl <- returned_values$mtl
 sensor_parameters <- returned_values$sensor_parameters
+#Reading file Station weather
+station_weather_table <- returned_values$swt #linha 143
 rm(returned_values)
 proc.time()
 print("DATA")
@@ -272,19 +283,6 @@ elevation <- resample_image(elevation, elevation_aux, "ngb", constantes)
 raster_stack <- resample_image(raster_stack, elevation, "ngb", constantes)
 proc.time()
 print("RESAMPLING")
-
-read_station_weather_data <- function(dados) {
-    sw <- dados$File.Station.Weather[1]
-    table <- (read.csv(
-        sw,
-        sep = ";",
-        header = FALSE,
-        stringsAsFactors = FALSE)
-    )
-    return(table)
-}
-#Reading file Station weather
-station_weather_table <- read_station_weather_data(dados) #linha 143
 
 calc_transmissivity <- function(elevation) {
     tal <- 0.75 + 2 * 10 ^ -5 * elevation
