@@ -80,7 +80,7 @@ function creatingDadosCSV {
 
   MTL_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTL.txt"
   FMASK_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_MTLFmask"
-  STATION_FILE_PATH=/nfs/results/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
+  STATION_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
 
   echo "File images;MTL;File Station Weather;File Fmask;Path Output;Current image" > dados.csv
   echo "/nfs/fixed-image/$FIXED_IMAGE_NAME;$MTL_FILE_PATH;$STATION_FILE_PATH;$FMASK_FILE_PATH;$OUTPUT_IMAGE_DIR;$IMAGE_NAME" >> dados.csv
@@ -132,10 +132,10 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  STATION_FILE_PATH=/nfs/results/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
+  STATION_FILE_PATH=/nfs/fixed-image/$FIXED_IMAGE_NAME/$FIXED_IMAGE_NAME"_station.csv"
 
   sudo mv dados.csv $OUTPUT_IMAGE_DIR
-  sudo mv $STATION_FILE_PATH $IMAGE_STATION_FILE_PATH
+  sudo cp $STATION_FILE_PATH $IMAGE_STATION_FILE_PATH
   cd ../..
 }
 
