@@ -163,8 +163,8 @@ function finally {
 echo "Creating image output directory"
 sudo mkdir -p $OUTPUT_IMAGE_DIR
 #checkProcessOutput
-preProcessImage
-checkProcessOutput
+#preProcessImage
+#checkProcessOutput
 creatingDadosCSV
 checkProcessOutput
 prepareEnvAndCollectUsage
