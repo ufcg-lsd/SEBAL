@@ -160,6 +160,8 @@ function finally {
 }
 
 #untarImageAndPrepareDirs
+echo "Creating image output directory"
+sudo mkdir -p $OUTPUT_IMAGE_DIR
 #checkProcessOutput
 preProcessImage
 checkProcessOutput
