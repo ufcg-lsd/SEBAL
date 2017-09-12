@@ -551,3 +551,5 @@ tryCatch({
   cat("Image phase two processing timedout. Exiting with 124 code...\n");
   quit("no", 124, FALSE)
 })
+
+proc.time()

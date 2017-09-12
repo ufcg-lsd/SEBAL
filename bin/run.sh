@@ -34,7 +34,7 @@ SCRIPTS_DIR=scripts
 SWIFT_CLI_DIR=swift-client
 LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
 
-FIXED_IMAGE_NAME="LT52160651994139CUB00"
+FIXED_IMAGE_NAME="LT52160652007271CUB00"
 
 # This function clean environment by deleting raster temp dir if exists
 function cleanRasterEnv {
