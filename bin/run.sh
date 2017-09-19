@@ -1,16 +1,10 @@
 #!/bin/bash
 # ${IMAGE_NEW_COLLECTION_NAME}
 IMAGE_NEW_COLLECTION_NAME=$1
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/
-IMAGES_DIR_PATH=$2
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/
-RESULTS_DIR_PATH=$3
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NEW_COLLECTION_NAME}
-OUTPUT_IMAGE_DIR=$4
-# ${SEBAL_MOUNT_POINT}/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}"_MTL.txt"
-IMAGE_MTL_PATH=$5
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}"_station.csv"
-IMAGE_STATION_FILE_PATH=$6
+# ${SEBAL_MOUNT_POINT}/${IMAGE_NEW_COLLECTION_NAME}/$INPUTS_DIR_NAME/
+INPUT_DIR_PATH=$2
+# ${SEBAL_MOUNT_POINT}/${IMAGE_NEW_COLLECTION_NAME}/$OUTPUT_DIR_NAME/
+OUTPUT_DIR_PATH=$3
 
 # Global variables
 SANDBOX=$(pwd)
@@ -20,12 +14,14 @@ LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
+IMAGE_MTL_FILE_PATH=$INPUT_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME"_MTL.txt"
+IMAGE_STATION_FILE_PATH=$INPUT_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME"_station.csv"
+
 R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-completo-v26062017.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
-OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
 SCRIPTS_DIR=scripts
 SWIFT_CLI_DIR=swift-client
 LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
@@ -41,17 +37,17 @@ function cleanRasterEnv {
 
 # This function untare image and creates an output dir into mounted dir
 function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
+  cd $INPUT_DIR_PATH
 
   echo "Image file name is $IMAGE_NEW_COLLECTION_NAME"
 
   # untar image
   echo "Untaring image $IMAGE_NEW_COLLECTION_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
+  cd $INPUT_DIR_PATH
   sudo tar -xvzf $IMAGE_NEW_COLLECTION_NAME".tar.gz"
 
   echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
+  sudo mkdir -p $OUTPUT_DIR_PATH
 
   cd $SANDBOX
 }
@@ -60,8 +56,8 @@ function untarImageAndPrepareDirs {
 function preProcessImage {
   cd $SEBAL_DIR_PATH
 
-  echo "Pre Process Parameters: $IMAGE_NEW_COLLECTION_NAME $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE"
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGE_NEW_COLLECTION_NAME $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE
+  echo "Pre Process Parameters: $IMAGE_NEW_COLLECTION_NAME $INPUT_DIR_PATH/ $IMAGE_MTL_FILE_PATH $OUTPUT_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE"
+  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGE_NEW_COLLECTION_NAME $INPUT_DIR_PATH/ $IMAGE_MTL_FILE_PATH $OUTPUT_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE
   sudo chmod 777 $IMAGE_STATION_FILE_PATH
   echo -e "\n" >> $IMAGE_STATION_FILE_PATH
   cd ..
@@ -74,7 +70,7 @@ function creatingDadosCSV {
   cd $R_EXEC_DIR
 
   echo "File images;MTL;File Station Weather;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "$INPUT_DIR_PATH/;$IMAGE_MTL_FILE_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_DIR_PATH" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
@@ -92,8 +88,8 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NEW_COLLECTION_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NEW_COLLECTION_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME"_cpu_usage.txt" > /dev/null &
+  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME"_mem_usage.txt" > /dev/null &
 }
 
 # This function executes R script
@@ -124,7 +120,7 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  sudo mv dados.csv $OUTPUT_IMAGE_DIR
+  sudo mv dados.csv $OUTPUT_DIR_PATH
   cd ../..
 }
 
