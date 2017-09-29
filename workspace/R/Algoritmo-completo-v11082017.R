@@ -8,10 +8,6 @@
 options(echo=TRUE)
 rm(list=ls())
 
-# for now, this will be here
-install.packages("snow", repos="https://vps.fmvz.usp.br/CRAN/")
-install.packages("R.utils", repos="https://vps.fmvz.usp.br/CRAN/")
-
 library(R.utils)
 library(raster)
 library(rgdal)
@@ -117,19 +113,19 @@ for (i in 1:nlayers(fic.st)) {
 
 proc.time()
 
-#if (0.99<=(sum(is.na(values(fic.st)))/7)/(fic.st@ncols*fic.st@nrows)) { 
- # print("Imagem incompatível para o processamento,mais de 99% nuvem e sombra de nuvem")
- # quit("no", 1, FALSE)
-#}
+if (0.99<=(sum(is.na(values(fic.st)))/7)/(fic.st@ncols*fic.st@nrows)) { 
+	print("Imagem incompativel para o processamento,mais de 99% nuvem e sombra de nuvem")
+	quit("no", 1, FALSE)
+}
 
 proc.time()
 
 # Changing the projection of the images (UTM to GEO)
 # This operation can be done in a parallel way by Clusters, projectRaster is implemented to naturally be executed by clusters
 # The number of used clusters is given by the 'clusters' constant
-beginCluster(clusters)
+#beginCluster(clusters)
 	fic.st <- projectRaster(fic.st, crs=WGS84)
-endCluster()
+#endCluster()
 
 proc.time()
 
