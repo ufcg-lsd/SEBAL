@@ -1,34 +1,55 @@
 #!/bin/bash
-# ${IMAGE_NEW_COLLECTION_NAME}
-IMAGE_NEW_COLLECTION_NAME=$1
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/
-IMAGES_DIR_PATH=$2
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/
-RESULTS_DIR_PATH=$3
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NEW_COLLECTION_NAME}
-OUTPUT_IMAGE_DIR=$4
-# ${SEBAL_MOUNT_POINT}/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}"_MTL.txt"
-IMAGE_MTL_PATH=$5
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NEW_COLLECTION_NAME}/${IMAGE_NEW_COLLECTION_NAME}"_station.csv"
-IMAGE_STATION_FILE_PATH=$6
+# ${SAPS_MOUNT_POINT}/${TASK_ID}/$INPUT_DIR
+INPUT_DIR_PATH=$1
+# ${SAPS_MOUNT_POINT}/$OUTPUT_DIR
+OUTPUT_DIR_PATH=$2
+# ${SAPS_MOUNT_POINT}/$PREPROCESS_DIR
+PREPROCESS_DIR_PATH=$3
 
 # Global variables
 SANDBOX=$(pwd)
-SEBAL_DIR_PATH=$SANDBOX/SEBAL
+SAPS_DIR_PATH=$SANDBOX/SAPS
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
-TMP_DIR_PATH=/mnt
+TMP_DIR_PATH=/tmp
 
-R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
+R_EXEC_DIR=$SAPS_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-completo-v26062017.R
-R_RASTER_TMP_DIR=/mnt/rasterTmp
+R_RASTER_TMP_DIR=/tmp/rasterTmp
 MAX_TRIES=2
 
-OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
 SCRIPTS_DIR=scripts
-SWIFT_CLI_DIR=swift-client
-LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
+LOG4J_PATH=$SAPS_DIR_PATH/log4j.properties
+
+# Required info
+IMAGE_NAME=
+IMAGE_MTL_PATH=
+IMAGE_STATION_FILE_PATH=
+
+# This function get required file names from input path
+function getFileNames {
+  files=( $INPUT_DIR_PATH/*_MTL.txt )
+  for file in "${files[@]}"
+  do
+    filename="${file##*/}"
+    filenameWithoutExtension="${filename%_MTL*}"
+    IMAGE_NAME="$filenameWithoutExtension"
+  done
+
+  IMAGE_MTL_PATH=$INPUT_DIR_PATH/$IMAGE_NAME"_MTL.txt"
+  IMAGE_STATION_FILE_PATH=$INPUT_DIR_PATH/$IMAGE_NAME"_station.csv"
+  
+  echo "ImageName: $IMAGE_NAME;  ImageMTLPath: $IMAGE_MTL_PATH; ImageStationPath: $IMAGE_STATION_FILE_PATH"
+}
+
+# This function verifies if all R dependencies are installed
+function verifyRScript {
+  echo "Verifying dependencies for R script"
+
+  bash -x ${SAPS_DIR_PATH}/SAPS/scripts/verify-dependencies.sh ${SAPS_DIR_PATH}/SAPS/scripts
+}
+
 
 # This function clean environment by deleting raster temp dir if exists
 function cleanRasterEnv {
@@ -39,42 +60,14 @@ function cleanRasterEnv {
 
 }
 
-# This function untare image and creates an output dir into mounted dir
-function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
-
-  echo "Image file name is $IMAGE_NEW_COLLECTION_NAME"
-
-  # untar image
-  echo "Untaring image $IMAGE_NEW_COLLECTION_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME
-  sudo tar -xvzf $IMAGE_NEW_COLLECTION_NAME".tar.gz"
-
-  echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
-
-  cd $SANDBOX
-}
-
-# This function calls a pre process java code to prepare a station file of a given image
-function preProcessImage {
-  cd $SEBAL_DIR_PATH
-
-  echo "Pre Process Parameters: $IMAGE_NEW_COLLECTION_NAME $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE"
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGE_NEW_COLLECTION_NAME $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE
-  sudo chmod 777 $IMAGE_STATION_FILE_PATH
-  echo -e "\n" >> $IMAGE_STATION_FILE_PATH
-  cd ..
-}
-
 # This function prepare a dados.csv file
 function creatingDadosCSV {
-  echo "Creating dados.csv for image $IMAGE_NEW_COLLECTION_NAME"
+  echo "Creating dados.csv for image $TASK_ID"
 
   cd $R_EXEC_DIR
 
   echo "File images;MTL;File Station Weather;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NEW_COLLECTION_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "$INPUT_DIR_PATH;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_DIR_PATH" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
@@ -92,8 +85,8 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NEW_COLLECTION_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NEW_COLLECTION_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
+  sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
 }
 
 # This function executes R script
@@ -101,7 +94,7 @@ function executeRScript {
   for i in `seq $MAX_TRIES`
   do
     cleanRasterEnv
-    sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+    sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
 
     echo "executeRScript_process_output=$PROCESS_OUTPUT"
@@ -124,7 +117,7 @@ function executeRScript {
 
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  sudo mv dados.csv $OUTPUT_IMAGE_DIR
+  sudo mv dados.csv $OUTPUT_DIR_PATH
   cd ../..
 }
 
@@ -148,7 +141,9 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-untarImageAndPrepareDirs
+getFileNames
+checkProcessOutput
+verifyRScript
 checkProcessOutput
 preProcessImage
 checkProcessOutput
