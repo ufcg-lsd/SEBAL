@@ -23,9 +23,13 @@ WD <- args[1]
 setwd(WD) # Working Directory
 
 # changing raster tmpdir
-rasterOptions(tmpdir = paste("", "tmp", "rasterTmp", sep = "/"))
+tmpdir_name <- paste(c("", "mnt", "rasterTmp"), collapse = "/")
+rasterOptions(
+    tmpdir = tmpdir_name,
+    maxmemory = 210000000
+)
+removeTmpFiles(h = 0)
 
-source("landsat.R")
 # Ler dist?ncia realtiva Sol a Terra
 load("d_sun_earth.RData")
 # Data
@@ -50,8 +54,6 @@ get_file_informations <- function(dados) {
     #Images file reading
     dir <- dados$File.images[1]
     #MTL File
-    rows <- 140
-    if (sensors == 8) rows <- 190
     MTL <- read.table(
         dados$MTL[1],
         skip = 0,
@@ -203,7 +205,7 @@ tdim <- returned_values$tdim
 mtl <- returned_values$mtl
 sensor_parameters <- returned_values$sensor_parameters
 #Reading file Station weather
-station_weather_table <- returned_values$swt #linha 143
+station_weather_table <- returned_values$swt
 rm(returned_values)
 proc.time()
 print("DATA")
@@ -646,7 +648,7 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     #Weather station data
     x <- 3 # Wind speed sensor Height (meters)
     hc <- 0.2 #Vegetation height (meters)
-    Lat <-  swt$V4[1] #Station Latitude
+    Lat <- swt$V4[1] #Station Latitude
     # Long <- swt$V5[1] #Station Longitude # never used
 
     #Surface roughness parameters in station
@@ -672,12 +674,10 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     base_ref <- stack(NDVI, TS, Rn, G, ustar, rah)
     nbase <- c("NDVI", "TS", "Rn", "G", "ustar", "rah")
     names(base_ref) <- nbase
-    beginCluster(constantes$clusters)
     value_pixels_ref <- extract(base_ref, ll_ref)
-    endCluster()
     rownames(value_pixels_ref) <- c("hot", "cold")
     H_hot <- value_pixels_ref["hot", "Rn"] -
-             value_pixels_ref["hot", "G"]  
+             value_pixels_ref["hot", "G"]
     value_pixel_rah <- value_pixels_ref["hot", "rah"]
 
     i <- 1
@@ -712,9 +712,9 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
         psi_200[L > 0] <- -5 * (2 / L[L > 0])
 
         # Velocidade de fric??o para todos os pixels
-        ustar <- k * u200 / (log(200 / zom) - psi_200)
+        ustar <- constantes$k * u200 / (log(200 / zom) - psi_200)
         # Resist?ncia aerodin?mica para todos os pixels
-        rah <- (log(2 / 0.1) - psi_2 + psi_0_1) / (ustar * k)
+        rah <- (log(2 / 0.1) - psi_2 + psi_0_1) / (ustar * constantes$k)
         rah_hot <- extract(rah, matrix(ll_ref["hot", ], 1, 2))
         value_pixel_rah <- c(value_pixel_rah, rah_hot)
         Erro <- (abs(1 - rah_hot_0 / rah_hot) >= 0.05)
@@ -768,6 +768,9 @@ phase2 <- function(stack, swt, constantes, sun_dist, julian_day) {
     #Evapotranspiration 24 hours (ET24h)
     ET24h_dB <- LE24h_dB * 86400 / ( (2.501 - 0.00236 *
                     (max(swt$V7[]) + min(swt$V7[])) / 2) * 10 ^ 6)
+
+    EF[EF == Inf] <- NA
+    ET24h_dB[ET24h_dB == -Inf] <- NA
 
     evapo_trans <- stack(EF, ET24h_dB)
     return(evapo_trans)
