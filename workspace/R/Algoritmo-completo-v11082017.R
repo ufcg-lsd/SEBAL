@@ -423,11 +423,7 @@ phase2 <- function() {
 		HO.c.hot.max<-sort(HO.c.hot)[round(0.75*length(HO.c.hot))]
 		ll.hot<-which(TS[]==TS.c.hot & HO[]>HO.c.hot.min & HO[]<HO.c.hot.max)
 		xy.hot <- xyFromCell(TS, ll.hot)
-	
-		beginCluster(clusters)
-			NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
-		endCluster()
-		
+		NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
 		NDVI.hot.2<-NDVI.hot[!sapply(NDVI.hot, is.null)]
 		NDVI.hot.cv <- sapply(NDVI.hot.2,sd, na.rm=TRUE)/sapply(NDVI.hot.2, mean, na.rm=TRUE)
 		i.NDVI.hot.cv<-which.min(NDVI.hot.cv)
@@ -448,11 +444,7 @@ phase2 <- function() {
 		HO.c.cold.max<-sort(HO.c.cold)[round(0.75*length(HO.c.cold))]
 		ll.cold<-which(TS[]==TS.c.cold & (HO>HO.c.cold.min &!is.na(HO)) & (HO<HO.c.cold.max & !is.na(HO)))
 		xy.cold <- xyFromCell(TS, ll.cold)
-		
-		beginCluster(clusters)
-			NDVI.cold<-extract(NDVI,xy.cold, buffer=105)
-		endCluster()
-		
+		NDVI.cold<-extract(NDVI,xy.cold, buffer=105)
 		NDVI.cold.2<-NDVI.cold[!sapply(NDVI.cold, is.null)]
 	
 		# Maximum number of neighboring pixels with $NVDI < 0$
@@ -502,11 +494,7 @@ phase2 <- function() {
 	base_ref<-stack(NDVI,TS,Rn,G,ustar,rah) # Raster
 	nbase<-c("NDVI","TS","Rn","G")
 	names(base_ref)<-c(nbase,"ustar","rah")
-
-	beginCluster(clusters)
-		value.pixels.ref<-extract(base_ref,ll_ref)
-	endCluster()
-	
+	value.pixels.ref<-extract(base_ref,ll_ref)
 	rownames(value.pixels.ref)<-c("hot","cold")
 	H.hot<-value.pixels.ref["hot","Rn"]-value.pixels.ref["hot","G"]  
 	value.pixel.rah<-value.pixels.ref["hot","rah"]
@@ -540,11 +528,7 @@ phase2 <- function() {
 	  ustar<-k*u200/(log(200/zom)-psi_200) # Changed from Raster to Vector # Friction velocity for all pixels
 	  rah<-NDVI
 	  rah[]<-(log(2/0.1)-psi_2+psi_0.1)/(ustar*k) # Changed from Raster to Vector # Aerodynamic resistency for all pixels
-	  
-	  beginCluster(clusters)
-	  	rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2)) # Value
-	  endCluster()	  
-
+	  rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2)) # Value
 	  value.pixel.rah<-c(value.pixel.rah,rah.hot) # Value
 	  Erro<-(abs(1-rah.hot.0/rah.hot)>=0.05)
 	  i<-i+1
