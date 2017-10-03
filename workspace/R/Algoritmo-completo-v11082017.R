@@ -35,8 +35,8 @@ k <- 0.41		# Von K?rm?n
 g <- 9.81		# Gravity
 rho <- 1.15		# Air density
 cp <- 1004		# Specific heat of air
-Gsc <- 0.082	# Solar constant (0.0820 MJ m-2 min-1)
-clusters <- 7	# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
+Gsc <- 0.082		# Solar constant (0.0820 MJ m-2 min-1)
+clusters <- 7		# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
 
 ######################### Reading sensor parameters #####################################
 
@@ -123,6 +123,7 @@ proc.time()
 # Changing the projection of the images (UTM to GEO)
 # This operation can be done in a parallel way by Clusters, projectRaster is implemented to naturally be executed by clusters
 # The number of used clusters is given by the 'clusters' constant
+
 #beginCluster(clusters)
 	fic.st <- projectRaster(fic.st, crs=WGS84)
 #endCluster()
@@ -139,10 +140,7 @@ BoundingBox <- BoundingBoxes[BoundingBoxes@data$WRSPR == WRSPR, ]
 # Read the File that stores the Elevation of the image area, this influence on some calculations
 fic.elevation <- paste("Elevation/srtm_29_14.tif")
 raster.elevation <- raster(fic.elevation)
-
-beginCluster(clusters)
-	raster.elevation <- crop(raster.elevation, extent(BoundingBox))
-endCluster()
+raster.elevation <- crop(raster.elevation, extent(BoundingBox))
 
 proc.time()
 
@@ -153,6 +151,7 @@ res(raster.elevation.aux) <- res(fic.st) # The raster elevation aux resolution i
 # Resample images
 beginCluster(clusters) # ?? beginClusters, whereis endClusters??
 	raster.elevation <- resample(raster.elevation, raster.elevation.aux, method="ngb")
+endCluster()
 
 proc.time()
 
@@ -168,7 +167,9 @@ proc.time()
 
 image.rec <- NULL;
 imageResample <- function() {
-  image_resample <- resample(fic.st, raster.elevation, method="ngb")
+  beginCluster(clusters)
+	image_resample <- resample(fic.st, raster.elevation, method="ngb")
+  endCluster()
   return(image_resample)
 }
 
@@ -227,9 +228,7 @@ proc.time()
 # This block is already Clustered
 
 outputMask <- function() {
-  beginCluster(clusters)
- 	 output <- mask(output, BoundingBox)
-  endCluster()
+  output <- mask(output, BoundingBox)
   return(output)
 }
 
@@ -424,7 +423,11 @@ phase2 <- function() {
 		HO.c.hot.max<-sort(HO.c.hot)[round(0.75*length(HO.c.hot))]
 		ll.hot<-which(TS[]==TS.c.hot & HO[]>HO.c.hot.min & HO[]<HO.c.hot.max)
 		xy.hot <- xyFromCell(TS, ll.hot)
-		NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
+	
+		beginCluster(clusters)
+			NDVI.hot<-extract(NDVI,xy.hot, buffer=105)
+		endCluster()
+		
 		NDVI.hot.2<-NDVI.hot[!sapply(NDVI.hot, is.null)]
 		NDVI.hot.cv <- sapply(NDVI.hot.2,sd, na.rm=TRUE)/sapply(NDVI.hot.2, mean, na.rm=TRUE)
 		i.NDVI.hot.cv<-which.min(NDVI.hot.cv)
@@ -445,7 +448,11 @@ phase2 <- function() {
 		HO.c.cold.max<-sort(HO.c.cold)[round(0.75*length(HO.c.cold))]
 		ll.cold<-which(TS[]==TS.c.cold & (HO>HO.c.cold.min &!is.na(HO)) & (HO<HO.c.cold.max & !is.na(HO)))
 		xy.cold <- xyFromCell(TS, ll.cold)
-		NDVI.cold<-extract(NDVI,xy.cold, buffer=105)
+		
+		beginCluster(clusters)
+			NDVI.cold<-extract(NDVI,xy.cold, buffer=105)
+		endCluster()
+		
 		NDVI.cold.2<-NDVI.cold[!sapply(NDVI.cold, is.null)]
 	
 		# Maximum number of neighboring pixels with $NVDI < 0$
@@ -454,8 +461,6 @@ phase2 <- function() {
 		i.NDVI.cold<-which.max(n.neg.NDVI)
 		ll.cold.f<-cbind(as.vector(xy.cold[i.NDVI.cold,1]), as.vector(xy.cold[i.NDVI.cold,2]))
 	}
-	
-	endCluster() # endCluster? Where is begin?
 	
 	# Location of reference pixels (hot and cold)
 	ll_ref<-rbind(ll.hot.f[1,],ll.cold.f[1,])
@@ -497,7 +502,11 @@ phase2 <- function() {
 	base_ref<-stack(NDVI,TS,Rn,G,ustar,rah) # Raster
 	nbase<-c("NDVI","TS","Rn","G")
 	names(base_ref)<-c(nbase,"ustar","rah")
-	value.pixels.ref<-extract(base_ref,ll_ref)
+
+	beginCluster(clusters)
+		value.pixels.ref<-extract(base_ref,ll_ref)
+	endCluster()
+	
 	rownames(value.pixels.ref)<-c("hot","cold")
 	H.hot<-value.pixels.ref["hot","Rn"]-value.pixels.ref["hot","G"]  
 	value.pixel.rah<-value.pixels.ref["hot","rah"]
@@ -531,7 +540,11 @@ phase2 <- function() {
 	  ustar<-k*u200/(log(200/zom)-psi_200) # Changed from Raster to Vector # Friction velocity for all pixels
 	  rah<-NDVI
 	  rah[]<-(log(2/0.1)-psi_2+psi_0.1)/(ustar*k) # Changed from Raster to Vector # Aerodynamic resistency for all pixels
-	  rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2)) # Value
+	  
+	  beginCluster(clusters)
+	  	rah.hot<-extract(rah,matrix(ll_ref["hot",],1,2)) # Value
+	  endCluster()	  
+
 	  value.pixel.rah<-c(value.pixel.rah,rah.hot) # Value
 	  Erro<-(abs(1-rah.hot.0/rah.hot)>=0.05)
 	  i<-i+1
