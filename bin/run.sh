@@ -145,8 +145,6 @@ getFileNames
 checkProcessOutput
 verifyRScript
 checkProcessOutput
-preProcessImage
-checkProcessOutput
 creatingDadosCSV
 checkProcessOutput
 prepareEnvAndCollectUsage
