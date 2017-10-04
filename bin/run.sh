@@ -47,7 +47,7 @@ function getFileNames {
 function verifyRScript {
   echo "Verifying dependencies for R script"
 
-  bash -x ${SAPS_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh ${SAPS_DIR_PATH}/SEBAL/scripts
+  bash -x ${SAPS_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh ${SAPS_DIR_PATH}/scripts
 }
 
 
