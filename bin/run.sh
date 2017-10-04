@@ -8,7 +8,7 @@ PREPROCESS_DIR_PATH=$3
 
 # Global variables
 SANDBOX=$(pwd)
-SAPS_DIR_PATH=$SANDBOX/SAPS
+SAPS_DIR_PATH=$SANDBOX/SEBAL
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
@@ -47,7 +47,7 @@ function getFileNames {
 function verifyRScript {
   echo "Verifying dependencies for R script"
 
-  bash -x ${SAPS_DIR_PATH}/SAPS/scripts/verify-dependencies.sh ${SAPS_DIR_PATH}/SAPS/scripts
+  bash -x ${SAPS_DIR_PATH}/SEBAL/scripts/verify-dependencies.sh ${SAPS_DIR_PATH}/SEBAL/scripts
 }
 
 
