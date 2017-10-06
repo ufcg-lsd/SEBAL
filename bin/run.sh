@@ -16,7 +16,7 @@ TMP_DIR_PATH=/tmp
 
 R_EXEC_DIR=$SAPS_DIR_PATH/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-completo-v26062017.R
-R_RASTER_TMP_DIR=/tmp/rasterTmp
+R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
 SCRIPTS_DIR=scripts
@@ -153,4 +153,6 @@ executeRScript
 checkProcessOutput
 mvDadosCSV
 killCollectScripts
+cleanRasterEnv
+checkProcessOutput
 finally
