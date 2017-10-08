@@ -32,7 +32,7 @@ public class FTPStationOperator implements StationOperator {
 	private Properties properties;
 	private Map<String, String> cache = new HashMap<String, String>();
 	
-	private static final Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
+	private static final java.util.logging.Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
 	
 	public FTPStationOperator(Properties properties) {
 		
@@ -45,6 +45,7 @@ public class FTPStationOperator implements StationOperator {
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
 		
+		LOGGER.debug("stationFileURL=" + url);
 		if(doDownloadStationCSVFile(localStationsCSVFilePath, url)) {			
 			return readStationCSVFile(localStationsCSVFilePath);
 		}
@@ -104,6 +105,8 @@ public class FTPStationOperator implements StationOperator {
 				station.put("lat", lineSplit[1]);
 				station.put("lon", lineSplit[2]);
 				stations.put(station);
+				
+				LOGGER.info("id=" + lineSplit[0] + " lat=" + lineSplit[1] + " lon=" + lineSplit[2]);
 			}
 			fileReader.close();
 			file.delete();
@@ -119,6 +122,8 @@ public class FTPStationOperator implements StationOperator {
 		
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		String year = StationOperatorConstants.DATE_FORMAT.format(begindate).substring(0, 4);
+		
+		LOGGER.debug("Begin year: " + year);
 		
 		JSONArray stations = getStations(year);
 		

@@ -142,6 +142,8 @@ public class WeatherStation {
 			checkVariablesAndBuildString(stationData, closestRecord, toReturn,
 					i);
 		}
+		
+		LOGGER.debug("stationData=" + toReturn.toString().trim());
 		return toReturn.toString().trim();
 	}
 
@@ -252,7 +254,10 @@ public class WeatherStation {
 	}
 
 	public String getStationData(double lat, double lon, Date date) {
+		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
 		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon, 0);
+		
+		LOGGER.debug("nearStations=" + nearStations.toString());
 		if(nearStations != null) {			
 			return readFullRecord(date, nearStations, 0);
 		}
