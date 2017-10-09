@@ -603,6 +603,8 @@ public class SEBALHelper {
 			PixelQuenteFrioChooser pixelQuenteFrioChooser,
 			BoundingBox boundingBox) throws URISyntaxException, HttpException,
 			IOException {
+		
+		LOGGER.info("Starting station collect...");
 
         Locale.setDefault(Locale.ROOT);
 
