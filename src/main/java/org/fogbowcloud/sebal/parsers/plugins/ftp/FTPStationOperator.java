@@ -32,7 +32,7 @@ public class FTPStationOperator implements StationOperator {
 	private Properties properties;
 	private Map<String, String> cache = new HashMap<String, String>();
 	
-	private static final java.util.logging.Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
+	private static final Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
 	
 	public FTPStationOperator(Properties properties) {
 		
