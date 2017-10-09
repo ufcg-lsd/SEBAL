@@ -112,33 +112,33 @@ public class RWrapper {
         }
 	}
 
-	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser) 
-    		throws Exception{
-    	LOGGER.info("Pre processing pixels...");
-    	
-    	long now = System.currentTimeMillis();
-        Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
-                
-        BoundingBox boundingBox = null;
-        if (boundingBoxVertices.size() > 3) {
-        	boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
-        	LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
-        	LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
-        }
-        
-        String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
-                jFinal, pixelQuenteFrioChooser, boundingBox);
-        
-        if(stationData != null) {        	
-        	LOGGER.debug("stationData: " + stationData);               
-        	LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
-        	
-        	saveWeatherStationInfo(stationData);              
-        	LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
-        } else {
-        	LOGGER.error("Error while getting station data");
-        }
-    }
+	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser)
+			throws Exception {
+		LOGGER.info("Pre processing pixels...");
+
+		long now = System.currentTimeMillis();
+		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
+
+		BoundingBox boundingBox = null;
+		if (boundingBoxVertices.size() > 3) {
+			boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
+			LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+			LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
+		}
+
+		String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
+				jFinal, pixelQuenteFrioChooser, boundingBox);
+
+		if (stationData != null && !stationData.isEmpty()) {
+			LOGGER.debug("stationData: " + stationData);
+			LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
+
+			saveWeatherStationInfo(stationData);
+			LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+		} else {
+			LOGGER.error("Error while getting station data");
+		}
+	}
 	
 	private void saveWeatherStationInfo(String stationData) {
 		long now = System.currentTimeMillis();

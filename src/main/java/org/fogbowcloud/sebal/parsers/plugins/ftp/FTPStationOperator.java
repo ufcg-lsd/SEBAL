@@ -104,9 +104,7 @@ public class FTPStationOperator implements StationOperator {
 				station.put("id", lineSplit[0]);
 				station.put("lat", lineSplit[1]);
 				station.put("lon", lineSplit[2]);
-				stations.put(station);
-				
-				LOGGER.info("id=" + lineSplit[0] + " lat=" + lineSplit[1] + " lon=" + lineSplit[2]);
+				stations.put(station);								
 			}
 			fileReader.close();
 			file.delete();
@@ -164,8 +162,12 @@ public class FTPStationOperator implements StationOperator {
 	}
 
 	@Override
-	public JSONArray readStation(String stationId, String beginDate, String endDate) throws Exception {
-		
+	public JSONArray readStation(String stationId, String beginDate, String endDate)
+			throws Exception {
+
+		LOGGER.debug("Reading station " + stationId + " in beginDate " + beginDate + " and endDate "
+				+ endDate);
+
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
@@ -179,11 +181,12 @@ public class FTPStationOperator implements StationOperator {
 		}
 
 		// Uncompressing station file
-		File uncompressedUnformattedStationFile = unGzip(compressedUnformattedLocalStationFile, true);
+		File uncompressedUnformattedStationFile = unGzip(compressedUnformattedLocalStationFile,
+				true);
 
 		List<String> stationData = new ArrayList<String>();
 		readStationFile(uncompressedUnformattedStationFile, stationData);
-		
+
 		uncompressedUnformattedStationFile.delete();
 		FileUtils.deleteDirectory(baseUnformattedLocalStationFile);
 
@@ -192,21 +195,20 @@ public class FTPStationOperator implements StationOperator {
 
 		for (int i = 0; i < dataArray.length(); i++) {
 			JSONObject stationDataRecord = dataArray.optJSONObject(i);
-			String airTemp = stationDataRecord
-					.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE);
+			String airTemp = stationDataRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE);
 			String dewTemp = stationDataRecord
 					.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE);
 			String windSpeed = stationDataRecord
 					.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED);
 
-			if (!airTemp.isEmpty() && !dewTemp.isEmpty()
-					&& !windSpeed.isEmpty()) {
+			if (!airTemp.isEmpty() && !dewTemp.isEmpty() && !windSpeed.isEmpty()) {
+				LOGGER.debug("Data found...airTemp=" + airTemp + " dewTemp=" + dewTemp
+						+ " windSpeed=" + windSpeed);
 				return dataArray;
 			}
 		}
 
-		cache.put(url, "FAILED");
-		throw new Exception();
+		return null;
 	}
 	
 	protected String getBaseUnformattedLocalStationFilePath(String year) {
@@ -237,6 +239,7 @@ public class FTPStationOperator implements StationOperator {
 	}
 	
 	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
+		LOGGER.debug("unformattedLocalStationFileURL=" + url);
 
 		ProcessBuilder builder = new ProcessBuilder("wget", "-O", unformattedLocalStationFile.getAbsolutePath(), url);
 
@@ -261,6 +264,7 @@ public class FTPStationOperator implements StationOperator {
 	}
 	
 	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
+		LOGGER.info("Unzipping station file...");
 		
 	    GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
 	    FileOutputStream fos = null;
@@ -303,6 +307,7 @@ public class FTPStationOperator implements StationOperator {
 	
 	private void getHourlyData(String beginDate, List<String> stationData,
 			JSONArray dataArray) throws JSONException {
+		LOGGER.info("Getting hourly data...");
 		
 		for (String data : stationData) {
 			if (data.contains(beginDate)) {
