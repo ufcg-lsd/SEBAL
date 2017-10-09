@@ -143,16 +143,16 @@ public class RWrapper {
 	private void saveWeatherStationInfo(String stationData) {
 		long now = System.currentTimeMillis();
 		String weatherPixelsFileName = getWeatherFileName();
-		
+
+		LOGGER.info("stationFileName=" + weatherPixelsFileName);
 		File outputFile = new File(weatherPixelsFileName);
 		try {
-			FileUtils.write(outputFile, "");			
+			FileUtils.write(outputFile, "");
 			FileUtils.write(outputFile, stationData, true);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error("Error while writing station file.", e);
 		}
-		LOGGER.debug("Saving station data output time="
-				+ (System.currentTimeMillis() - now));
+		LOGGER.debug("Saving station data output time=" + (System.currentTimeMillis() - now));
 	}
 	
     private String getWeatherFileName() {

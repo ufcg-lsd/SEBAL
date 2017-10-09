@@ -71,8 +71,7 @@ public class WeatherStation {
 				"stations.json"));
 	}
 
-	protected String readFullRecord(Date date, List<JSONObject> stations,
-			int numberOfDays) {
+	protected String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		Date endDate = new Date(date.getTime() + numberOfDays * StationOperatorConstants.A_DAY);
 
@@ -87,41 +86,41 @@ public class WeatherStation {
 					Long smallestDiff = Long.MAX_VALUE;
 
 					for (int i = 0; i < stationData.length(); i++) {
-						JSONObject stationDataRecord = stationData
-								.optJSONObject(i);
+						JSONObject stationDataRecord = stationData.optJSONObject(i);
 						String dateValue = stationDataRecord
 								.optString(SEBALAppConstants.JSON_STATION_DATE);
 						String timeValue = stationDataRecord
 								.optString(SEBALAppConstants.JSON_STATION_TIME);
 
-						Date recordDate = StationOperatorConstants.DATE_TIME_FORMAT.parse(dateValue
-								+ ";" + timeValue);
-						long diff = Math.abs(recordDate.getTime()
-								- date.getTime());
+						Date recordDate = StationOperatorConstants.DATE_TIME_FORMAT
+								.parse(dateValue + ";" + timeValue);
+						long diff = Math.abs(recordDate.getTime() - date.getTime());
 						if (diff < smallestDiff) {
 							smallestDiff = diff;
 							closestRecord = stationDataRecord;
 						}
 
-						if (!closestRecord.optString(
-								SEBALAppConstants.JSON_STATION_DATE).isEmpty()
+						if (!closestRecord.optString(SEBALAppConstants.JSON_STATION_DATE).isEmpty()
 								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_TIME)
 										.isEmpty()
 								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_LATITUDE)
 										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_LONGITUDE)
+								&& !closestRecord
+										.optString(SEBALAppConstants.JSON_STATION_LONGITUDE)
 										.isEmpty()
 								&& !closestRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE)
 										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE)
+								&& !closestRecord
+										.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE)
 										.isEmpty()
 								&& !closestRecord
 										.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)
 										.isEmpty()
-								&& Double.parseDouble(closestRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3) {
-							return generateStationData(stationData,
-									closestRecord);
-						} else if (Double.parseDouble(closestRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < 0.3) {
+								&& Double.parseDouble(closestRecord.optString(
+										SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3) {
+							return generateStationData(stationData, closestRecord);
+						} else if (Double.parseDouble(closestRecord
+								.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < 0.3) {
 							closestRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
 							closestRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED, "0.3");
 						}
@@ -143,7 +142,6 @@ public class WeatherStation {
 					i);
 		}
 		
-		LOGGER.debug("stationData=" + toReturn.toString().trim());
 		return toReturn.toString().trim();
 	}
 
@@ -257,8 +255,8 @@ public class WeatherStation {
 		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
 		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon, 0);
 		
-		LOGGER.debug("nearStations=" + nearStations.toString());
-		if(nearStations != null) {			
+		if(nearStations != null) {
+			LOGGER.info("Near stations found...reading full record");
 			return readFullRecord(date, nearStations, 0);
 		}
 		
