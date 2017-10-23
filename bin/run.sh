@@ -8,19 +8,18 @@ PREPROCESS_DIR_PATH=$3
 
 # Global variables
 SANDBOX=$(pwd)
-SAPS_DIR_PATH=$SANDBOX/SEBAL
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/tmp
 
-R_EXEC_DIR=$SAPS_DIR_PATH/workspace/R
+R_EXEC_DIR=$SANDBOX/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-completo-v26062017.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
 SCRIPTS_DIR=scripts
-LOG4J_PATH=$SAPS_DIR_PATH/log4j.properties
+LOG4J_PATH=$SANDBOX/log4j.properties
 
 # Required info
 IMAGE_NAME=
@@ -77,8 +76,8 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
+  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
 }
 
 # This function executes R script
@@ -86,7 +85,7 @@ function executeRScript {
   for i in `seq $MAX_TRIES`
   do
     cleanRasterEnv
-    sudo bash $SAPS_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+    sudo bash $SANDBOX/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
     PROCESS_OUTPUT=$?
 
     echo "executeRScript_process_output=$PROCESS_OUTPUT"
