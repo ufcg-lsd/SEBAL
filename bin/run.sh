@@ -43,14 +43,6 @@ function getFileNames {
   echo "ImageName: $IMAGE_NAME;  ImageMTLPath: $IMAGE_MTL_PATH; ImageStationPath: $IMAGE_STATION_FILE_PATH"
 }
 
-# This function verifies if all R dependencies are installed
-function verifyRScript {
-  echo "Verifying dependencies for R script"
-
-  bash -x ${SAPS_DIR_PATH}/$SCRIPTS_DIR/verify-dependencies.sh ${SAPS_DIR_PATH}/$SCRIPTS_DIR
-}
-
-
 # This function clean environment by deleting raster temp dir if exists
 function cleanRasterEnv {
   if [ -d $R_RASTER_TMP_DIR ]
@@ -142,8 +134,6 @@ function finally {
 }
 
 getFileNames
-checkProcessOutput
-verifyRScript
 checkProcessOutput
 creatingDadosCSV
 checkProcessOutput
