@@ -32,7 +32,7 @@ public class TestFTPStationOperator {
 		Properties properties = mock(Properties.class);
 		String year = "2002";
 		int numberOfDays = 0;
-		double lat = -3.40;
+		double lat = -3.40; // Maranhao - Moncao
 		double lon = -45.20;
 		
 		String stringDate = "26-01-2002";		
@@ -55,11 +55,20 @@ public class TestFTPStationOperator {
 		stationTwo.put("name", "ARACAJU - SE");
 		stationTwo.put("lat", "-10.95");
 		
+		JSONObject stationThree = new JSONObject();
+		stationThree.put("id", "80000");
+		stationThree.put("lon", "-42.768209");
+		stationThree.put("altitude", "16.5");
+		stationThree.put("name", "TERESINA - PI");
+		stationThree.put("lat", "-5.035041");
+		
 		JSONArray stations = new JSONArray();
+		stations.put(stationThree);
 		stations.put(stationOne);
 		stations.put(stationTwo);
 		
 		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
+		expectedStation.add(stationThree);
 		expectedStation.add(stationOne);
 		
 		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));

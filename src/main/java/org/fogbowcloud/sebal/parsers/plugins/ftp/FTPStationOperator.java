@@ -28,34 +28,35 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class FTPStationOperator implements StationOperator {
-	
+
 	private Properties properties;
 	private Map<String, String> cache = new HashMap<String, String>();
-	
+
 	private static final Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
-	
+
 	public FTPStationOperator(Properties properties) {
-		
+
 		this.properties = properties;
 	}
 
 	@Override
 	public JSONArray getStations(String year) {
-		
+
 		String localStationsCSVFilePath = getStationCSVFilePath(year);
 		String url = getStationCSVFileURL(year);
-		
-		LOGGER.debug("stationFileURL=" + url);
-		if(doDownloadStationCSVFile(localStationsCSVFilePath, url)) {			
+
+		if (doDownloadStationCSVFile(localStationsCSVFilePath, url)) {
 			return readStationCSVFile(localStationsCSVFilePath);
 		}
-		
+
 		return null;
 	}
 
-	protected boolean doDownloadStationCSVFile(String localStationsCSVFilePath,
-			String url) {
-		
+	protected boolean doDownloadStationCSVFile(String localStationsCSVFilePath, String url) {
+
+		LOGGER.info("Downloading stations file by stationFileURL [" + url + "] and putting at ["
+				+ localStationsCSVFilePath + "] directory");
+
 		ProcessBuilder builder = new ProcessBuilder("wget", "-O", localStationsCSVFilePath, url);
 
 		try {
@@ -66,18 +67,19 @@ public class FTPStationOperator implements StationOperator {
 		} catch (IOException e) {
 			LOGGER.error("Error while writing file for station csv", e);
 			cache.put(url, "FAILED");
-			LOGGER.error("Setting URL " + url + " as FAILED.");
+			LOGGER.error("Saving the file at [" + localStationsCSVFilePath + "] as FAILED.");
 			return false;
 		} catch (InterruptedException e) {
 			LOGGER.error("Error while downloading file for station csv", e);
 			cache.put(url, "FAILED");
-			LOGGER.error("Setting URL " + url + " as FAILED.");
+			LOGGER.error("Setting URL [" + url + "] as FAILED.");
 			return false;
 		}
-		
+
+		LOGGER.info("Successfully Downloaded stations file by stationFileURL [" + url + "]");
 		return true;
 	}
-	
+
 	protected String getStationCSVFilePath(String year) {
 		return properties.getProperty(StationOperatorConstants.STATIONS_CSV_FROM_YEAR_FILE_PATH)
 				+ File.separator + year + "-stations.csv";
@@ -90,41 +92,50 @@ public class FTPStationOperator implements StationOperator {
 
 	@Override
 	public JSONArray readStationCSVFile(String localStationsCSVFilePath) {
-		
+
+		LOGGER.info("Reading station file at [" + localStationsCSVFilePath + "] path");
+
 		JSONArray stations = new JSONArray();
-		
+
 		try {
 			File file = new File(localStationsCSVFilePath);
 			FileReader fileReader = new FileReader(file);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			String line;
 			while ((line = bufferedReader.readLine()) != null) {
+
+				LOGGER.info("Founded station data: [" + line + "]");
+
 				String[] lineSplit = line.split(";");
 				JSONObject station = new JSONObject();
 				station.put("id", lineSplit[0]);
 				station.put("lat", lineSplit[1]);
 				station.put("lon", lineSplit[2]);
-				stations.put(station);								
+				stations.put(station);
 			}
 			fileReader.close();
 			file.delete();
+
+			LOGGER.info("Sucessfully readed the station file [" + localStationsCSVFilePath + "]");
 		} catch (IOException e) {
-			LOGGER.error("Error while reading stations csv file", e);
+			LOGGER.error("Error while reading stations csv file [" + localStationsCSVFilePath + "]",
+					e);
 		}
-		
+
 		return stations;
 	}
 
 	@Override
-	public List<JSONObject> findNearestStation(Date date, double lat, double lon, int numberOfDays) {
-		
+	public List<JSONObject> findNearestStation(Date date, double lat, double lon,
+			int numberOfDays) {
+
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		String year = StationOperatorConstants.DATE_FORMAT.format(begindate).substring(0, 4);
-		
-		LOGGER.debug("Begin year: " + year);
-		
+
+		LOGGER.debug("Find Nearest Station, Begin Year [" + year + "]");
+
 		JSONArray stations = getStations(year);
-		
+
 		List<JSONObject> orderedStations = new LinkedList<JSONObject>();
 		double minDistance = Double.MAX_VALUE;
 		for (int i = 0; i < stations.length(); i++) {
@@ -141,22 +152,21 @@ public class FTPStationOperator implements StationOperator {
 
 			@Override
 			public int compare(JSONObject o1, JSONObject o2) {
-				return ((Double) o1.optDouble("d")).compareTo((Double) o2
-						.optDouble("d"));
+				return ((Double) o1.optDouble("d")).compareTo((Double) o2.optDouble("d"));
 			}
 		});
 
 		return orderedStations;
 	}
-	
+
 	private double d(double lat1, double lon1, double lat2, double lon2) {
-		
+
 		double dLat = Math.toRadians(lat2 - lat1);
 		double dLon = Math.toRadians(lon2 - lon1);
 		lat1 = Math.toRadians(lat1);
 		lat2 = Math.toRadians(lat2);
-		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2)
-				* Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+				+ Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		return StationOperatorConstants.R * c;
 	}
@@ -165,14 +175,15 @@ public class FTPStationOperator implements StationOperator {
 	public JSONArray readStation(String stationId, String beginDate, String endDate)
 			throws Exception {
 
-		LOGGER.debug("Reading station " + stationId + " in beginDate " + beginDate + " and endDate "
-				+ endDate);
+		LOGGER.info("Reading station [" + stationId + "], in beginDate [" + beginDate
+				+ "], and endDate [" + endDate + "]");
 
 		String year = beginDate.substring(0, 4);
 
 		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
 		File baseUnformattedLocalStationFile = new File(baseUnformattedLocalStationFilePath);
-		baseUnformattedLocalStationFile.mkdirs();
+
+		createDirectory(baseUnformattedLocalStationFile);
 
 		File compressedUnformattedLocalStationFile = getUnformattedStationFile(stationId, year);
 		String url = getStationFileUrl(stationId, year);
@@ -180,14 +191,13 @@ public class FTPStationOperator implements StationOperator {
 			return null;
 		}
 
-		// Uncompressing station file
 		File uncompressedUnformattedStationFile = unGzip(compressedUnformattedLocalStationFile,
 				true);
 
 		List<String> stationData = new ArrayList<String>();
 		readStationFile(uncompressedUnformattedStationFile, stationData);
 
-		uncompressedUnformattedStationFile.delete();
+		deleteFile(uncompressedUnformattedStationFile);
 		FileUtils.deleteDirectory(baseUnformattedLocalStationFile);
 
 		JSONArray dataArray = new JSONArray();
@@ -202,46 +212,73 @@ public class FTPStationOperator implements StationOperator {
 					.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED);
 
 			if (!airTemp.isEmpty() && !dewTemp.isEmpty() && !windSpeed.isEmpty()) {
-				LOGGER.debug("Data found...airTemp=" + airTemp + " dewTemp=" + dewTemp
-						+ " windSpeed=" + windSpeed);
+				LOGGER.info("Data founded airTemp [" + airTemp + "] dewTemp [" + dewTemp
+						+ "] windSpeed [" + windSpeed + "]");
 				return dataArray;
 			}
 		}
 
 		return null;
 	}
-	
+
+	private void deleteFile(File file) {
+		LOGGER.info("Deleting file [" + file.getPath() + "]");
+		if (file.exists()) {
+			if (file.delete()) {
+				LOGGER.info("Successfully deleted file [" + file.getPath() + "]");
+			} else {
+				LOGGER.debug("Error while trying to delete file [" + file.getPath() + "]");
+			}
+		} else {
+			LOGGER.info("File doesn't exist [" + file.getPath() + "]");
+		}
+	}
+
+	private void createDirectory(File file) {
+		LOGGER.info("Creating directory [" + file.getPath() + "]");
+		if (!file.exists()) {
+			if (file.mkdirs()) {
+				LOGGER.info("Successfully created directory [" + file.getPath() + "]");
+			} else {
+				LOGGER.error("Error while creating directory [" + file.getPath() + "]");
+			}
+		} else {
+			LOGGER.info("Directory [" + file.getPath() + "] already exist");
+		}
+	}
+
 	protected String getBaseUnformattedLocalStationFilePath(String year) {
-		
-		return properties
-				.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
+		return properties.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year;
 	}
 
 	protected String getStationFileUrl(String stationId, String year) {
-		
-		return properties.getProperty(StationOperatorConstants.NOAA_FTP_SERVER_URL)
-				+ File.separator + year + File.separator + stationId
-				+ "-99999-" + year + ".gz";
+		return properties.getProperty(StationOperatorConstants.NOAA_FTP_SERVER_URL) + File.separator
+				+ year + File.separator + stationId + "-99999-" + year + ".gz";
 	}
 
 	protected File getUnformattedStationFile(String stationId, String year) {
-		
-		String unformattedLocalStationFilePath = properties.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
+
+		String unformattedLocalStationFilePath = properties
+				.getProperty(StationOperatorConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
 				+ File.separator + year + File.separator + stationId + "-99999-" + year + ".gz";
 
 		File unformattedLocalStationFile = new File(unformattedLocalStationFilePath);
 		if (unformattedLocalStationFile.exists()) {
-			LOGGER.info("File " + unformattedLocalStationFile + " already exists. Will be removed before repeating download");
+			LOGGER.info("File " + unformattedLocalStationFile
+					+ " already exists. Will be removed before repeating download");
 			unformattedLocalStationFile.delete();
 		}
 		return unformattedLocalStationFile;
 	}
-	
-	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url) throws Exception {
-		LOGGER.debug("unformattedLocalStationFileURL=" + url);
 
-		ProcessBuilder builder = new ProcessBuilder("wget", "-O", unformattedLocalStationFile.getAbsolutePath(), url);
+	protected boolean downloadUnformattedStationFile(File unformattedLocalStationFile, String url)
+			throws Exception {
+		LOGGER.info("Downloading unformattedLocalStationFile [" + url + "] and putting at ["
+				+ unformattedLocalStationFile + "] path");
+
+		ProcessBuilder builder = new ProcessBuilder("wget", "-O",
+				unformattedLocalStationFile.getAbsolutePath(), url);
 
 		try {
 			Process p = builder.start();
@@ -260,55 +297,66 @@ public class FTPStationOperator implements StationOperator {
 			throw e;
 		}
 
+		LOGGER.info("Successfully Downloaded unformattedLocalStationFile [" + url
+				+ "] and saved at [" + unformattedLocalStationFile + "]");
 		return true;
 	}
-	
-	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
-		LOGGER.info("Unzipping station file...");
-		
-	    GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
-	    FileOutputStream fos = null;
-	    try {
-	        File outFile = new File(file.getParent(), file.getName().replaceAll("\\.gz$", ""));
-	        fos = new FileOutputStream(outFile);
-	        byte[] buf = new byte[100000];
-	        int len;
-	        while ((len = gin.read(buf)) > 0) {
-	            fos.write(buf, 0, len);
-	        }
 
-	        fos.close();
-	        if (deleteGzipfileOnSuccess) {
-	            file.delete();
-	        }
-	        return outFile; 
-	    } finally {
-	        if (gin != null) {
-	            gin.close();    
-	        }
-	        if (fos != null) {
-	            fos.close();    
-	        }
-	    }       
+	public static File unGzip(File file, boolean deleteGzipfileOnSuccess) throws IOException {
+		LOGGER.info("Unzipping station file [" + file.getPath() + "]");
+
+		GZIPInputStream gin = new GZIPInputStream(new FileInputStream(file));
+		FileOutputStream fos = null;
+		try {
+			File outFile = new File(file.getParent(), file.getName().replaceAll("\\.gz$", ""));
+			fos = new FileOutputStream(outFile);
+			byte[] buf = new byte[100000];
+			int len;
+			while ((len = gin.read(buf)) > 0) {
+				fos.write(buf, 0, len);
+			}
+
+			fos.close();
+			if (deleteGzipfileOnSuccess) {
+				file.delete();
+			}
+
+			LOGGER.info("Successfully Unzipped station file [" + file.getPath() + "]");
+
+			return outFile;
+		} catch (IOException e) {
+			LOGGER.error("Error while trying to Unzip the station file [" + file.getPath() + "]");
+			throw e;
+		} finally {
+			if (gin != null) {
+				gin.close();
+			}
+			if (fos != null) {
+				fos.close();
+			}
+		}
 	}
-	
-	private void readStationFile(File unformattedLocalStationFile,
-			List<String> stationData) throws FileNotFoundException, IOException {
-		
-		BufferedReader br = new BufferedReader(new FileReader(
-				unformattedLocalStationFile));
+
+	private void readStationFile(File unformattedLocalStationFile, List<String> stationData)
+			throws FileNotFoundException, IOException {
+
+		LOGGER.info("Reading unformattedStationFile [" + unformattedLocalStationFile + "]");
+
+		BufferedReader br = new BufferedReader(new FileReader(unformattedLocalStationFile));
 		String line = null;
 		while ((line = br.readLine()) != null) {
 			stationData.add(line);
 		}
 
+		LOGGER.info(
+				"Successfully readed unformattedStationFile [" + unformattedLocalStationFile + "]");
 		br.close();
 	}
-	
-	private void getHourlyData(String beginDate, List<String> stationData,
-			JSONArray dataArray) throws JSONException {
-		LOGGER.info("Getting hourly data...");
-		
+
+	private void getHourlyData(String beginDate, List<String> stationData, JSONArray dataArray)
+			throws JSONException {
+		LOGGER.info("Getting hourly data to beginDate [" + beginDate + "]");
+
 		for (String data : stationData) {
 			if (data.contains(beginDate)) {
 				JSONObject jsonObject = new JSONObject();
@@ -335,36 +383,34 @@ public class FTPStationOperator implements StationOperator {
 				jsonObject.put(SEBALAppConstants.JSON_STATION_ID, stationId);
 				jsonObject.put(SEBALAppConstants.JSON_STATION_DATE, date);
 				jsonObject.put(SEBALAppConstants.JSON_STATION_TIME, time);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_LATITUDE,
-						latitude);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_LONGITUDE,
-						longitude);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
-						windSpeed);
+				jsonObject.put(SEBALAppConstants.JSON_STATION_LATITUDE, latitude);
+				jsonObject.put(SEBALAppConstants.JSON_STATION_LONGITUDE, longitude);
+				jsonObject.put(SEBALAppConstants.JSON_STATION_WIND_SPEED, windSpeed);
 				jsonObject.put(SEBALAppConstants.JSON_AIR_TEMPERATURE, airTemp);
-				jsonObject.put(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE,
-						dewTemp);
+				jsonObject.put(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE, dewTemp);
 
 				dataArray.put(jsonObject);
 			}
 		}
+
+		LOGGER.info("Successfully geted hourly data to beginDate [" + beginDate + "]");
 	}
-	
+
 	private String changeToLatitudeFormat(String latitude) {
-		
+
 		StringBuilder sb = new StringBuilder(latitude);
-		if(latitude.contains("+")) {			
+		if (latitude.contains("+")) {
 			sb.deleteCharAt(0);
 		}
 		latitude = sb.toString();
 		double latitudeValue = Double.valueOf(latitude) / 1000.0;
 		return String.valueOf(latitudeValue);
 	}
-	
+
 	private String changeToLongitudeFormat(String longitude) {
-		
+
 		StringBuilder sb = new StringBuilder(longitude);
-		if(longitude.contains("+")) {			
+		if (longitude.contains("+")) {
 			sb.deleteCharAt(0);
 		}
 		longitude = sb.toString();
@@ -372,9 +418,8 @@ public class FTPStationOperator implements StationOperator {
 		return String.valueOf(longitudeValue);
 	}
 
-	private String changeToWindSpeedFormat(String windSpeed)
-			throws NumberFormatException {
-		
+	private String changeToWindSpeedFormat(String windSpeed) throws NumberFormatException {
+
 		if (windSpeed.equals("99999")) {
 			windSpeed = "***";
 		} else {
@@ -383,9 +428,8 @@ public class FTPStationOperator implements StationOperator {
 		return windSpeed;
 	}
 
-	private String changeToAirTempFormat(String airTemp)
-			throws NumberFormatException {
-		
+	private String changeToAirTempFormat(String airTemp) throws NumberFormatException {
+
 		StringBuilder sb;
 		String airTempSign = airTemp.substring(0, 0);
 		sb = new StringBuilder(airTemp);
@@ -399,9 +443,8 @@ public class FTPStationOperator implements StationOperator {
 		return airTemp;
 	}
 
-	private String changeToDewTempFormat(String dewTemp)
-			throws NumberFormatException {
-		
+	private String changeToDewTempFormat(String dewTemp) throws NumberFormatException {
+
 		StringBuilder sb;
 		String dewTempSign = dewTemp.substring(0, 0);
 		sb = new StringBuilder(dewTemp);
@@ -415,17 +458,15 @@ public class FTPStationOperator implements StationOperator {
 		return dewTemp;
 	}
 
-	private String formatWindSpeed(String windSpeed)
-			throws NumberFormatException {
-		
+	private String formatWindSpeed(String windSpeed) throws NumberFormatException {
+
 		double integerConvertion = Integer.parseInt(windSpeed);
 		integerConvertion = integerConvertion / 10.0;
 		return String.valueOf(integerConvertion);
 	}
 
-	private String formatAirTemp(String airTemp, String airTempSign)
-			throws NumberFormatException {
-		
+	private String formatAirTemp(String airTemp, String airTempSign) throws NumberFormatException {
+
 		double integerConvertion = Integer.parseInt(airTemp);
 		if (airTempSign.equals("-")) {
 			integerConvertion *= -1;
@@ -435,9 +476,8 @@ public class FTPStationOperator implements StationOperator {
 		return String.valueOf(integerConvertion);
 	}
 
-	private String formatDewTemp(String dewTemp, String dewTempSign)
-			throws NumberFormatException {
-		
+	private String formatDewTemp(String dewTemp, String dewTempSign) throws NumberFormatException {
+
 		double integerConvertion = Integer.parseInt(dewTemp);
 		if (dewTempSign.equals("-")) {
 			integerConvertion *= -1;
