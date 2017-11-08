@@ -5,6 +5,8 @@ INPUT_DIR_PATH=$1
 OUTPUT_DIR_PATH=$2
 # ${SAPS_MOUNT_POINT}/$PREPROCESS_DIR
 PREPROCESS_DIR_PATH=$3
+# ${SAPS_MOUNT_POINT}/$METADATA_DIR
+METADATA_DIR_PATH=$4
 
 # Global variables
 SANDBOX=$(pwd)
@@ -118,6 +120,37 @@ function killCollectScripts {
   ps -ef | grep collect-memory-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
 }
 
+function generateMetadataFile {
+  METADATA_FILE_PATH=$METADATA_DIR_PATH/outputDescription.txt
+
+  echo "Generating metadata file $METADATA_FILE_PATH"
+  sudo touch $METADATA_FILE_PATH
+
+  EVI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_EVI.nc")
+  LAI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LAI.nc")
+  NDVI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_NDVI.nc")
+  LSA_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LSA.nc")
+  LST_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LST.nc")
+  RN_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_Rn.nc")
+  G_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_G.nc")
+  EF_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_EF.nc")
+  ET24H_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_ET24h.nc")
+
+  CURRENT_DATE=$(date)
+
+  sudo echo "# Worker Implementation Metadata" >> $METADATA_FILE_PATH
+  sudo echo "#$CURRENT_DATE" >> $METADATA_FILE_PATH
+  sudo echo "enhanced_vegetation_index_data=$EVI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "leaf_area_index_data=$LAI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "normalized_different_vegetation_index_data=$NDVI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "land_surface_albedo_data=$LSA_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "land_surface_temperature_data=$LST_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "net_radiation_balance_data=$RN_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "ground_heat_flux_data=$G_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "evapotranspirative_fraction_data=$EF_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "ecapotranspirative_data=$ET24H_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+}
+
 function checkProcessOutput {
   PROCESS_OUTPUT=$?
 
@@ -143,5 +176,7 @@ checkProcessOutput
 mvDadosCSV
 killCollectScripts
 cleanRasterEnv
+checkProcessOutput
+generateMetadataFile
 checkProcessOutput
 finally
