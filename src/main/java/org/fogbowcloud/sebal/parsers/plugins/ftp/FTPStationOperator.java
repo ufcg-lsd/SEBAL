@@ -137,29 +137,25 @@ public class FTPStationOperator implements StationOperator {
 		JSONArray stations = getStations(year);
 
 		List<JSONObject> orderedStations = new LinkedList<JSONObject>();
-		double minDistance = Double.MAX_VALUE;
 		for (int i = 0; i < stations.length(); i++) {
 			JSONObject station = stations.optJSONObject(i);
-			double d = d(lat, lon, station.optDouble("lat"), station.optDouble("lon"));
-			if (d < minDistance) {
-				minDistance = d;
-				station.put("d", d);
-				orderedStations.add(station);
-			}
+			double dist = distance(lat, lon, station.optDouble("lat"), station.optDouble("lon"));
+			station.put("distance", dist);
+			orderedStations.add(station);
 		}
 
 		Collections.sort(orderedStations, new Comparator<JSONObject>() {
-
 			@Override
 			public int compare(JSONObject o1, JSONObject o2) {
-				return ((Double) o1.optDouble("d")).compareTo((Double) o2.optDouble("d"));
+				return ((Double) o1.optDouble("distance"))
+						.compareTo((Double) o2.optDouble("distance"));
 			}
 		});
 
 		return orderedStations;
 	}
 
-	private double d(double lat1, double lon1, double lat2, double lon2) {
+	private double distance(double lat1, double lon1, double lat2, double lon2) {
 
 		double dLat = Math.toRadians(lat2 - lat1);
 		double dLon = Math.toRadians(lon2 - lon1);

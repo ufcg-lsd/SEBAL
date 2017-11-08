@@ -70,6 +70,7 @@ public class TestFTPStationOperator {
 		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
 		expectedStation.add(stationThree);
 		expectedStation.add(stationOne);
+		expectedStation.add(stationTwo);
 		
 		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
 		doReturn(stations).when(stationOperator).getStations(year);

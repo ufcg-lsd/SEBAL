@@ -59,6 +59,39 @@ public class WeatherStation {
 		IOUtils.write(stations.toString(2), new FileOutputStream("stations.json"));
 	}
 
+	public double zx(double lat, double lon) {
+		if (properties.getProperty("altitude_sensor_velocidade") != null) {
+			return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
+		}
+		return 6.;
+	}
+
+	public double d(double lat, double lon) {
+		return 4. * 2 / 3;
+	}
+
+	public double hc(double lat, double lon) {
+		if (properties.getProperty("hc") != null) {
+			return Double.parseDouble(properties.getProperty("hc"));
+		}
+		return 4.0;
+	}
+
+	public String getStationData(double lat, double lon, Date date) {
+		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
+
+		// TODO: see if at least one of the nearest station has the needed three lines
+		int daysWindow = 0;
+		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon,
+				daysWindow);
+
+		if (nearStations != null) {
+			return readFullRecord(date, nearStations, daysWindow);
+		}
+
+		return null;
+	}
+
 	protected String readFullRecord(Date date, List<JSONObject> stations, int numberOfDays) {
 		LOGGER.info("Near stations found...reading full record");
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
@@ -73,53 +106,17 @@ public class WeatherStation {
 							StationOperatorConstants.DATE_FORMAT.format(endDate));
 
 					if (stationData != null) {
-						JSONObject closestRecord = null;
-						Long smallestDiff = Long.MAX_VALUE;
+						windSpeedCorrection(stationData);
 
 						for (int i = 0; i < stationData.length(); i++) {
 							JSONObject stationDataRecord = stationData.optJSONObject(i);
-							String dateValue = stationDataRecord
-									.optString(SEBALAppConstants.JSON_STATION_DATE);
-							String timeValue = stationDataRecord
-									.optString(SEBALAppConstants.JSON_STATION_TIME);
 
-							Date recordDate = StationOperatorConstants.DATE_TIME_FORMAT
-									.parse(dateValue + ";" + timeValue);
-							long diff = Math.abs(recordDate.getTime() - date.getTime());
-							if (diff < smallestDiff) {
-								smallestDiff = diff;
-								closestRecord = stationDataRecord;
-							}
-
-							if (!closestRecord.optString(SEBALAppConstants.JSON_STATION_DATE)
-									.isEmpty()
-									&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_TIME)
-											.isEmpty()
-									&& !closestRecord
-											.optString(SEBALAppConstants.JSON_STATION_LATITUDE)
-											.isEmpty()
-									&& !closestRecord
-											.optString(SEBALAppConstants.JSON_STATION_LONGITUDE)
-											.isEmpty()
-									&& !closestRecord
-											.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE)
-											.isEmpty()
-									&& !closestRecord
-											.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE)
-											.isEmpty()
-									&& !closestRecord
-											.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)
-											.isEmpty()
-									&& Double.parseDouble(closestRecord.optString(
-											SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3) {
-								return generateStationData(stationData, closestRecord);
-							} else if (Double.parseDouble(closestRecord
-									.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < 0.3) {
-								closestRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
-								closestRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED, "0.3");
+							if (stationContainsAll(stationDataRecord)) {
+								return generateStationData(stationData, stationDataRecord);
 							}
 						}
 					}
+
 				} catch (Exception e) {
 					LOGGER.error("Error while reading full record", e);
 				}
@@ -129,6 +126,32 @@ public class WeatherStation {
 		}
 
 		return null;
+	}
+
+	private void windSpeedCorrection(JSONArray stationData) {
+		if (stationData != null) {
+			for (int i = 0; i < stationData.length(); i++) {
+				JSONObject stationDataRecord = stationData.optJSONObject(i);
+
+				if (Double.parseDouble(stationDataRecord
+						.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < 0.3) {
+					stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
+					stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED, "0.3");
+				}
+			}
+		}
+	}
+
+	private boolean stationContainsAll(JSONObject station) {
+		return !station.optString(SEBALAppConstants.JSON_STATION_DATE).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_STATION_TIME).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_STATION_LATITUDE).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_STATION_LONGITUDE).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE).isEmpty()
+				&& !station.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED).isEmpty()
+				&& Double.parseDouble(
+						station.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3;
 	}
 
 	private String generateStationData(JSONArray stationData, JSONObject closestRecord) {
@@ -195,37 +218,6 @@ public class WeatherStation {
 		toReturn.append(stationId + ";" + dateValue + ";" + timeValue + ";" + latitude + ";"
 				+ longitude + ";" + windSpeed + ";" + airTemp + ";" + dewTemp + ";" + avgAirTemp
 				+ ";" + relativeHumidity + ";" + minTemp + ";" + maxTemp + ";" + solarRad + ";\n");
-	}
-
-	public double zx(double lat, double lon) {
-		if (properties.getProperty("altitude_sensor_velocidade") != null) {
-			return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
-		}
-		return 6.;
-	}
-
-	public double d(double lat, double lon) {
-		return 4. * 2 / 3;
-	}
-
-	public double hc(double lat, double lon) {
-		if (properties.getProperty("hc") != null) {
-			return Double.parseDouble(properties.getProperty("hc"));
-		}
-		return 4.0;
-	}
-
-	public String getStationData(double lat, double lon, Date date) {
-		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
-		
-		//TODO: see if at least one of the nearest station has the needed three lines  
-		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon, 0);
-
-		if (nearStations != null) {
-			return readFullRecord(date, nearStations, 0);
-		}
-
-		return null;
 	}
 
 	public Properties getProperties() {
