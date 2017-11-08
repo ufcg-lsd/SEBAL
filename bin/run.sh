@@ -140,15 +140,15 @@ function generateMetadataFile {
 
   sudo echo "# Worker Implementation Metadata" >> $METADATA_FILE_PATH
   sudo echo "#$CURRENT_DATE" >> $METADATA_FILE_PATH
-  sudo echo "enhanced_vegetation_index_data=$EVI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "leaf_area_index_data=$LAI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "normalized_different_vegetation_index_data=$NDVI_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "land_surface_albedo_data=$LSA_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "land_surface_temperature_data=$LST_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "net_radiation_balance_data=$RN_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "ground_heat_flux_data=$G_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "evapotranspirative_fraction_data=$EF_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
-  sudo echo "ecapotranspirative_data=$ET24H_OUTPUT_FILE_PATH" >> $METADATA_FILE_PATH
+  sudo echo "$EVI_OUTPUT_FILE_PATH # Enhanced vegetation index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LAI_OUTPUT_FILE_PATH # Leaf area index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$NDVI_OUTPUT_FILE_PATH # Normalized different vegetation index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LSA_OUTPUT_FILE_PATH # Land surface albedo data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LST_OUTPUT_FILE_PATH # Land surface temperature data file path" >> $METADATA_FILE_PATH
+  sudo echo "$RN_OUTPUT_FILE_PATH # Net radiation balance data file path" >> $METADATA_FILE_PATH
+  sudo echo "$G_OUTPUT_FILE_PATH # Ground heat flux data file path" >> $METADATA_FILE_PATH
+  sudo echo "$EF_OUTPUT_FILE_PATH # Evapotranspirative fraction data file path" >> $METADATA_FILE_PATH
+  sudo echo "$ET24H_OUTPUT_FILE_PATH # Evapotranspirative data file path" >> $METADATA_FILE_PATH
 }
 
 function checkProcessOutput {
