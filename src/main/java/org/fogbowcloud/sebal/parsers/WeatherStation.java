@@ -34,8 +34,12 @@ public class WeatherStation {
 
 	public WeatherStation(Properties properties)
 			throws URISyntaxException, HttpException, IOException {
+		this(properties, new FTPStationOperator(properties));
+	}
+
+	protected WeatherStation(Properties properties, FTPStationOperator stationOperator) {
 		this.properties = properties;
-		this.stationOperator = new FTPStationOperator(properties);
+		this.stationOperator = stationOperator;
 	}
 
 	public void persistStations() throws IOException {
@@ -99,8 +103,9 @@ public class WeatherStation {
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		Date endDate = new Date(date.getTime() + numberOfDays * StationOperatorConstants.A_DAY);
 
-		if (!stations.isEmpty()) {
+		if (stations != null && !stations.isEmpty()) {
 			LOGGER.debug("beginDate: " + begindate + " endDate: " + endDate);
+
 			for (JSONObject station : stations) {
 				try {
 					JSONArray stationData = stationOperator.readStation(station.optString("id"),
@@ -127,7 +132,7 @@ public class WeatherStation {
 	private boolean checkRecords(JSONArray stationData) {
 		boolean result = false;
 		if (stationData != null) {
-			
+
 			for (int i = 0; i < stationData.length(); i++) {
 				JSONObject stationDataRecord = stationData.optJSONObject(i);
 
@@ -143,7 +148,7 @@ public class WeatherStation {
 					i--;
 				}
 			}
-			
+
 			boolean hasAll = true;
 			for (String hour : WeatherStation.WANTED_STATION_HOURS) {
 				if (!hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
@@ -168,7 +173,7 @@ public class WeatherStation {
 
 	private boolean isRecord(JSONObject stationDataRecord, String key, String value) {
 		boolean result = false;
-		if (!stationDataRecord.optString(key).isEmpty()) {
+		if (stationDataRecord.optString(key).equals(value)) {
 			result = true;
 		}
 		return result;
@@ -208,7 +213,6 @@ public class WeatherStation {
 		for (int i = 0; i < stationData.length(); i++) {
 			result.append(checkVariablesAndBuildString(stationData.optJSONObject(i)));
 		}
-
 		return result.toString().trim();
 	}
 
