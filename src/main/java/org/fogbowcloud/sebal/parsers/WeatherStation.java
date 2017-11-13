@@ -115,9 +115,10 @@ public class WeatherStation {
 					windSpeedCorrection(stationData);
 
 					if (checkRecords(stationData)) {
+						LOGGER.info("Founded ideal Station Data: " + System.lineSeparator()
+								+ stationData.toString());
 						return generateStationData(stationData);
 					}
-
 				} catch (Exception e) {
 					LOGGER.error("Error while reading full record", e);
 				}
@@ -129,7 +130,7 @@ public class WeatherStation {
 		return null;
 	}
 
-	private boolean checkRecords(JSONArray stationData) {
+	protected boolean checkRecords(JSONArray stationData) {
 		boolean result = false;
 		if (stationData != null) {
 
@@ -160,11 +161,11 @@ public class WeatherStation {
 		return result;
 	}
 
-	private boolean hasRecord(JSONArray stationData, String key, String value) {
+	protected boolean hasRecord(JSONArray stationData, String key, String value) {
 		boolean result = false;
 		for (int i = 0; i < stationData.length() && !result; i++) {
 			JSONObject stationDataRecord = stationData.optJSONObject(i);
-			if (!stationDataRecord.optString(key).isEmpty()) {
+			if (isRecord(stationDataRecord, key, value)) {
 				result = true;
 			}
 		}
@@ -179,7 +180,7 @@ public class WeatherStation {
 		return result;
 	}
 
-	private void windSpeedCorrection(JSONArray stationData) {
+	protected void windSpeedCorrection(JSONArray stationData) {
 		if (stationData != null) {
 			for (int i = 0; i < stationData.length(); i++) {
 				JSONObject stationDataRecord = stationData.optJSONObject(i);
@@ -196,7 +197,7 @@ public class WeatherStation {
 		}
 	}
 
-	private boolean stationContainsAll(JSONObject station) {
+	protected boolean stationContainsAll(JSONObject station) {
 		return !station.optString(SEBALAppConstants.JSON_STATION_DATE).isEmpty()
 				&& !station.optString(SEBALAppConstants.JSON_STATION_TIME).isEmpty()
 				&& !station.optString(SEBALAppConstants.JSON_STATION_LATITUDE).isEmpty()
@@ -216,7 +217,7 @@ public class WeatherStation {
 		return result.toString().trim();
 	}
 
-	private String checkVariablesAndBuildString(JSONObject stationDataRecord) {
+	protected String checkVariablesAndBuildString(JSONObject stationDataRecord) {
 
 		String stationId = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_ID);
 		String dateValue = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_DATE);

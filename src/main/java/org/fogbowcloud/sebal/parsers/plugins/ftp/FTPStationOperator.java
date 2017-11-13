@@ -103,9 +103,6 @@ public class FTPStationOperator implements StationOperator {
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			String line;
 			while ((line = bufferedReader.readLine()) != null) {
-
-				LOGGER.info("Founded station data: [" + line + "]");
-
 				String[] lineSplit = line.split(";");
 				JSONObject station = new JSONObject();
 				station.put("id", lineSplit[0]);
