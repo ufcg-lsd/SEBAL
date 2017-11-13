@@ -5,7 +5,7 @@ public class GeoLoc {
 	private int j;
 	private double lat;
 	private double lon;
-	
+
 	public GeoLoc(int i, int j, double lat, double lon) {
 		this.i = i;
 		this.j = j;
@@ -19,7 +19,7 @@ public class GeoLoc {
 	public double getLon() {
 		return lon;
 	}
-	
+
 	public void setLon(double lon) {
 		this.lon = lon;
 	}
