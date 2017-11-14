@@ -2,7 +2,6 @@ package org.fogbowcloud.sebal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +12,6 @@ import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.model.image.Image;
 import org.fogbowcloud.sebal.model.image.ImagePixel;
 import org.fogbowcloud.sebal.model.image.ImagePixelOutput;
-import org.fogbowcloud.sebal.model.image.NDVIComparator;
-import org.fogbowcloud.sebal.model.image.TSComparator;
 import org.python.google.common.primitives.Doubles;
 
 
@@ -28,13 +25,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 	private int minLatWater = 1;			// 1 is default value
 	private int minLonWater = 1;			// 1 is default value
 	private double maxDiffFromTSMean = 0.2;	// 0.2 is default value
-	private double maxDiffFromAlbedoMean = 0.02; // 0.02 is default value
 	
 	private static final Logger LOGGER = Logger.getLogger(ClusteredPixelQuenteFrioChooser.class);
-	
-	public ClusteredPixelQuenteFrioChooser() {
-		
-	}
 	
 	public ClusteredPixelQuenteFrioChooser(Properties properties) {
 		if (properties == null) {
@@ -75,11 +67,6 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 			maxDiffFromTSMean = Double.parseDouble(properties
 					.getProperty("cluster_max_difference_from_ts_mean"));
 		}
-		
-		if (properties.getProperty("cluster_max_difference_from_albedo_mean") != null) {
-			maxDiffFromAlbedoMean  = Double.parseDouble(properties
-					.getProperty("cluster_max_difference_from_albedo_mean"));
-		}
 	}
 
 	@Override
@@ -114,8 +101,8 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		LOGGER.debug("Chossing pixels hot and cold from candidates...");
 		long now = System.currentTimeMillis();
 		
-		selectPixelFrio();
-		selectPixelQuente();
+		//selectPixelFrio();
+		//selectPixelQuente();
 
 		if (pixelFrio != null) {
 			LOGGER.debug("TS of pixel frio: " + pixelFrio.output().getTs());
@@ -277,118 +264,6 @@ public class ClusteredPixelQuenteFrioChooser extends AbstractPixelQuenteFrioChoo
 		findWater(pixels, visited, i - 1, j, width, height, sampleId, samples);
 		findWater(pixels, visited, i, j + 1, width, height, sampleId, samples);
 		findWater(pixels, visited, i, j - 1, width, height, sampleId, samples);
-	}
-
-	private void selectPixelQuente() {
-		/*
-		 * Choosing pixel quente 
-		 * Pixel Quente candidates: 10% smallest NDVI and 20% biggest TS
-		 */
-		LOGGER.debug("Number of pixel quente candidates=" + pixelQuenteCandidates.size());		
-		List<ImagePixel> bestCandidates = filterSmallestNDVI(pixelQuenteCandidates, 10);
-		bestCandidates = filterBiggestTS(bestCandidates, 20);
-		
-		//Logging best candidates
-		LOGGER.info(" ----------------------- BEST PIXEL FRIO CANDIDATES (Lat, Lon, TS, SAVI, Rn, G) ----------------------- ");
-		for (ImagePixel imagePixel : bestCandidates) {
-			LOGGER.info("(" + imagePixel.geoLoc().getLat() + ", " + imagePixel.geoLoc().getLon()
-					+ ", " + imagePixel.output().getTs() + ", " + imagePixel.output().SAVI() + ", "
-					+ imagePixel.output().Rn() + ", " + imagePixel.output().G() + ")");
-		}
-		
-		double[] tsValuesQuenteCandidates = new double[bestCandidates.size()];
-		for (int i = 0; i < bestCandidates.size(); i++) {
-			tsValuesQuenteCandidates[i] = bestCandidates.get(i).output().getTs();
-		}
-		double tsQuenteMean = calcMean(tsValuesQuenteCandidates);
-		for (ImagePixel pixel : bestCandidates) {
-			if (pixel.output().getTs() >= (tsQuenteMean - maxDiffFromTSMean)
-					&& pixel.output().getTs() <= (tsQuenteMean + maxDiffFromTSMean)){
-				pixelQuente = pixel;
-				break;
-			}
-		}
-	}
-
-	private void selectPixelFrio() {
-		LOGGER.debug("Number of pixel frio candidates=" + pixelFrioCandidates.size());
-		/*
-		 * Choosing pixel frio out of the water 
-		 * Pixel Frio candidates: 5% biggest NDVI and 20% smallest TS
-		 */
-		List<ImagePixel> bestCandidates = filterBiggestNDVI(pixelFrioCandidates, 5);
-		bestCandidates = filterSmallestTS(bestCandidates, 20);
-		
-		//Logging best candidates
-		LOGGER.info(" ----------------------- BEST PIXEL FRIO CANDIDATES (Lat, Lon, TS) ----------------------- ");
-		for (ImagePixel imagePixel : bestCandidates) {
-			LOGGER.info("(" + imagePixel.geoLoc().getLat() + ", " + imagePixel.geoLoc().getLon()
-					+ ", " + imagePixel.output().getTs() + ")");
-		}
-		
-		double[] tsValuesFrioCandidates = new double[bestCandidates.size()];
-		double[] alphaValuesFrioCandidates = new double[bestCandidates.size()];
-		for (int i = 0; i < bestCandidates.size(); i++) {
-			tsValuesFrioCandidates[i] = bestCandidates.get(i).output().getTs();
-			alphaValuesFrioCandidates[i] = bestCandidates.get(i).output().getAlpha();
-		}
-		double tsFrioMean = calcMean(tsValuesFrioCandidates);
-		double alphaFrioMean = calcMean(alphaValuesFrioCandidates);
-		for (ImagePixel pixel : bestCandidates) {
-			if (pixel.output().getTs() >= (tsFrioMean - maxDiffFromTSMean)
-					&& pixel.output().getTs() <= (tsFrioMean + maxDiffFromTSMean)
-					&& pixel.output().getAlpha() >= (alphaFrioMean - maxDiffFromAlbedoMean)
-					&& pixel.output().getAlpha() <= (alphaFrioMean + maxDiffFromAlbedoMean)) {
-				pixelFrio = pixel;
-				break;
-			}
-		}		
-	}
-	
-	protected List<ImagePixel> filterBiggestTS(List<ImagePixel> pixels, double percent) {
-		Collections.sort(pixels, new TSComparator());
-		Collections.reverse(pixels);
-		List<ImagePixel> percentBiggestTS = new ArrayList<ImagePixel>();
-		for (int index = 0; index < Math.round(pixels.size() * (percent / 100) + 0.4); index++) {
-			percentBiggestTS.add(pixels.get(index));
-		}
-		return percentBiggestTS;
-	}
-
-	protected List<ImagePixel> filterSmallestNDVI(List<ImagePixel> pixels, double percent) {
-		Collections.sort(pixels, new NDVIComparator());
-		
-		//excluding pixels where ndvi is 0
-		for (ImagePixel imagePixel : new ArrayList<ImagePixel>(pixels)) {
-			if (imagePixel.output().getNDVI() <= 0) {
-				pixels.remove(imagePixel);
-			}
-		}
-		
-		List<ImagePixel> percentSmallestNDVI = new ArrayList<ImagePixel>();
-		for (int index = 0; index < Math.round(pixels.size() * (percent / 100) + 0.4); index++) {
-			percentSmallestNDVI.add(pixels.get(index));
-		}
-		return percentSmallestNDVI;
-	}
-
-	protected List<ImagePixel> filterSmallestTS(List<ImagePixel> pixels, double percent) {
-		Collections.sort(pixels, new TSComparator());
-		List<ImagePixel> percentSmallestTS = new ArrayList<ImagePixel>();
-		for (int index = 0; index < Math.round(pixels.size() * (percent / 100) + 0.4); index++) {
-			percentSmallestTS.add(pixels.get(index));
-		}
-		return percentSmallestTS;
-	}
-
-	protected List<ImagePixel> filterBiggestNDVI(List<ImagePixel> pixels, double percent) {
-		Collections.sort(pixels, new NDVIComparator());
-		Collections.reverse(pixels);
-		List<ImagePixel> percentBiggestNDVI = new ArrayList<ImagePixel>();
-		for (int index = 0; index < Math.round(pixels.size() * (percent / 100) + 0.4); index++) {
-			percentBiggestNDVI.add(pixels.get(index));
-		}
-		return percentBiggestNDVI;
 	}
 
 	private double calcMean(double[] values) {

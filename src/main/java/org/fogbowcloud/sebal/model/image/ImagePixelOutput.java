@@ -1,7 +1,5 @@
 package org.fogbowcloud.sebal.model.image;
 
-import java.util.List;
-
 public class ImagePixelOutput {
 
 	private double NDVI;
@@ -27,7 +25,6 @@ public class ImagePixelOutput {
 	private double evapo24h;
 	private double frEvapo;
 	private double lambda24h;
-	private List<HOutput> hOuts;
 	private double tau24h;
 	private double rn24h;
 	private boolean waterTest;
@@ -35,8 +32,8 @@ public class ImagePixelOutput {
 	private boolean PCP;
 	private double wCloudProb;
 	private double lCloudProb;
-	private boolean isCloud; 
-	
+	private boolean isCloud;
+
 	public boolean isCloud() {
 		return isCloud;
 	}
@@ -52,11 +49,11 @@ public class ImagePixelOutput {
 	public void setNDVI(double nDVI) {
 		NDVI = nDVI;
 	}
-	
+
 	public void setTs(double ts) {
 		Ts = ts;
 	}
-	
+
 	public double getTs() {
 		return Ts;
 	}
@@ -64,7 +61,7 @@ public class ImagePixelOutput {
 	public double SAVI() {
 		return sAVI;
 	}
-	
+
 	public void setSAVI(double SAVI) {
 		sAVI = SAVI;
 	}
@@ -76,11 +73,11 @@ public class ImagePixelOutput {
 	public void setG(double g) {
 		this.G = g;
 	}
-	
+
 	public double Rn() {
 		return Rn;
 	}
-	
+
 	public double G() {
 		return G;
 	}
@@ -229,14 +226,6 @@ public class ImagePixelOutput {
 		this.lambda24h = lambda24h;
 	}
 
-	public List<HOutput> gethOuts() {
-		return hOuts;
-	}
-
-	public void sethOuts(List<HOutput> hOuts) {
-		this.hOuts = hOuts;
-	}
-
 	public double getRn24h() {
 		return rn24h;
 	}
@@ -252,23 +241,23 @@ public class ImagePixelOutput {
 	public void setTau24h(double tau24h) {
 		this.tau24h = tau24h;
 	}
-	
+
 	public boolean getWaterTest() {
 		return waterTest;
 	}
-	
+
 	public void setWaterTest(boolean waterTest) {
-		this.waterTest= waterTest;
+		this.waterTest = waterTest;
 	}
-	
+
 	public void setNDSI(double NDSI) {
 		this.NDSI = NDSI;
 	}
-	
+
 	public double getNDSI() {
 		return NDSI;
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof ImagePixelOutput) {
@@ -289,35 +278,35 @@ public class ImagePixelOutput {
 		}
 		return false;
 	}
-	
+
 	public boolean getClearSkyWater() {
-		return getWaterTest() && rho[6] < 0.03;		
+		return getWaterTest() && rho[6] < 0.03;
 	}
-	
+
 	public boolean getClearSkyLand() {
-		return !PCP && !getWaterTest();	
+		return !PCP && !getWaterTest();
 	}
 
 	public void setPCP(boolean PCP) {
-		this.PCP = PCP;		
+		this.PCP = PCP;
 	}
-	
+
 	public boolean getPCP() {
-		return PCP;		
+		return PCP;
 	}
 
 	public void setWCloudProb(double wCloudProb) {
 		this.wCloudProb = wCloudProb;
 	}
-	
+
 	public double getWCloudProb() {
 		return wCloudProb;
 	}
-	
+
 	public void setLCloudProb(double lCloudProb) {
 		this.lCloudProb = lCloudProb;
 	}
-	
+
 	public double getLCloudProb() {
 		return lCloudProb;
 	}

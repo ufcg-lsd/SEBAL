@@ -30,52 +30,6 @@ public class RWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(RWrapper.class);
 
-	public RWrapper(Properties properties) throws IOException {
-		String mtlFilePath = properties.getProperty("mtl_file_path");
-		if (mtlFilePath == null || mtlFilePath.isEmpty()) {
-			LOGGER.error("Property mtl_file_path must be set.");
-			throw new IllegalArgumentException("Property mtl_file_path must be set.");
-		}
-		this.properties = properties;
-		this.mtlFilePath = mtlFilePath;
-		this.imageName = properties.getProperty("image_name");
-
-		String iBeginStr = properties.getProperty("i_begin_interval");
-		String iFinalStr = properties.getProperty("i_final_interval");
-		String jBeginStr = properties.getProperty("j_begin_interval");
-		String jFinalStr = properties.getProperty("j_final_interval");
-
-		if (iBeginStr == null || iFinalStr == null || jBeginStr == null || jFinalStr == null) {
-			LOGGER.error("Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
-			throw new IllegalArgumentException(
-					"Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
-		}
-		this.iBegin = Integer.parseInt(iBeginStr);
-		this.iFinal = Integer.parseInt(iFinalStr);
-		this.jBegin = Integer.parseInt(jBeginStr);
-		this.jFinal = Integer.parseInt(jFinalStr);
-
-		LOGGER.debug("i interval: (" + iBegin + ", " + iFinal + ")");
-		LOGGER.debug("j interval: (" + jBegin + ", " + jFinal + ")");
-
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
-
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-
-		File mtlFile = new File(mtlFilePath);
-		String imageName = mtlFile.getParentFile().getName();
-		String outputDir = properties.getProperty("output_dir_path");
-
-		if (outputDir == null || outputDir.isEmpty()) {
-			this.outputDir = imageName;
-		} else {
-			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-				new File(outputDir).mkdirs();
-			}
-			this.outputDir = outputDir + "/" + imageName;
-		}
-	}
-
 	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
 		
