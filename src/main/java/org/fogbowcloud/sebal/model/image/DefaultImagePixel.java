@@ -9,7 +9,6 @@ public class DefaultImagePixel implements ImagePixel {
 	private double[] Ap;
 	private double[] Mp;
 	private double cosTheta;
-	private double sinTheta;
 	private double sinThetaSunEle;
 	private Image image;
 	private double z;
@@ -134,10 +133,6 @@ public class DefaultImagePixel implements ImagePixel {
 	
 	public void cosTheta(double cosTheta) {
 		this.cosTheta = cosTheta;
-	}
-	
-	public void sinTheta(double sinTheta) {
-		this.sinTheta = sinTheta;
 	}
 	
 	public void sinThetaEle(double sinThetaSunEle) {

@@ -9,8 +9,6 @@ public class PixelSample {
 		
 	private static final int UNDEFINED = -1;
 	private List<ImagePixel> pixels;
-//	private int horizontalPixels;
-//	private int verticalPixels;
 	private int minX = UNDEFINED;
 	private int maxX = UNDEFINED;
 	private int minY = UNDEFINED;
@@ -45,14 +43,6 @@ public class PixelSample {
 			maxX = x;
 		}	
 	}
-
-//	public void updateHorizontalPixels(int horizontalPixel) {
-//		horizontalPixels = Math.max(horizontalPixels, horizontalPixel);
-//	}
-//
-//	public void updateVerticalPixels(int verticalPixel) {
-//		verticalPixels = Math.max(verticalPixels, verticalPixel);		
-//	}
 
 	public List<ImagePixel> pixels() {
 		return pixels;
