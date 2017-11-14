@@ -29,13 +29,12 @@ public class PreProcessMain {
 		FileInputStream input = new FileInputStream(confFile);
 		properties.load(input);
 
-		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(
-				leftX, rightX, numberOfPartitions, partitionIndex);		
+		XPartitionInterval imagePartition = BulkHelper.getSelectedPartition(leftX, rightX,
+				numberOfPartitions, partitionIndex);
 
-		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, imageName,
-				mtlFilePath, imagePartition.getIBegin(),
-				imagePartition.getIFinal(), upperY, lowerY, boundingBoxPath,
-				properties);
+		RWrapper rwrapper = new RWrapper(imagesPath, outputDir, imageName, mtlFilePath,
+				imagePartition.getIBegin(), imagePartition.getIFinal(), upperY, lowerY,
+				boundingBoxPath, properties);
 		rwrapper.doTask(TaskType.PREPROCESS);
 	}
 

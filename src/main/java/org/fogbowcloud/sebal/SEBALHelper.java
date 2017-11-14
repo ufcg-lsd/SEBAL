@@ -247,8 +247,8 @@ public class SEBALHelper {
 	}
 
 	public static String getStationData(Properties properties, Product product, int iBegin,
-			int iFinal, int jBegin, int jFinal, PixelQuenteFrioChooser pixelQuenteFrioChooser,
-			BoundingBox boundingBox) throws URISyntaxException, HttpException, IOException {
+			int iFinal, int jBegin, int jFinal, BoundingBox boundingBox)
+			throws URISyntaxException, HttpException, IOException {
 
 		LOGGER.info("Starting station collect...");
 

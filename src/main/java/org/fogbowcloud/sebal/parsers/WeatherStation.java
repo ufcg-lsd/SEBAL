@@ -1,14 +1,11 @@
 package org.fogbowcloud.sebal.parsers;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
 import org.apache.log4j.Logger;
 import org.fogbowcloud.sebal.parsers.plugins.StationOperator;
@@ -40,48 +37,6 @@ public class WeatherStation {
 	protected WeatherStation(Properties properties, FTPStationOperator stationOperator) {
 		this.properties = properties;
 		this.stationOperator = stationOperator;
-	}
-
-	public void persistStations() throws IOException {
-		JSONArray stations = new JSONArray();
-		for (String line : IOUtils.readLines(new FileInputStream("stations.html"))) {
-			if (line.contains("var html")) {
-				String[] split = line.split("<br />");
-				JSONObject json = new JSONObject();
-				String split0 = split[0];
-				String split00 = split0
-						.substring(split[0].lastIndexOf(":") + 1, split[0].indexOf("</b>")).trim();
-
-				json.put("id", split00.split("-")[0].trim());
-				json.put("name", split00.substring(split00.indexOf("-") + 1).trim());
-				json.put("lat",
-						Double.parseDouble(split[1].substring(split[1].indexOf(":") + 1).trim()));
-				json.put("lon",
-						Double.parseDouble(split[2].substring(split[2].indexOf(":") + 1).trim()));
-				json.put("altitude", Double.parseDouble(
-						split[3].substring(split[3].indexOf(":") + 1).replaceAll("m", "").trim()));
-				stations.put(json);
-			}
-		}
-		IOUtils.write(stations.toString(2), new FileOutputStream("stations.json"));
-	}
-
-	public double zx(double lat, double lon) {
-		if (properties.getProperty("altitude_sensor_velocidade") != null) {
-			return Double.parseDouble(properties.getProperty("altitude_sensor_velocidade"));
-		}
-		return 6.;
-	}
-
-	public double d(double lat, double lon) {
-		return 4. * 2 / 3;
-	}
-
-	public double hc(double lat, double lon) {
-		if (properties.getProperty("hc") != null) {
-			return Double.parseDouble(properties.getProperty("hc"));
-		}
-		return 4.0;
 	}
 
 	public String getStationData(double lat, double lon, Date date) {

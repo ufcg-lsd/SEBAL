@@ -35,7 +35,6 @@ public class FTPStationOperator implements StationOperator {
 	private static final Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
 
 	public FTPStationOperator(Properties properties) {
-
 		this.properties = properties;
 	}
 

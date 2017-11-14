@@ -10,8 +10,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
-import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
-import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
 
@@ -25,7 +23,6 @@ public class RWrapper {
     private int jBegin;
     private int jFinal;
     private String outputDir;
-    private PixelQuenteFrioChooser pixelQuenteFrioChooser;
     private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 
 	private static final Logger LOGGER = Logger.getLogger(RWrapper.class);
@@ -50,14 +47,13 @@ public class RWrapper {
 			this.outputDir = outputDir + imageName;
 		}
 		
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
 		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
 	}
 	
 	public void doTask(String taskType) throws Exception {
 		try {
         	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
-        		preProcessingPixels(pixelQuenteFrioChooser);
+        		preProcessingPixels();
                 return;
         	}
         } catch (Throwable e) {
@@ -66,7 +62,7 @@ public class RWrapper {
         }
 	}
 
-	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser)
+	public void preProcessingPixels()
 			throws Exception {
 		LOGGER.info("Pre processing pixels...");
 
@@ -81,7 +77,7 @@ public class RWrapper {
 		}
 
 		String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
-				jFinal, pixelQuenteFrioChooser, boundingBox);
+				jFinal, boundingBox);
 
 		if (stationData != null && !stationData.isEmpty()) {
 			LOGGER.debug("stationData: " + stationData);
