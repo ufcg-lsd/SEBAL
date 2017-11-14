@@ -34,38 +34,23 @@
 	</build>
 
 	<repositories>
-		<!-- <repository> -->
-		<!-- <snapshots> -->
-		<!-- <enabled>true</enabled> -->
-		<!-- </snapshots> -->
-		<!-- <id>geo-solutions</id> -->
-		<!-- <name>geo-solutions</name> -->
-		<!-- <url>http://maven.geo-solutions.it/</url> -->
-		<!-- </repository> -->
-<!-- 
-		<repository>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<id>maven.ourgrid.org</id>
-			<name>maven.ourgrid.org</name>
-			<url> http://maven.ourgrid.org/repos</url>
-		</repository>
--->
 	
 		<repository>
 			<id>maven-fogbow</id>
-			<url>https://github.com/fogbow/mvn-repo/raw/master/releases/sebal</url>
+			<url>https://github.com/fogbow/mvn-repo/raw/master/releases/esa-beam</url>
 		</repository>
+			
 		<repository>
           	<id>local</id>
           	<url>file://${basedir}/.m2</url>
         </repository>
+        
         <repository>
             <id>osgeo</id>
             <name>Open Source Geospatial Foundation Repository</name>
             <url>http://download.osgeo.org/webdav/geotools/</url>
         </repository>
+        
         <repository>
 	        <id>unidata-releases</id>
 	        <name>UNIDATA Releases</name>
@@ -96,33 +81,25 @@
 	</profiles>
 
 	<dependencies>
-<!-- 		<dependency> -->
-<!-- 			<groupId>org.fogbowcloud</groupId> -->
-<!-- 			<artifactId>manager</artifactId> -->
-<!-- 			<version>0.0.1-SNAPSHOT</version> -->
-<!-- 		</dependency> -->
+		
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20131018</version>
 		</dependency>
-<!-- 
-		<dependency>
-			<groupId>org.esa.beam</groupId>
-			<artifactId>beam-landsat-reader</artifactId>
-			<version>5.0-SNAPSHOT</version>
-		</dependency>
- -->		
+		
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.3</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>net.lingala.zip4j</groupId>
 			<artifactId>zip4j</artifactId>
@@ -140,540 +117,54 @@
 		   <artifactId>gdal</artifactId>
 		   <version>1.10.1</version>
 		</dependency>
+		
 		<dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
             <version>12.3</version>
         </dependency>
+        
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-swing</artifactId>
             <version>12.3</version>
         </dependency>
+        
         <dependency>
 		  <groupId>edu.ucar</groupId>
 		  <artifactId>netcdfAll</artifactId>
 		  <version>4.6.1</version>
 		</dependency>
+		
 		<dependency>
 		  <groupId>log4j</groupId>
 	 	  <artifactId>log4j</artifactId>
 		  <version>1.2.14</version>
         </dependency>
+        
 		<dependency>
       	  <groupId>org.mockito</groupId>
       	  <artifactId>mockito-all</artifactId>
       	  <version>1.8.4</version>
     	</dependency>
     	
-    	<!-- Old dependencies of OurGrid  -->
-    	<dependency>
-		   <groupId>beam-flhmci</groupId>
-		   <artifactId>beam-flhmci</artifactId>
+    	<!-- https://mvnrepository.com/artifact/junit/junit -->
+		<dependency>
+	    	<groupId>junit</groupId>
+	    	<artifactId>junit</artifactId>
+	    	<version>4.11</version>
+		</dependency>
+		
+		<!-- Maven Fogbow Dependencies -->
+		<dependency>
+		   <groupId>beam-core</groupId>
+		   <artifactId>beam-core</artifactId>
 		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jts</groupId>
-		   <artifactId>jts</artifactId>
-		   <version>1.11</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-glayer</groupId>
-		   <artifactId>ceres-glayer</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-gpf</groupId>
-		   <artifactId>beam-gpf</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-binding</groupId>
-		   <artifactId>ceres-binding</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-netcdf</groupId>
-		   <artifactId>beam-netcdf</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-visat</groupId>
-		   <artifactId>beam-visat</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>hamcrest-core</groupId>
-		   <artifactId>hamcrest-core</artifactId>
-		   <version>1.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>slf4j-api</groupId>
-		   <artifactId>slf4j-api</artifactId>
-		   <version>1.6.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jcip-annotations</groupId>
-		   <artifactId>jcip-annotations</artifactId>
-		   <version>1.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-render</groupId>
-		   <artifactId>gt-render</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-brr</groupId>
-		   <artifactId>beam-meris-brr</artifactId>
-		   <version>2.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-pconvert</groupId>
-		   <artifactId>beam-pconvert</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>udunits</groupId>
-		   <artifactId>udunits</artifactId>
-		   <version>4.3.21</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>quartz</groupId>
-		   <artifactId>quartz</artifactId>
-		   <version>2.1.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-getasse30-reader</groupId>
-		   <artifactId>beam-getasse30-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-referencing</groupId>
-		   <artifactId>gt-referencing</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-logging</groupId>
-		   <artifactId>commons-logging</artifactId>
-		   <version>1.0.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-cluster-analysis</groupId>
-		   <artifactId>beam-cluster-analysis</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>Jama</groupId>
-		   <artifactId>Jama</artifactId>
-		   <version>1.0.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>javahelp</groupId>
-		   <artifactId>javahelp</artifactId>
-		   <version>2.0.02</version>
 		</dependency>
 		
 		<dependency>
 		   <groupId>beam-csv-dataio</groupId>
 		   <artifactId>beam-csv-dataio</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jna</groupId>
-		   <artifactId>jna</artifactId>
-		   <version>3.0.9</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-shapefile</groupId>
-		   <artifactId>gt-shapefile</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ejml</groupId>
-		   <artifactId>ejml</artifactId>
-		   <version>0.21</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-math3</groupId>
-		   <artifactId>commons-math3</artifactId>
-		   <version>3.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>opendap</groupId>
-		   <artifactId>opendap</artifactId>
-		   <version>4.3.21</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>junit</groupId>
-		   <artifactId>junit</artifactId>
-		   <version>4.11</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-visat-rcp</groupId>
-		   <artifactId>beam-visat-rcp</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-ui</groupId>
-		   <artifactId>beam-ui</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-pgx-reader</groupId>
-		   <artifactId>beam-pgx-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-jai</groupId>
-		   <artifactId>ceres-jai</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-opengis</groupId>
-		   <artifactId>gt-opengis</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jai-imageio</groupId>
-		   <artifactId>jai-imageio</artifactId>
-		   <version>1.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-cql</groupId>
-		   <artifactId>gt-cql</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-merisl3-reader</groupId>
-		   <artifactId>beam-merisl3-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>clibwrapper-jiio</groupId>
-		   <artifactId>clibwrapper-jiio</artifactId>
-		   <version>1.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-avhrr-reader</groupId>
-		   <artifactId>beam-avhrr-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jsr-275-beta</groupId>
-		   <artifactId>jsr-275-beta</artifactId>
-		   <version>1.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>imageio-ext-utilities</groupId>
-		   <artifactId>imageio-ext-utilities</artifactId>
-		   <version>1.0.8</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-ui</groupId>
-		   <artifactId>ceres-ui</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>js</groupId>
-		   <artifactId>js</artifactId>
-		   <version>1.7R1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-opendap</groupId>
-		   <artifactId>beam-opendap</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>slf4j-api</groupId>
-		   <artifactId>slf4j-api</artifactId>
-		   <version>1.7.5</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-pool</groupId>
-		   <artifactId>commons-pool</artifactId>
-		   <version>1.5.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jide-grids</groupId>
-		   <artifactId>jide-grids</artifactId>
-		   <version>3.5.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-collections</groupId>
-		   <artifactId>commons-collections</artifactId>
-		   <version>3.2.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-coverage</groupId>
-		   <artifactId>gt-coverage</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-smac</groupId>
-		   <artifactId>beam-meris-smac</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-ndvi</groupId>
-		   <artifactId>beam-ndvi</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-httpclient</groupId>
-		   <artifactId>commons-httpclient</artifactId>
-		   <version>3.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jdom</groupId>
-		   <artifactId>jdom</artifactId>
-		   <version>1.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>protobuf-java</groupId>
-		   <artifactId>protobuf-java</artifactId>
-		   <version>2.5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jnn</groupId>
-		   <artifactId>jnn</artifactId>
-		   <version>1.7</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>xmlpull</groupId>
-		   <artifactId>xmlpull</artifactId>
-		   <version>1.1.3.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>xpp3_min</groupId>
-		   <artifactId>xpp3_min</artifactId>
-		   <version>1.1.4c</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>seadas-reader</groupId>
-		   <artifactId>seadas-reader</artifactId>
-		   <version>1.5.5</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-lang</groupId>
-		   <artifactId>commons-lang</artifactId>
-		   <version>2.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>vecmath</groupId>
-		   <artifactId>vecmath</artifactId>
-		   <version>1.3.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>je</groupId>
-		   <artifactId>je</artifactId>
-		   <version>4.0.92</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-geotiff</groupId>
-		   <artifactId>gt-geotiff</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-cli</groupId>
-		   <artifactId>commons-cli</artifactId>
-		   <version>1.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-temporal-percentile-op</groupId>
-		   <artifactId>beam-temporal-percentile-op</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jai-core</groupId>
-		   <artifactId>jai-core</artifactId>
-		   <version>1.1.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-envisat-reader</groupId>
-		   <artifactId>beam-envisat-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-alos-reader</groupId>
-		   <artifactId>beam-alos-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jdom2</groupId>
-		   <artifactId>jdom2</artifactId>
-		   <version>2.0.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-glint</groupId>
-		   <artifactId>beam-meris-glint</artifactId>
-		   <version>1.2.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-api</groupId>
-		   <artifactId>gt-api</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-spot-vgt-reader</groupId>
-		   <artifactId>beam-spot-vgt-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-hdf5-writer</groupId>
-		   <artifactId>beam-hdf5-writer</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>htmlparser</groupId>
-		   <artifactId>htmlparser</artifactId>
-		   <version>1.6</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-binning</groupId>
-		   <artifactId>beam-binning</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>c3p0</groupId>
-		   <artifactId>c3p0</artifactId>
-		   <version>0.9.1.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-collocation</groupId>
-		   <artifactId>beam-collocation</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-metadata</groupId>
-		   <artifactId>gt-metadata</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jide-common</groupId>
-		   <artifactId>jide-common</artifactId>
-		   <version>3.5.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jython</groupId>
-		   <artifactId>jython</artifactId>
-		   <version>2.5.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-core</groupId>
-		   <artifactId>ceres-core</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-binio</groupId>
-		   <artifactId>ceres-binio</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>nujan</groupId>
-		   <artifactId>nujan</artifactId>
-		   <version>1.4.1.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-landsat-reader</groupId>
-		   <artifactId>beam-landsat-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-wms</groupId>
-		   <artifactId>gt-wms</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-atsr-reader</groupId>
-		   <artifactId>beam-atsr-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-scripting</groupId>
-		   <artifactId>beam-scripting</artifactId>
 		   <version>5.0</version>
 		</dependency>
 		
@@ -684,233 +175,10 @@
 		</dependency>
 		
 		<dependency>
-		   <groupId>gt-data</groupId>
-		   <artifactId>gt-data</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-cloud</groupId>
-		   <artifactId>beam-meris-cloud</artifactId>
+		   <groupId>beam-landsat-reader</groupId>
+		   <artifactId>beam-landsat-reader</artifactId>
 		   <version>5.0</version>
 		</dependency>
-		
-		<dependency>
-		   <groupId>jide-dock</groupId>
-		   <artifactId>jide-dock</artifactId>
-		   <version>3.5.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jfreechart</groupId>
-		   <artifactId>jfreechart</artifactId>
-		   <version>1.0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jai-codec</groupId>
-		   <artifactId>jai-codec</artifactId>
-		   <version>1.1.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ceres-metadata</groupId>
-		   <artifactId>ceres-metadata</artifactId>
-		   <version>0.14</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-aatsr-sst</groupId>
-		   <artifactId>beam-aatsr-sst</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-case2-regional</groupId>
-		   <artifactId>beam-meris-case2-regional</artifactId>
-		   <version>1.6</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>joda-time</groupId>
-		   <artifactId>joda-time</artifactId>
-		   <version>2.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-unmix</groupId>
-		   <artifactId>beam-unmix</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-radiometry</groupId>
-		   <artifactId>beam-meris-radiometry</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>slf4j-jdk14</groupId>
-		   <artifactId>slf4j-jdk14</artifactId>
-		   <version>1.6.1</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-time-series-tool</groupId>
-		   <artifactId>beam-time-series-tool</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>hsqldb</groupId>
-		   <artifactId>hsqldb</artifactId>
-		   <version>1.8.0.7</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-envi-reader</groupId>
-		   <artifactId>beam-envi-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-epsg-hsql</groupId>
-		   <artifactId>gt-epsg-hsql</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-chris-reader</groupId>
-		   <artifactId>beam-chris-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jcl-over-slf4j</groupId>
-		   <artifactId>jcl-over-slf4j</artifactId>
-		   <version>1.7.5</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-sdr</groupId>
-		   <artifactId>beam-meris-sdr</artifactId>
-		   <version>2.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>velocity</groupId>
-		   <artifactId>velocity</artifactId>
-		   <version>1.7</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>ehcache-core</groupId>
-		   <artifactId>ehcache-core</artifactId>
-		   <version>2.6.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>xpp3</groupId>
-		   <artifactId>xpp3</artifactId>
-		   <version>1.1.4c</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>netcdf</groupId>
-		   <artifactId>netcdf</artifactId>
-		   <version>4.3.21</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-meris-l2auxdata</groupId>
-		   <artifactId>beam-meris-l2auxdata</artifactId>
-		   <version>1.2.5</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jide-action</groupId>
-		   <artifactId>jide-action</artifactId>
-		   <version>3.5.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-statistics-op</groupId>
-		   <artifactId>beam-statistics-op</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jtar</groupId>
-		   <artifactId>jtar</artifactId>
-		   <version>1.0.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jcommon</groupId>
-		   <artifactId>jcommon</artifactId>
-		   <version>1.0.17</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-pixel-extraction</groupId>
-		   <artifactId>beam-pixel-extraction</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-core</groupId>
-		   <artifactId>beam-core</artifactId>
-		   <version>5.0</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>imageio-ext-tiff</groupId>
-		   <artifactId>imageio-ext-tiff</artifactId>
-		   <version>1.0.8</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-xml</groupId>
-		   <artifactId>gt-xml</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>mlibwrapper-jai</groupId>
-		   <artifactId>mlibwrapper-jai</artifactId>
-		   <version>1.1.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>jide-components</groupId>
-		   <artifactId>jide-components</artifactId>
-		   <version>3.5.3</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>commons-codec</groupId>
-		   <artifactId>commons-codec</artifactId>
-		   <version>1.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>gt-main</groupId>
-		   <artifactId>gt-main</artifactId>
-		   <version>2.7.4</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>xstream</groupId>
-		   <artifactId>xstream</artifactId>
-		   <version>1.4.2</version>
-		</dependency>
-		
-		<dependency>
-		   <groupId>beam-modis-reader</groupId>
-		   <artifactId>beam-modis-reader</artifactId>
-		   <version>5.0</version>
-		</dependency>
-    	
 		
 	</dependencies>
 </project>

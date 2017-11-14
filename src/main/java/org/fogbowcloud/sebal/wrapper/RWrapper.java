@@ -27,7 +27,7 @@ public class RWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(RWrapper.class);
 
-	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
+	public RWrapper(String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
 			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
 		
 		this.imageName = imageName;

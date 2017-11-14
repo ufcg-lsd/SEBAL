@@ -197,6 +197,7 @@ public class SEBALHelper {
 
 		Map<String, String> properties = Collections.singletonMap("name",
 				"WGS 84 / UTM Zone " + zoneNumber);
+		
 		@SuppressWarnings("deprecation")
 		ProjectedCRS projCRS = factories.createProjectedCRS(properties, geoCRS, null, parameters,
 				cartCS);
