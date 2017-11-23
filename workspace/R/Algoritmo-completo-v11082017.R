@@ -87,10 +87,30 @@ tdim <- ncdim_def("time", "days since 1970-1-1", daysSince1970, unlim=TRUE, crea
 # Depending on the sattelite the number of spectral bands captured are differents
 fichs.imagens <- list.files(path=fic.dir, pattern="*.TIF", full.names=TRUE)
 
+getBandsPath <- function(n.sensor){
+  wanted_bands <- NULL
+  if(n.sensor == 8) {
+    wanted_bands <- c("B2", "B3", "B4", "B5", "B6", "B7", "B10")
+  } else if(n.sensor == 7) {
+    wanted_bands <- c("B1", "B2", "B3", "B4", "B5", "B6_VCID_2", "B7")
+  } else if(n.sensor == 5) {
+    wanted_bands <- c("B1", "B2", "B3", "B4", "B5", "B6", "B7")
+  }
+  
+  bands_path <- list()
+  for (i in 1:length(wanted_bands)) {
+    for (j in 1:length(fichs.imagens)) {
+      if(regexpr(paste(wanted_bands[i], '.TIF', sep=""), fichs.imagens[[j]]) != -1) {
+        bands_path[[i]] <- fichs.imagens[[j]]
+      }
+    }
+  }
+  
+  return(bands_path)
+}
+
 # Reading
-if (n.sensor==8) fic.st <- stack(as.list(fichs.imagens[c(4:9,2)]))
-if (n.sensor==7) fic.st <- stack(as.list(fichs.imagens[1:8]))
-if (n.sensor==5) fic.st <- stack(as.list(fichs.imagens[1:7]))
+fic.st <- stack(as.list(getBandsPath(n.sensor)))
 
 proc.time()
 
