@@ -33,6 +33,7 @@ public class FTPStationOperator implements StationOperator {
 	private Map<String, String> cache = new HashMap<String, String>();
 
 	private static final Logger LOGGER = Logger.getLogger(FTPStationOperator.class);
+	private static final double MAX_REGION_DISTANCE_KM = 500;
 
 	public FTPStationOperator(Properties properties) {
 		this.properties = properties;
@@ -134,10 +135,15 @@ public class FTPStationOperator implements StationOperator {
 
 		List<JSONObject> orderedStations = new LinkedList<JSONObject>();
 		for (int i = 0; i < stations.length(); i++) {
+			
 			JSONObject station = stations.optJSONObject(i);
-			double dist = distance(lat, lon, station.optDouble("lat"), station.optDouble("lon"));
-			station.put("distance", dist);
-			orderedStations.add(station);
+			double distance = distance(lat, lon, station.optDouble("lat"),
+					station.optDouble("lon"));
+
+			if (distance <= FTPStationOperator.MAX_REGION_DISTANCE_KM) {
+				station.put("distance", distance);
+				orderedStations.add(station);
+			}
 		}
 
 		Collections.sort(orderedStations, new Comparator<JSONObject>() {

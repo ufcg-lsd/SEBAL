@@ -22,8 +22,9 @@ public class WeatherStation {
 
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 
-	private static final String[] WANTED_STATION_HOURS = new String[] { "0000", "1200", "1800" };
+	private static final String[] WANTED_STATION_HOURS = new String[] { "1200" };
 	private static final String MINIMUM_WIND_SPEED_VALUE = "0.3";
+	private static final int MINIMUM_STATION_RECORDS = 3;
 
 	public WeatherStation() throws URISyntaxException, HttpException, IOException {
 		this(new Properties());
@@ -70,7 +71,7 @@ public class WeatherStation {
 					windSpeedCorrection(stationData);
 
 					if (checkRecords(stationData)) {
-						LOGGER.info("Founded ideal Station Data: " + System.lineSeparator()
+						LOGGER.info("Founded Station Data: " + System.lineSeparator()
 								+ stationData.toString());
 						return generateStationData(stationData);
 					}
@@ -92,26 +93,21 @@ public class WeatherStation {
 			for (int i = 0; i < stationData.length(); i++) {
 				JSONObject stationDataRecord = stationData.optJSONObject(i);
 
-				boolean isWanted = false;
-				for (String hour : WeatherStation.WANTED_STATION_HOURS) {
-					if (isRecord(stationDataRecord, SEBALAppConstants.JSON_STATION_TIME, hour)) {
-						isWanted = true;
-					}
-				}
-
-				if (!isWanted || !stationContainsAll(stationDataRecord)) {
+				if (!stationContainsAll(stationDataRecord)) {
 					stationData.remove(i);
 					i--;
 				}
 			}
 
-			boolean hasAll = true;
-			for (String hour : WeatherStation.WANTED_STATION_HOURS) {
-				if (!hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
-					hasAll = false;
+			if (stationData.length() >= WeatherStation.MINIMUM_STATION_RECORDS) {
+				boolean hasAll = true;
+				for (String hour : WeatherStation.WANTED_STATION_HOURS) {
+					if (!hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
+						hasAll = false;
+					}
 				}
+				result = hasAll;
 			}
-			result = hasAll;
 		}
 		return result;
 	}
@@ -120,17 +116,10 @@ public class WeatherStation {
 		boolean result = false;
 		for (int i = 0; i < stationData.length() && !result; i++) {
 			JSONObject stationDataRecord = stationData.optJSONObject(i);
-			if (isRecord(stationDataRecord, key, value)) {
+			
+			if (stationDataRecord.optString(key).equals(value)) {
 				result = true;
 			}
-		}
-		return result;
-	}
-
-	private boolean isRecord(JSONObject stationDataRecord, String key, String value) {
-		boolean result = false;
-		if (stationDataRecord.optString(key).equals(value)) {
-			result = true;
 		}
 		return result;
 	}
