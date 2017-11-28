@@ -92,7 +92,7 @@ getBandsPath <- function(n.sensor){
   if(n.sensor == 8) {
     wanted_bands <- c("B2", "B3", "B4", "B5", "B6", "B7", "B10")
   } else if(n.sensor == 7) {
-    wanted_bands <- c("B1", "B2", "B3", "B4", "B5", "B6_VCID_2", "B7")
+    wanted_bands <- c("B1", "B2", "B3", "B4", "B5", "B6_VCID_1", "B6_VCID_2", "B7")
   } else if(n.sensor == 5) {
     wanted_bands <- c("B1", "B2", "B3", "B4", "B5", "B6", "B7")
   }
