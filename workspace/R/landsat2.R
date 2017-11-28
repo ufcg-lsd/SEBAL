@@ -48,7 +48,7 @@ landsat<-function(){
   
   #Temperatura de Superfície em Kelvin (TS)
   if (n.sensor==5) k1<-607.76 else k1<-666.09   #Constante Temperatura de superfície
-  if (n.sensor==5) k2<-1260.56 else k2<-1282.71 #Constante Temperatura de superfície
+  if (n.sensor==7) k2<-1260.56 else k2<-1282.71 #Constante Temperatura de superfície
   if (n.sensor==5) TS_temp<-k2/log((Enb_temp*k1/rad[[6]])+1) else TS_temp<-k2/log((Enb_temp*k1/rad[[7]])+1)
   
   #Radiação de onda longa emitida pela superfície (RLsup)
