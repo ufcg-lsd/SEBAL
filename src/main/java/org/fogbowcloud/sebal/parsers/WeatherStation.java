@@ -44,18 +44,18 @@ public class WeatherStation {
 		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
 
 		int daysWindow = 0;
-		List<JSONObject> nearStations = stationOperator.findNearestStation(date, lat, lon,
+		List<JSONObject> nearStations = this.stationOperator.findNearestStation(date, lat, lon,
 				daysWindow);
 
+		String stationData = null;
 		if (nearStations != null) {
-			return selectStationRecords(date, nearStations, daysWindow);
+			stationData = this.selectStation(date, nearStations, daysWindow);
 		}
-
-		return null;
+		return stationData;
 	}
 
-	protected String selectStationRecords(Date date, List<JSONObject> stations, int numberOfDays) {
-		LOGGER.info("Near stations found... reading and selecting full record");
+	protected String selectStation(Date date, List<JSONObject> stations, int numberOfDays) {
+
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		Date endDate = new Date(date.getTime() + numberOfDays * StationOperatorConstants.A_DAY);
 
@@ -64,11 +64,12 @@ public class WeatherStation {
 
 			for (JSONObject station : stations) {
 				try {
-					JSONArray stationData = stationOperator.readStation(station.optString("id"),
+					JSONArray stationData = this.stationOperator.readStation(
+							station.optString("id"),
 							StationOperatorConstants.DATE_FORMAT.format(begindate),
 							StationOperatorConstants.DATE_FORMAT.format(endDate));
 
-					windSpeedCorrection(stationData);
+					stationData = windSpeedCorrection(stationData);
 
 					if (checkRecords(stationData)) {
 						LOGGER.info("Founded Station Data: " + System.lineSeparator()
@@ -93,7 +94,7 @@ public class WeatherStation {
 			for (int i = 0; i < stationData.length(); i++) {
 				JSONObject stationDataRecord = stationData.optJSONObject(i);
 
-				if (!stationContainsAll(stationDataRecord)) {
+				if (!containsNeededStationValues(stationDataRecord)) {
 					stationData.remove(i);
 					i--;
 				}
@@ -112,11 +113,11 @@ public class WeatherStation {
 		return result;
 	}
 
-	protected boolean hasRecord(JSONArray stationData, String key, String value) {
+	private boolean hasRecord(JSONArray stationData, String key, String value) {
 		boolean result = false;
 		for (int i = 0; i < stationData.length() && !result; i++) {
 			JSONObject stationDataRecord = stationData.optJSONObject(i);
-			
+
 			if (stationDataRecord.optString(key).equals(value)) {
 				result = true;
 			}
@@ -124,10 +125,14 @@ public class WeatherStation {
 		return result;
 	}
 
-	protected void windSpeedCorrection(JSONArray stationData) {
+	protected JSONArray windSpeedCorrection(JSONArray stationData) {
+		JSONArray result = new JSONArray();
+
 		if (stationData != null) {
-			for (int i = 0; i < stationData.length(); i++) {
-				JSONObject stationDataRecord = stationData.optJSONObject(i);
+			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
 
 				if (Double.parseDouble(stationDataRecord
 						.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < Double
@@ -138,19 +143,28 @@ public class WeatherStation {
 							WeatherStation.MINIMUM_WIND_SPEED_VALUE);
 				}
 			}
+
+			result = adjustedStationData;
 		}
+
+		return result;
 	}
 
-	protected boolean stationContainsAll(JSONObject station) {
-		return !station.optString(SEBALAppConstants.JSON_STATION_DATE).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_STATION_TIME).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_STATION_LATITUDE).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_STATION_LONGITUDE).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE).isEmpty()
-				&& !station.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED).isEmpty()
-				&& Double.parseDouble(
-						station.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3;
+	protected boolean containsNeededStationValues(JSONObject station) {
+		String[] neededStationValues = new String[] { SEBALAppConstants.JSON_STATION_DATE,
+				SEBALAppConstants.JSON_STATION_TIME, SEBALAppConstants.JSON_STATION_LATITUDE,
+				SEBALAppConstants.JSON_STATION_LONGITUDE, SEBALAppConstants.JSON_AIR_TEMPERATURE,
+				SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE,
+				SEBALAppConstants.JSON_STATION_WIND_SPEED };
+
+		boolean result = true;
+		for (String value : neededStationValues) {
+			if (station.optString(value).isEmpty() == true) {
+				result = false;
+			}
+		}
+
+		return result;
 	}
 
 	private String generateStationData(JSONArray stationData) {
@@ -199,7 +213,7 @@ public class WeatherStation {
 	}
 
 	public Properties getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public void setProperties(Properties properties) {

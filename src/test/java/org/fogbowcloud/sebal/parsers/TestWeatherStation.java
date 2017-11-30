@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.fogbowcloud.sebal.parsers.plugins.ftp.FTPStationOperator;
-import org.fogbowcloud.sebal.util.SEBALAppConstants;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -153,11 +152,11 @@ public class TestWeatherStation {
 				+ System.lineSeparator()
 				+ "825790;20020126;1800;-5.05;-42.82;2.1;32.5;23.1;NA;NA;NA;NA;NA;";
 
-		String actual = this.weatherStation.selectStationRecords(date, nearStations, 0);
+		String actual = this.weatherStation.selectStation(date, nearStations, 0);
 
 		Assert.equals(expected, actual);
 
-		assertNull(this.weatherStation.selectStationRecords(date, null, 0));
+		assertNull(this.weatherStation.selectStation(date, null, 0));
 	}
 
 	@Test
@@ -189,9 +188,9 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		assertNull(this.weatherStation.selectStationRecords(date, nearStations, 0));
+		assertNull(this.weatherStation.selectStation(date, nearStations, 0));
 
-		assertNull(this.weatherStation.selectStationRecords(date, null, 0));
+		assertNull(this.weatherStation.selectStation(date, null, 0));
 	}
 
 	@Test
@@ -223,7 +222,7 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		assertNull(this.weatherStation.selectStationRecords(date, nearStations, 0));
+		assertNull(this.weatherStation.selectStation(date, nearStations, 0));
 	}
 
 	@Test
@@ -243,28 +242,6 @@ public class TestWeatherStation {
 	}
 
 	@Test
-	public void testHasRecord() {
-
-		FTPStationOperator ftp = Mockito.mock(FTPStationOperator.class);
-
-		this.weatherStation = new WeatherStation(this.properties, ftp);
-
-		JSONArray station = new JSONArray(
-				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"4.6\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
-
-		String[] hours = new String[] { "0000", "1200", "1800" };
-		Assert.equals(true, this.weatherStation.hasRecord(station,
-				SEBALAppConstants.JSON_STATION_TIME, hours[0]));
-		Assert.equals(true, this.weatherStation.hasRecord(station,
-				SEBALAppConstants.JSON_STATION_TIME, hours[1]));
-		Assert.equals(false, this.weatherStation.hasRecord(station,
-				SEBALAppConstants.JSON_STATION_TIME, hours[2]));
-		Assert.equals(false, this.weatherStation.hasRecord(station,
-				SEBALAppConstants.JSON_STATION_TIME, "2300"));
-
-	}
-
-	@Test
 	public void testWindSpeedCorrection() {
 
 		FTPStationOperator ftp = Mockito.mock(FTPStationOperator.class);
@@ -274,7 +251,7 @@ public class TestWeatherStation {
 		JSONArray station = new JSONArray(
 				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.0\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
 
-		this.weatherStation.windSpeedCorrection(station);
+		station = this.weatherStation.windSpeedCorrection(station);
 
 		JSONArray expected = new JSONArray(
 				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.3\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
@@ -317,12 +294,12 @@ public class TestWeatherStation {
 		JSONObject stationRecord = new JSONObject(
 				"{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"4.6\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"}");
 
-		Assert.equals(true, this.weatherStation.stationContainsAll(stationRecord));
+		Assert.equals(true, this.weatherStation.containsNeededStationValues(stationRecord));
 
 		stationRecord = new JSONObject(
 				"{\"Estacao\":\"827980\",\"VelocidadeVento\":\"4.6\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"}");
 
-		Assert.equals(false, this.weatherStation.stationContainsAll(stationRecord));
+		Assert.equals(false, this.weatherStation.containsNeededStationValues(stationRecord));
 	}
 
 }

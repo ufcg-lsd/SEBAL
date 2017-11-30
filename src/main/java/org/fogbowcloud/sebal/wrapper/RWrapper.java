@@ -72,7 +72,7 @@ public class RWrapper {
 
 		BoundingBox boundingBox = null;
 		if (this.boundingBoxVertices.size() > 3) {
-			boundingBox = SEBALHelper.calculateBoundingBox(this.boundingBoxVertices, product);
+			boundingBox = SEBALHelper.buildBoundingBox(this.boundingBoxVertices, product);
 			
 			LOGGER.debug("Bounding box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
 			LOGGER.debug("Bounding box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());

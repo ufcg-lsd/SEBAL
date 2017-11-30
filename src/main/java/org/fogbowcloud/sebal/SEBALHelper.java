@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -59,9 +58,8 @@ public class SEBALHelper {
 		return reader.readProductNodes(mtlFile, null);
 	}
 
-	public static BoundingBox calculateBoundingBox(List<BoundingBoxVertice> boudingVertices,
-			Product product)
-			throws ClientProtocolException, IOException, FactoryException, TransformException {
+	public static BoundingBox buildBoundingBox(List<BoundingBoxVertice> boudingVertices,
+			Product product) throws Exception {
 
 		List<UTMCoordinate> utmCoordinates = new ArrayList<UTMCoordinate>();
 
@@ -71,7 +69,7 @@ public class SEBALHelper {
 				.getElement("PROJECTION_PARAMETERS").getAttribute("UTM_ZONE").getData()
 				.getElemInt();
 
-		int centralMeridian = findCentralMeridian(zoneNumber);
+		int centralMeridian = SEBALHelper.centralMeridian(zoneNumber);
 
 		for (BoundingBoxVertice boundingBoxVertice : boudingVertices) {
 			utmCoordinates.add(convertLatLonToUtm(boundingBoxVertice.getLat(),
@@ -80,26 +78,16 @@ public class SEBALHelper {
 
 		LOGGER.debug("Boundingbox UTM coordinates: " + utmCoordinates);
 
-		double x0 = getMinimunX(utmCoordinates);
-		double y0 = getMaximunY(utmCoordinates);
+		double x0 = SEBALHelper.getMinimunX(utmCoordinates);
+		double y0 = SEBALHelper.getMaximunY(utmCoordinates);
 
-		double x1 = getMaximunX(utmCoordinates);
-		double y1 = getMinimunY(utmCoordinates);
+		double x1 = SEBALHelper.getMaximunX(utmCoordinates);
+		double y1 = SEBALHelper.getMinimunY(utmCoordinates);
 
 		double ULx = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
 				.getAttribute("CORNER_UL_PROJECTION_X_PRODUCT").getData().getElemDouble();
 		double ULy = metadataRoot.getElement("L1_METADATA_FILE").getElement("PRODUCT_METADATA")
 				.getAttribute("CORNER_UL_PROJECTION_Y_PRODUCT").getData().getElemDouble();
-
-		// TODO remove it
-		LOGGER.debug("ULx=" + ULx);
-		LOGGER.debug("ULy=" + ULy);
-
-		LOGGER.debug("x0=" + x0);
-		LOGGER.debug("y0=" + y0);
-
-		LOGGER.debug("x1=" + x1);
-		LOGGER.debug("y1=" + y1);
 
 		int offsetX = (int) ((x0 - ULx) / 30);
 		int offsetY = (int) ((ULy - y0) / 30);
@@ -110,11 +98,11 @@ public class SEBALHelper {
 		return boundingBox;
 	}
 
-	public static int findCentralMeridian(int zoneNumber)
-			throws ClientProtocolException, IOException {
+	public static int centralMeridian(int zoneNumber) throws Exception {
+		Integer result = null;
 
 		if (zoneToCentralMeridian.get(zoneNumber) != null) {
-			return zoneToCentralMeridian.get(zoneNumber);
+			result = zoneToCentralMeridian.get(zoneNumber);
 		} else {
 
 			CloseableHttpClient httpClient = HttpClients.createMinimal();
@@ -124,22 +112,29 @@ public class SEBALHelper {
 			HttpResponse response = httpClient.execute(homeGet);
 			String responseStr = EntityUtils.toString(response.getEntity());
 
-			StringTokenizer st1 = new StringTokenizer(responseStr, "\n");
-			while (st1.hasMoreTokens()) {
-				String line = st1.nextToken();
+			StringTokenizer tokenizedResponse = new StringTokenizer(responseStr, "\n");
+			while (tokenizedResponse.hasMoreTokens()) {
+				String line = tokenizedResponse.nextToken();
+				
 				if (line.contains("central_meridian")) {
 					line = line.replaceAll(Pattern.quote("["), "");
 					line = line.replaceAll(Pattern.quote("]"), "");
-					StringTokenizer st2 = new StringTokenizer(line, ",");
-					st2.nextToken();
-					int centralMeridian = Integer.parseInt(st2.nextToken().trim());
+					
+					StringTokenizer tokenizedLine = new StringTokenizer(line, ",");
+					tokenizedLine.nextToken();
+					
+					int centralMeridian = Integer.parseInt(tokenizedLine.nextToken().trim());
 					zoneToCentralMeridian.put(zoneNumber, centralMeridian);
-					return centralMeridian;
+					result = centralMeridian;
 				}
 			}
 		}
-		throw new RuntimeException(
-				"The crentral_meridian was not found to zone number " + zoneNumber);
+
+		if (result == null) {
+			throw new Exception(
+					"The central meridian was not found to zone number [" + zoneNumber + "]");
+		}
+		return result;
 	}
 
 	private static double getMinimunX(List<UTMCoordinate> vertices) {
@@ -153,7 +148,7 @@ public class SEBALHelper {
 	}
 
 	private static double getMaximunX(List<UTMCoordinate> vertices) {
-		double maximunX = vertices.get(0).getEasting(); // initializing with first value
+		double maximunX = vertices.get(0).getEasting();
 		for (UTMCoordinate utmCoordinate : vertices) {
 			if (utmCoordinate.getEasting() > maximunX) {
 				maximunX = utmCoordinate.getEasting();
@@ -163,7 +158,7 @@ public class SEBALHelper {
 	}
 
 	private static double getMaximunY(List<UTMCoordinate> vertices) {
-		double maximunY = vertices.get(0).getNorthing(); // initializing with first value
+		double maximunY = vertices.get(0).getNorthing();
 		for (UTMCoordinate utmCoordinate : vertices) {
 			if (utmCoordinate.getNorthing() > maximunY) {
 				maximunY = utmCoordinate.getNorthing();
@@ -173,7 +168,7 @@ public class SEBALHelper {
 	}
 
 	private static double getMinimunY(List<UTMCoordinate> vertices) {
-		double minimunY = vertices.get(0).getNorthing(); // initializing with first value
+		double minimunY = vertices.get(0).getNorthing();
 		for (UTMCoordinate utmCoordinate : vertices) {
 			if (utmCoordinate.getNorthing() < minimunY) {
 				minimunY = utmCoordinate.getNorthing();
