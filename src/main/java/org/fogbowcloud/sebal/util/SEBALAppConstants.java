@@ -16,4 +16,7 @@ public class SEBALAppConstants {
 	public static final String JSON_MIN_TEMPERATURE = "TemperaturaMinima";
 	public static final String JSON_MAX_TEMPERATURE = "TemperaturaMaxima";
 	public static final String JSON_SOLAR_RADIATION = "RadiacaoSolar";
+	
+	// File constants
+	public static final String FILE_ENCODING = "UTF-8";
 }

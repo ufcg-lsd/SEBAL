@@ -32,6 +32,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData.UTC;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
 import org.fogbowcloud.sebal.parsers.WeatherStation;
+import org.fogbowcloud.sebal.util.SEBALAppConstants;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.ReferencingFactoryContainer;
@@ -51,7 +52,7 @@ public class SEBALHelper {
 	private static final Logger LOGGER = Logger.getLogger(SEBALHelper.class);
 
 	public static Product readProduct(String mtlFileName,
-			List<BoundingBoxVertice> boundingBoxVertices) throws Exception {
+			List<BoundingBoxVertice> boundingBoxVertices) throws IOException {
 		File mtlFile = new File(mtlFileName);
 		LandsatGeotiffReaderPlugin readerPlugin = new LandsatGeotiffReaderPlugin();
 		LandsatGeotiffReader reader = new LandsatGeotiffReader(readerPlugin);
@@ -59,7 +60,9 @@ public class SEBALHelper {
 	}
 
 	public static BoundingBox calculateBoundingBox(List<BoundingBoxVertice> boudingVertices,
-			Product product) throws Exception {
+			Product product)
+			throws ClientProtocolException, IOException, FactoryException, TransformException {
+
 		List<UTMCoordinate> utmCoordinates = new ArrayList<UTMCoordinate>();
 
 		MetadataElement metadataRoot = product.getMetadataRoot();
@@ -109,6 +112,7 @@ public class SEBALHelper {
 
 	public static int findCentralMeridian(int zoneNumber)
 			throws ClientProtocolException, IOException {
+
 		if (zoneToCentralMeridian.get(zoneNumber) != null) {
 			return zoneToCentralMeridian.get(zoneNumber);
 		} else {
@@ -197,7 +201,7 @@ public class SEBALHelper {
 
 		Map<String, String> properties = Collections.singletonMap("name",
 				"WGS 84 / UTM Zone " + zoneNumber);
-		
+
 		@SuppressWarnings("deprecation")
 		ProjectedCRS projCRS = factories.createProjectedCRS(properties, geoCRS, null, parameters,
 				cartCS);
@@ -227,9 +231,11 @@ public class SEBALHelper {
 			throws IOException {
 		List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 
-		// TODO check number of args inside bounding box file name
 		if (boundingBoxFileName != null && new File(boundingBoxFileName).exists()) {
-			String boundingBoxInfo = FileUtils.readFileToString(new File(boundingBoxFileName));
+
+			String boundingBoxInfo = FileUtils.readFileToString(new File(boundingBoxFileName),
+					SEBALAppConstants.FILE_ENCODING);
+
 			String[] boundingBoxValues = boundingBoxInfo.split(",");
 
 			for (int i = 0; i < boundingBoxValues.length; i += 2) {
