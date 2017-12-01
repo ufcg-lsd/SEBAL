@@ -2,6 +2,7 @@ package org.fogbowcloud.sebal.parsers;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -22,12 +23,10 @@ public class WeatherStation {
 
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 
-	private static final String[] WANTED_STATION_HOURS = new String[] { "1200" };
 	private static final Double MIN_WIND_SPEED_VALUE = 0.3;
 	private static final Double MAX_WIND_SPEED_VALUE = 31.0;
 	private static final Double MIN_AIR_TEMP_VALUE = 5.0;
 	private static final Double MAX_AIR_TEMP_VALUE = 55.0;
-	private static final int MIN_STATION_RECORDS = 3;
 
 	public WeatherStation() throws URISyntaxException, HttpException, IOException {
 		this(new Properties());
@@ -63,6 +62,8 @@ public class WeatherStation {
 		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
 		Date endDate = new Date(date.getTime() + numberOfDays * StationOperatorConstants.A_DAY);
 
+		List<String> mainHours = getMainHours(sceneCenterTime);
+
 		if (stations != null && !stations.isEmpty()) {
 			LOGGER.debug("beginDate: " + begindate + " endDate: " + endDate);
 
@@ -75,11 +76,13 @@ public class WeatherStation {
 
 					Double stationDistance = station.optDouble("distance");
 
+					stationData = removeNonRepresentativeRecords(stationData);
+
 					stationData = temperatureCorrection(stationData);
 
-					stationData = windSpeedCorrection(stationData);
+					stationData = windSpeedCorrection(stationData, mainHours);
 
-					if (checkRecords(stationData)) {
+					if (checkRecords(stationData, mainHours)) {
 						LOGGER.info("Founded Station Data: " + System.lineSeparator()
 								+ stationData.toString());
 						LOGGER.info("Station distance: [" + stationDistance + "]km");
@@ -97,27 +100,67 @@ public class WeatherStation {
 		return null;
 	}
 
-	protected boolean checkRecords(JSONArray stationData) {
+	protected List<String> getMainHours(String sceneCenterTime) {
+		List<String> result = new ArrayList<String>();
+		Integer interval = 2;
+		Integer hour = Integer.parseInt(sceneCenterTime.substring(0, 3));
+		for (int i = 0; i < interval; i++, hour++) {
+			String strHour = hour + "00";
+			if (strHour.length() < 4) {
+				strHour = "0" + strHour;
+			}
+			result.add(i, strHour);
+		}
+		return result;
+	}
+
+	protected List<String> getHoursInterval(String hour) {
+		List<String> intervalHours = new ArrayList<String>();
+		Integer intHour = Integer.parseInt(hour.substring(0, 3));
+		Integer lowerBound = (intHour - 6) % 24;
+		Integer upperBound = (intHour + 6) % 24;
+
+		for (Integer i = upperBound; i != lowerBound; i = (i + 1) % 24) {
+			String strHour = i + "00";
+			if (strHour.length() < 4) {
+				strHour = "0" + strHour;
+			}
+			intervalHours.add(strHour);
+		}
+		return intervalHours;
+	}
+
+	protected boolean checkRecords(JSONArray stationData, List<String> mainHours) {
 		boolean result = false;
 		if (stationData != null) {
 
-			for (int i = 0; i < stationData.length(); i++) {
-				JSONObject stationDataRecord = stationData.optJSONObject(i);
-
-				if (!containsNeededStationValues(stationDataRecord)) {
-					stationData.remove(i);
-					i--;
+			boolean hasAtLeastOneMainHour = false;
+			for (String hour : mainHours) {
+				if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
+					hasAtLeastOneMainHour = true;
 				}
 			}
 
-			if (stationData.length() >= WeatherStation.MIN_STATION_RECORDS) {
-				boolean hasAll = true;
-				for (String hour : WeatherStation.WANTED_STATION_HOURS) {
-					if (!hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
-						hasAll = false;
+			if (hasAtLeastOneMainHour) {
+				List<String> intervalHours = getHoursInterval(mainHours.get(0));
+				int mid = intervalHours.size() / 2;
+
+				boolean hasOneInFirstPart = false;
+				for (int i = 0; i < mid && !hasOneInFirstPart; i++) {
+					if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME,
+							intervalHours.get(i))) {
+						hasOneInFirstPart = true;
 					}
 				}
-				result = hasAll;
+
+				boolean hasOneInSecondPart = false;
+				for (int i = mid; i < intervalHours.size() && !hasOneInSecondPart; i++) {
+					if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME,
+							intervalHours.get(i))) {
+						hasOneInSecondPart = true;
+					}
+				}
+				result = hasOneInFirstPart && hasOneInSecondPart;
 			}
 		}
 		return result;
@@ -135,7 +178,7 @@ public class WeatherStation {
 		return result;
 	}
 
-	protected JSONArray windSpeedCorrection(JSONArray stationData) {
+	protected JSONArray windSpeedCorrection(JSONArray stationData, List<String> mainHours) {
 		JSONArray result = null;
 
 		if (stationData != null) {
@@ -144,24 +187,26 @@ public class WeatherStation {
 			for (int i = 0; i < adjustedStationData.length(); i++) {
 				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
 
-				Double JSONWindSpeed = Double.parseDouble(
-						stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
+				String JSONHour = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_TIME);
 
-				if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
-					stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
+				if (mainHours.contains(JSONHour)) {
+					Double JSONWindSpeed = Double.parseDouble(
+							stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
 
-					stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
-							WeatherStation.MIN_WIND_SPEED_VALUE);
+					if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
+						stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
 
-				} else if (JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
-					adjustedStationData.remove(i);
-					i--;
+						stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
+								WeatherStation.MIN_WIND_SPEED_VALUE);
+
+					} else if (JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
+						adjustedStationData.remove(i);
+						i--;
+					}
 				}
 			}
-
 			result = adjustedStationData;
 		}
-
 		return result;
 	}
 
@@ -184,10 +229,27 @@ public class WeatherStation {
 					i--;
 				}
 			}
-
 			result = adjustedStationData;
 		}
+		return result;
+	}
 
+	protected JSONArray removeNonRepresentativeRecords(JSONArray stationData) {
+		JSONArray result = null;
+
+		if (stationData != null) {
+			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
+
+				if (!containsNeededStationValues(stationDataRecord)) {
+					adjustedStationData.remove(i);
+					i--;
+				}
+			}
+			result = adjustedStationData;
+		}
 		return result;
 	}
 
