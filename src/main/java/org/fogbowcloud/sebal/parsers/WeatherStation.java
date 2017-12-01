@@ -23,8 +23,10 @@ public class WeatherStation {
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 
 	private static final String[] WANTED_STATION_HOURS = new String[] { "1200" };
-	private static final String MIN_WIND_SPEED_VALUE = "0.3";
-	private static final String MAX_WIND_SPEED_VALUE = "31.0";
+	private static final Double MIN_WIND_SPEED_VALUE = 0.3;
+	private static final Double MAX_WIND_SPEED_VALUE = 31.0;
+	private static final Double MIN_AIR_TEMP_VALUE = 5.0;
+	private static final Double MAX_AIR_TEMP_VALUE = 55.0;
 	private static final int MIN_STATION_RECORDS = 3;
 
 	public WeatherStation() throws URISyntaxException, HttpException, IOException {
@@ -72,6 +74,8 @@ public class WeatherStation {
 							StationOperatorConstants.DATE_FORMAT.format(endDate));
 
 					Double stationDistance = station.optDouble("distance");
+
+					stationData = temperatureCorrection(stationData);
 
 					stationData = windSpeedCorrection(stationData);
 
@@ -132,7 +136,7 @@ public class WeatherStation {
 	}
 
 	protected JSONArray windSpeedCorrection(JSONArray stationData) {
-		JSONArray result = new JSONArray();
+		JSONArray result = null;
 
 		if (stationData != null) {
 			JSONArray adjustedStationData = new JSONArray(stationData.toString());
@@ -142,16 +146,40 @@ public class WeatherStation {
 
 				Double JSONWindSpeed = Double.parseDouble(
 						stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
-				Double minWindSpeed = Double.parseDouble(WeatherStation.MIN_WIND_SPEED_VALUE);
-				Double maxWindSpeed = Double.parseDouble(WeatherStation.MAX_WIND_SPEED_VALUE);
 
-				if (JSONWindSpeed < minWindSpeed) {
+				if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
 					stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
 
 					stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
 							WeatherStation.MIN_WIND_SPEED_VALUE);
 
-				} else if (JSONWindSpeed > maxWindSpeed) {
+				} else if (JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
+					adjustedStationData.remove(i);
+					i--;
+				}
+			}
+
+			result = adjustedStationData;
+		}
+
+		return result;
+	}
+
+	protected JSONArray temperatureCorrection(JSONArray stationData) {
+		JSONArray result = null;
+
+		if (stationData != null) {
+			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
+
+				Double JSONAirTemp = Double.parseDouble(
+						stationDataRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE));
+
+				if (JSONAirTemp < WeatherStation.MIN_AIR_TEMP_VALUE
+						|| JSONAirTemp > WeatherStation.MAX_AIR_TEMP_VALUE) {
+
 					adjustedStationData.remove(i);
 					i--;
 				}

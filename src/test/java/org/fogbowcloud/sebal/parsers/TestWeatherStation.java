@@ -260,6 +260,34 @@ public class TestWeatherStation {
 					actualObj.optString("\"VelocidadeVento\""));
 		}
 
+		assertNull(this.weatherStation.windSpeedCorrection(null));
+	}
+	
+	@Test
+	public void testTemperatureCorrection() {
+		FTPStationOperator ftp = Mockito.mock(FTPStationOperator.class);
+
+		this.weatherStation = new WeatherStation(this.properties, ftp);
+
+		JSONArray station = new JSONArray(
+				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.0\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"999.9\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"4.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"60.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1800\"}]");
+
+		station = this.weatherStation.temperatureCorrection(station);
+
+		JSONArray expected = new JSONArray(
+				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.3\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"}]");
+	
+		Assert.equals(expected.length(), station.length());
+
+		for (int i = 0; i < station.length(); i++) {
+			JSONObject actualObj = station.optJSONObject(i);
+			JSONObject expectedObj = expected.optJSONObject(i);
+
+			Assert.equals(expectedObj.optString("\"TempBulboSeco\""),
+					actualObj.optString("\"TempBulboSeco\""));
+		}
+		
+		assertNull(this.weatherStation.temperatureCorrection(null));
 	}
 
 	@Test
