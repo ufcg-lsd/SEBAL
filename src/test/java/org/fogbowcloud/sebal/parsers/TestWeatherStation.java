@@ -63,55 +63,49 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		String expected = "825790;20020126;0000;-5.05;-42.82;2.6;28.1;26.0;NA;NA;NA;NA;NA;"
+		String expected = "825790;20020126;0000;-5.05;-42.82;2.6;28.1;26.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0100;-5.05;-42.82;2.6;27.0;25.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0100;-5.05;-42.82;2.6;27.0;25.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0200;-5.05;-42.82;1.0;26.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0200;-5.05;-42.82;1.0;26.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0300;-5.05;-42.82;1.0;25.5;24.1;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0300;-5.05;-42.82;1.0;25.5;24.1;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0400;-5.05;-42.82;1.0;25.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0400;-5.05;-42.82;1.0;25.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0500;-5.05;-42.82;1.5;25.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0500;-5.05;-42.82;1.5;25.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0600;-5.05;-42.82;15.4;24.5;23.8;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0600;-5.05;-42.82;15.4;24.5;23.8;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0700;-5.05;-42.82;999.9;24.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;0900;-5.05;-42.82;0.3;24.0;23.8;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0800;-5.05;-42.82;999.9;24.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1000;-5.05;-42.82;1.0;24.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;0900;-5.05;-42.82;0.3;24.0;23.8;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1200;-5.05;-42.82;1.5;26.8;24.6;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1000;-5.05;-42.82;1.0;24.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1300;-5.05;-42.82;1.5;28.0;25.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1100;-5.05;-42.82;999.9;25.0;25.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1400;-5.05;-42.82;1.5;29.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1200;-5.05;-42.82;1.5;26.8;24.6;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1500;-5.05;-42.82;2.1;29.9;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1300;-5.05;-42.82;1.5;28.0;25.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1600;-5.05;-42.82;1.5;30.0;25.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1400;-5.05;-42.82;1.5;29.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1700;-5.05;-42.82;3.1;31.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1500;-5.05;-42.82;2.1;29.9;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1800;-5.05;-42.82;2.1;32.5;23.1;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1600;-5.05;-42.82;1.5;30.0;25.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1900;-5.05;-42.82;3.1;33.0;23.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1700;-5.05;-42.82;3.1;31.0;24.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;2000;-5.05;-42.82;1.5;33.0;23.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1800;-5.05;-42.82;2.1;32.5;23.1;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;2100;-5.05;-42.82;1.0;32.3;22.9;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1900;-5.05;-42.82;3.1;33.0;23.0;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;2200;-5.05;-42.82;2.6;30.0;24.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;2000;-5.05;-42.82;1.5;33.0;23.0;NA;NA;NA;NA;NA;"
-				+ System.lineSeparator()
-				+ "825790;20020126;2100;-5.05;-42.82;1.0;32.3;22.9;NA;NA;NA;NA;NA;"
-				+ System.lineSeparator()
-				+ "825790;20020126;2200;-5.05;-42.82;2.6;30.0;24.0;NA;NA;NA;NA;NA;"
-				+ System.lineSeparator()
-				+ "825790;20020126;2300;-5.05;-42.82;3.6;27.0;23.0;NA;NA;NA;NA;NA;";
+				+ "825790;20020126;2300;-5.05;-42.82;3.6;27.0;23.0;NA;NA;NA;NA;NA;5.9728933028073445;";
 
-		String actual = this.weatherStation.getStationData(-5.035041, -42.768209, date);
+		String actual = this.weatherStation.getStationData(-5.035041, -42.768209, date, "1200");
 
 		Assert.equals(expected, actual);
 	}
@@ -146,17 +140,17 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		String expected = "825790;20020126;0000;-5.05;-42.82;2.6;28.1;26.0;NA;NA;NA;NA;NA;"
+		String expected = "825790;20020126;0000;-5.05;-42.82;2.6;28.1;26.0;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1200;-5.05;-42.82;1.5;26.8;24.6;NA;NA;NA;NA;NA;"
+				+ "825790;20020126;1200;-5.05;-42.82;1.5;26.8;24.6;NA;NA;NA;NA;NA;5.9728933028073445;"
 				+ System.lineSeparator()
-				+ "825790;20020126;1800;-5.05;-42.82;2.1;32.5;23.1;NA;NA;NA;NA;NA;";
+				+ "825790;20020126;1800;-5.05;-42.82;2.1;32.5;23.1;NA;NA;NA;NA;NA;5.9728933028073445;";
 
-		String actual = this.weatherStation.selectStation(date, nearStations, 0);
+		String actual = this.weatherStation.selectStation(date, nearStations, 0, "1200");
 
 		Assert.equals(expected, actual);
 
-		assertNull(this.weatherStation.selectStation(date, null, 0));
+		assertNull(this.weatherStation.selectStation(date, null, 0, "1200"));
 	}
 
 	@Test
@@ -188,9 +182,9 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		assertNull(this.weatherStation.selectStation(date, nearStations, 0));
+		assertNull(this.weatherStation.selectStation(date, nearStations, 0, "1200"));
 
-		assertNull(this.weatherStation.selectStation(date, null, 0));
+		assertNull(this.weatherStation.selectStation(date, null, 0, "1200"));
 	}
 
 	@Test
@@ -222,7 +216,7 @@ public class TestWeatherStation {
 
 		Mockito.when(ftp.readStation("825790", "20020126", "20020126")).thenReturn(stationRecords);
 
-		assertNull(this.weatherStation.selectStation(date, nearStations, 0));
+		assertNull(this.weatherStation.selectStation(date, nearStations, 0, "1200"));
 	}
 
 	@Test
@@ -249,12 +243,12 @@ public class TestWeatherStation {
 		this.weatherStation = new WeatherStation(this.properties, ftp);
 
 		JSONArray station = new JSONArray(
-				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.0\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
+				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.0\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"999.9\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1800\"}]");
 
 		station = this.weatherStation.windSpeedCorrection(station);
 
 		JSONArray expected = new JSONArray(
-				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.3\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
+				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"0.3\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1800\"}]");
 
 		Assert.equals(expected.length(), station.length());
 
@@ -278,8 +272,9 @@ public class TestWeatherStation {
 		JSONArray station = new JSONArray(
 				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"4.6\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
 
-		String actual = this.weatherStation.checkVariablesAndBuildString(station.getJSONObject(0));
-		String expected = "827980;20170815;0000;-7.148;-34.951;4.6;23.0;21.0;NA;NA;NA;NA;NA;"
+		String actual = this.weatherStation.checkVariablesAndBuildString(station.getJSONObject(0),
+				100.0);
+		String expected = "827980;20170815;0000;-7.148;-34.951;4.6;23.0;21.0;NA;NA;NA;NA;NA;100.0;"
 				+ System.lineSeparator();
 
 		Assert.equals(expected, actual);
