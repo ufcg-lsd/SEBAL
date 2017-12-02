@@ -77,15 +77,13 @@ public class WeatherStation {
 					Double stationDistance = station.optDouble("distance");
 
 					stationData = removeNonRepresentativeRecords(stationData);
-
 					stationData = temperatureCorrection(stationData);
-
 					stationData = windSpeedCorrection(stationData, mainHours);
 
 					if (checkRecords(stationData, mainHours)) {
-						LOGGER.info("Founded Station Data: " + System.lineSeparator()
+						LOGGER.info("Found Station Data: " + System.lineSeparator()
 								+ stationData.toString());
-						LOGGER.info("Station distance: [" + stationDistance + "]km");
+						LOGGER.info("Station Distance: [" + stationDistance + "]km");
 
 						return generateStationData(stationData, stationDistance);
 					}
@@ -101,10 +99,17 @@ public class WeatherStation {
 	}
 
 	protected List<String> getMainHours(String sceneCenterTime) {
+
+		if (sceneCenterTime == null || sceneCenterTime.isEmpty()) {
+			LOGGER.debug("Scene Center Time Null or Empty, using Default Value ["
+					+ SEBALAppConstants.DEFAULT_SCENE_CENTER_TIME + "]");
+			sceneCenterTime = SEBALAppConstants.DEFAULT_SCENE_CENTER_TIME;
+		}
+
 		List<String> result = new ArrayList<String>();
-		Integer interval = 2;
-		Integer hour = Integer.parseInt(sceneCenterTime.substring(0, 3));
-		for (int i = 0; i < interval; i++, hour++) {
+		Integer size = 2;
+		Integer hour = Integer.parseInt(sceneCenterTime.substring(0, 2));
+		for (int i = 0; i < size; i++, hour = (hour + 1) % 24) {
 			String strHour = hour + "00";
 			if (strHour.length() < 4) {
 				strHour = "0" + strHour;
@@ -116,11 +121,12 @@ public class WeatherStation {
 
 	protected List<String> getHoursInterval(String hour) {
 		List<String> intervalHours = new ArrayList<String>();
-		Integer intHour = Integer.parseInt(hour.substring(0, 3));
+
+		Integer intHour = Integer.parseInt(hour.substring(0, 2));
 		Integer lowerBound = (intHour - 6) % 24;
 		Integer upperBound = (intHour + 6) % 24;
 
-		for (Integer i = upperBound; i != lowerBound; i = (i + 1) % 24) {
+		for (Integer i = upperBound; i != ((lowerBound + 1) % 24); i = (i + 1) % 24) {
 			String strHour = i + "00";
 			if (strHour.length() < 4) {
 				strHour = "0" + strHour;
@@ -133,37 +139,29 @@ public class WeatherStation {
 	protected boolean checkRecords(JSONArray stationData, List<String> mainHours) {
 		boolean result = false;
 		if (stationData != null) {
+			boolean hasAtLeastOneMainHour = hasHourInStationData(stationData, mainHours);
 
-			boolean hasAtLeastOneMainHour = false;
-			for (String hour : mainHours) {
-				if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hour)) {
-					hasAtLeastOneMainHour = true;
-				}
-			}
+			List<String> intervalHours = getHoursInterval(mainHours.get(0));
+			int midIndex = intervalHours.size() / 2;
 
-			if (hasAtLeastOneMainHour) {
-				List<String> intervalHours = getHoursInterval(mainHours.get(0));
-				int mid = intervalHours.size() / 2;
+			boolean hasOneHourInFirstPart = hasHourInStationData(stationData,
+					intervalHours.subList(0, midIndex));
+			boolean hasOneHourInSecondPart = hasHourInStationData(stationData,
+					intervalHours.subList(midIndex, intervalHours.size()));
 
-				boolean hasOneInFirstPart = false;
-				for (int i = 0; i < mid && !hasOneInFirstPart; i++) {
-					if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME,
-							intervalHours.get(i))) {
-						hasOneInFirstPart = true;
-					}
-				}
-
-				boolean hasOneInSecondPart = false;
-				for (int i = mid; i < intervalHours.size() && !hasOneInSecondPart; i++) {
-					if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME,
-							intervalHours.get(i))) {
-						hasOneInSecondPart = true;
-					}
-				}
-				result = hasOneInFirstPart && hasOneInSecondPart;
-			}
+			result = hasAtLeastOneMainHour && hasOneHourInFirstPart && hasOneHourInSecondPart;
 		}
 		return result;
+	}
+
+	private boolean hasHourInStationData(JSONArray stationData, List<String> hours) {
+		boolean hasHour = false;
+		for (int i = 0; i < hours.size() && !hasHour; i++) {
+			if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hours.get(i))) {
+				hasHour = true;
+			}
+		}
+		return hasHour;
 	}
 
 	private boolean hasRecord(JSONArray stationData, String key, String value) {
@@ -189,21 +187,21 @@ public class WeatherStation {
 
 				String JSONHour = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_TIME);
 
-				if (mainHours.contains(JSONHour)) {
-					Double JSONWindSpeed = Double.parseDouble(
-							stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
+				Double JSONWindSpeed = Double.parseDouble(
+						stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
 
-					if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
-						stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
-
-						stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
-								WeatherStation.MIN_WIND_SPEED_VALUE);
-
-					} else if (JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
-						adjustedStationData.remove(i);
-						i--;
-					}
+				if (mainHours.contains(JSONHour)
+						&& JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
+					adjustedStationData.remove(i);
+					i--;
 				}
+
+				if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
+					stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
+					stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
+							WeatherStation.MIN_WIND_SPEED_VALUE);
+				}
+
 			}
 			result = adjustedStationData;
 		}
@@ -253,7 +251,7 @@ public class WeatherStation {
 		return result;
 	}
 
-	protected boolean containsNeededStationValues(JSONObject data) {
+	private boolean containsNeededStationValues(JSONObject data) {
 		String[] neededStationValues = new String[] { SEBALAppConstants.JSON_STATION_DATE,
 				SEBALAppConstants.JSON_STATION_TIME, SEBALAppConstants.JSON_STATION_LATITUDE,
 				SEBALAppConstants.JSON_STATION_LONGITUDE, SEBALAppConstants.JSON_AIR_TEMPERATURE,

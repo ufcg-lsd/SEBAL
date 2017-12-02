@@ -19,4 +19,7 @@ public class SEBALAppConstants {
 	
 	// File constants
 	public static final String FILE_ENCODING = "UTF-8";
+	
+	// Weather Station constants
+	public static final String DEFAULT_SCENE_CENTER_TIME = "1200";
 }
