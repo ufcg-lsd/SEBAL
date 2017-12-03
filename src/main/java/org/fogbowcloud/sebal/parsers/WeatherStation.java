@@ -80,7 +80,7 @@ public class WeatherStation {
 					stationData = temperatureCorrection(stationData);
 					stationData = windSpeedCorrection(stationData, mainHours);
 
-					if (checkRecords(stationData, mainHours)) {
+					if (validateStationData(stationData, mainHours)) {
 						LOGGER.info("Found Station Data: " + System.lineSeparator()
 								+ stationData.toString());
 						LOGGER.info("Station Distance: [" + stationDistance + "]km");
@@ -99,13 +99,6 @@ public class WeatherStation {
 	}
 
 	protected List<String> getMainHours(String sceneCenterTime) {
-
-		if (sceneCenterTime == null || sceneCenterTime.isEmpty()) {
-			LOGGER.debug("Scene Center Time Null or Empty, using Default Value ["
-					+ SEBALAppConstants.DEFAULT_SCENE_CENTER_TIME + "]");
-			sceneCenterTime = SEBALAppConstants.DEFAULT_SCENE_CENTER_TIME;
-		}
-
 		List<String> result = new ArrayList<String>();
 		Integer size = 2;
 		Integer hour = Integer.parseInt(sceneCenterTime.substring(0, 2));
@@ -136,17 +129,17 @@ public class WeatherStation {
 		return intervalHours;
 	}
 
-	protected boolean checkRecords(JSONArray stationData, List<String> mainHours) {
+	protected boolean validateStationData(JSONArray stationData, List<String> mainHours) {
 		boolean result = false;
 		if (stationData != null) {
-			boolean hasAtLeastOneMainHour = hasHourInStationData(stationData, mainHours);
+			boolean hasAtLeastOneMainHour = hasHoursInStationData(stationData, mainHours);
 
 			List<String> intervalHours = getHoursInterval(mainHours.get(0));
 			int midIndex = intervalHours.size() / 2;
 
-			boolean hasOneHourInFirstPart = hasHourInStationData(stationData,
+			boolean hasOneHourInFirstPart = hasHoursInStationData(stationData,
 					intervalHours.subList(0, midIndex));
-			boolean hasOneHourInSecondPart = hasHourInStationData(stationData,
+			boolean hasOneHourInSecondPart = hasHoursInStationData(stationData,
 					intervalHours.subList(midIndex, intervalHours.size()));
 
 			result = hasAtLeastOneMainHour && hasOneHourInFirstPart && hasOneHourInSecondPart;
@@ -154,7 +147,7 @@ public class WeatherStation {
 		return result;
 	}
 
-	private boolean hasHourInStationData(JSONArray stationData, List<String> hours) {
+	private boolean hasHoursInStationData(JSONArray stationData, List<String> hours) {
 		boolean hasHour = false;
 		for (int i = 0; i < hours.size() && !hasHour; i++) {
 			if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hours.get(i))) {
@@ -177,10 +170,10 @@ public class WeatherStation {
 	}
 
 	protected JSONArray windSpeedCorrection(JSONArray stationData, List<String> mainHours) {
-		JSONArray result = null;
+		JSONArray adjustedStationData = null;
 
 		if (stationData != null) {
-			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+			adjustedStationData = new JSONArray(stationData.toString());
 
 			for (int i = 0; i < adjustedStationData.length(); i++) {
 				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
@@ -203,16 +196,15 @@ public class WeatherStation {
 				}
 
 			}
-			result = adjustedStationData;
 		}
-		return result;
+		return adjustedStationData;
 	}
 
 	protected JSONArray temperatureCorrection(JSONArray stationData) {
-		JSONArray result = null;
+		JSONArray adjustedStationData = null;
 
 		if (stationData != null) {
-			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+			adjustedStationData = new JSONArray(stationData.toString());
 
 			for (int i = 0; i < adjustedStationData.length(); i++) {
 				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
@@ -227,16 +219,15 @@ public class WeatherStation {
 					i--;
 				}
 			}
-			result = adjustedStationData;
 		}
-		return result;
+		return adjustedStationData;
 	}
 
 	protected JSONArray removeNonRepresentativeRecords(JSONArray stationData) {
-		JSONArray result = null;
+		JSONArray adjustedStationData = null;
 
 		if (stationData != null) {
-			JSONArray adjustedStationData = new JSONArray(stationData.toString());
+			adjustedStationData = new JSONArray(stationData.toString());
 
 			for (int i = 0; i < adjustedStationData.length(); i++) {
 				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
@@ -246,9 +237,8 @@ public class WeatherStation {
 					i--;
 				}
 			}
-			result = adjustedStationData;
 		}
-		return result;
+		return adjustedStationData;
 	}
 
 	private boolean containsNeededStationValues(JSONObject data) {

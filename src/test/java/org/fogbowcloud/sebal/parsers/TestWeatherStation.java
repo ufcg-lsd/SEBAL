@@ -311,7 +311,7 @@ public class TestWeatherStation {
 	}
 
 	@Test
-	public void testCheckRecords() {
+	public void testValidateStationData() {
 		FTPStationOperator ftp = Mockito.mock(FTPStationOperator.class);
 
 		this.weatherStation = new WeatherStation(this.properties, ftp);
@@ -325,16 +325,16 @@ public class TestWeatherStation {
 		JSONArray station2 = new JSONArray(
 				"[{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"4.6\",\"TempBulboUmido\":\"21.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"23.0\",\"Longitude\":\"-34.951\",\"Hora\":\"0000\"},{\"Data\":\"20170815\",\"Estacao\":\"827980\",\"VelocidadeVento\":\"5.7\",\"TempBulboUmido\":\"20.0\",\"Latitude\":\"-7.148\",\"TempBulboSeco\":\"26.0\",\"Longitude\":\"-34.951\",\"Hora\":\"1200\"}]");
 
-		assertTrue(this.weatherStation.checkRecords(station1, mainHours));
-		assertFalse(this.weatherStation.checkRecords(station2, mainHours));
-		assertFalse(this.weatherStation.checkRecords(null, mainHours));
+		assertTrue(this.weatherStation.validateStationData(station1, mainHours));
+		assertFalse(this.weatherStation.validateStationData(station2, mainHours));
+		assertFalse(this.weatherStation.validateStationData(null, mainHours));
 
 		mainHours = new ArrayList<String>();
 		mainHours.add("2200");
 		mainHours.add("2300");
 
-		assertTrue(this.weatherStation.checkRecords(station1, mainHours));
-		assertFalse(this.weatherStation.checkRecords(station2, mainHours));
+		assertTrue(this.weatherStation.validateStationData(station1, mainHours));
+		assertFalse(this.weatherStation.validateStationData(station2, mainHours));
 	}
 
 	@Test
@@ -466,14 +466,6 @@ public class TestWeatherStation {
 		List<String> expected = new ArrayList<String>();
 		expected.add("1200");
 		expected.add("1300");
-
-		assertEquals(expected.toString(), actual.toString());
-
-		actual = this.weatherStation.getMainHours(null);
-
-		assertEquals(expected.toString(), actual.toString());
-
-		actual = this.weatherStation.getMainHours("");
 
 		assertEquals(expected.toString(), actual.toString());
 
