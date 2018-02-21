@@ -24,7 +24,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/mnt
 
 R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
-R_ALGORITHM_VERSION=Algoritmo-completo-v12042017.R
+R_ALGORITHM_VERSION=Algoritmo-memory-clean-21_02_2018.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
@@ -151,10 +151,10 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-untarImageAndPrepareDirs
-checkProcessOutput
-preProcessImage
-checkProcessOutput
+#untarImageAndPrepareDirs
+#checkProcessOutput
+#preProcessImage
+#checkProcessOutput
 creatingDadosCSV
 checkProcessOutput
 prepareEnvAndCollectUsage
