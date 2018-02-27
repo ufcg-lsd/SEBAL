@@ -17,14 +17,14 @@ library(sp)
 library(snow)
 
 args = commandArgs(trailingOnly=TRUE)
-#WD <- args[1]
-setwd("C:/SAPS/LC08_L1TP_215065_20170815_20170825_01_T1/") # Working Directory
+WD <- args[1]
+setwd(WD) # Working Directory
 
 # Changing raster tmpdir
-rasterOptions(tmpdir="C:/SAPS/rasterTmp")
+rasterOptions(tmpdir=args[2])
 
 # Load the source code in landsat.R to this code
-source("C:/SAPS/landsat2.R")
+source("landsat2.R")
 
 # File that stores the Image Directories (TIFs, MTL, FMask)
 dados <- read.csv("dados.csv", sep=";", stringsAsFactors=FALSE)
@@ -40,13 +40,13 @@ clusters <- 7		# Number of clusters used in image processing - some raster libra
 
 ######################### Reading sensor parameters #####################################
 
-p.s.TM1 <- read.csv("C:/SAPS/parametros do sensor/parametrosdosensorTM1.csv", sep=";", stringsAsFactors=FALSE)
-p.s.TM2 <- read.csv("C:/SAPS/parametros do sensor/parametrosdosensorTM2.csv", sep=";", stringsAsFactors=FALSE)
-p.s.ETM <- read.csv("C:/SAPS/parametros do sensor/parametrosdosensorETM.csv", sep=";", stringsAsFactors=FALSE)
-p.s.LC <- read.csv("C:/SAPS/parametros do sensor/parametrosdosensorLC.csv", sep=";", stringsAsFactors=FALSE)
+p.s.TM1 <- read.csv("parametros do sensor/parametrosdosensorTM1.csv", sep=";", stringsAsFactors=FALSE)
+p.s.TM2 <- read.csv("parametros do sensor/parametrosdosensorTM2.csv", sep=";", stringsAsFactors=FALSE)
+p.s.ETM <- read.csv("parametros do sensor/parametrosdosensorETM.csv", sep=";", stringsAsFactors=FALSE)
+p.s.LC <- read.csv("parametros do sensor/parametrosdosensorLC.csv", sep=";", stringsAsFactors=FALSE)
 
 # Read relative distance from Sun to Earth
-load("C:/SAPS/d_sun_earth.RData")
+load("d_sun_earth.RData")
 
 # Set projection and spatial resolution
 WGS84 <- "+proj=longlat +datum=WGS84 +ellps=WGS84"
@@ -152,13 +152,13 @@ proc.time()
 
 # Reading Bounding Box
 # The Bounding Box area that is important and has less noise in the Image
-fic.bounding.boxes <- paste("C:/SAPS/wrs2_asc_desc/wrs2_asc_desc_recorte.shp")
+fic.bounding.boxes <- paste("wrs2_asc_desc/wrs2_asc_desc.shp")
 BoundingBoxes <- readShapePoly(fic.bounding.boxes, proj4string=CRS(WGS84))
 BoundingBox <- BoundingBoxes[BoundingBoxes@data$WRSPR == WRSPR, ]
 
 # Reading Elevation
 # Read the File that stores the Elevation of the image area, this influence on some calculations
-fic.elevation <- paste("C:/SAPS/Elevation/srtm_29_14.tif")
+fic.elevation <- paste("Elevation/srtm_29_14.tif")
 raster.elevation <- raster(fic.elevation)
 raster.elevation <- crop(raster.elevation, extent(BoundingBox))
 
