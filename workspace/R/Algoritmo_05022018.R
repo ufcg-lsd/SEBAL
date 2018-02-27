@@ -75,7 +75,7 @@ costheta <- sin(sun_elevation*pi/180) # From SUN ELEVATION
 if (n.sensor==8) p.s <- p.s.LC
 if (n.sensor==7) p.s <- p.s.ETM
 if (Ano < 1992 & n.sensor==5) p.s <- p.s.TM1 
-if (Ano > 1992 & n.sensor==5) p.s <- p.s.TM2
+if (Ano >= 1992 & n.sensor==5) p.s <- p.s.TM2
 
 # Time image
 acquired_date <- as.Date(MTL$V2[MTL$V1==grep(pattern="DATE_ACQUIRED", MTL$V1, value=TRUE)])
