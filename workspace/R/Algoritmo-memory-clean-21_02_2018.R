@@ -36,13 +36,13 @@ g <- 9.81		# Gravity
 rho <- 1.15		# Air density
 cp <- 1004		# Specific heat of air
 Gsc <- 0.082		# Solar constant (0.0820 MJ m-2 min-1)
-clusters <- 7		# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
+clusters <- 2		# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
 
 ######################### Reading sensor parameters #####################################
 
 p.s.TM1 <- read.csv("parametros do sensor/parametrosdosensorTM1.csv", sep=";", stringsAsFactors=FALSE)
 p.s.TM2 <- read.csv("parametros do sensor/parametrosdosensorTM2.csv", sep=";", stringsAsFactors=FALSE)
-p.s.ETM <- read.csv("parametros do sensor/parametrosdosensorETM.csv" , sep=";", stringsAsFactors=FALSE)
+p.s.ETM <- read.csv("parametros do sensor/parametrosdosensorETM.csv", sep=";", stringsAsFactors=FALSE)
 p.s.LC <- read.csv("parametros do sensor/parametrosdosensorLC.csv", sep=";", stringsAsFactors=FALSE)
 
 # Read relative distance from Sun to Earth
@@ -154,6 +154,9 @@ fic.st <- projectRaster(fic.st, crs=WGS84)
 
 proc.time()
 
+print("Calling GC")
+gc()
+
 # Reading Bounding Box
 # The Bounding Box area that is important and has less noise in the Image
 fic.bounding.boxes <- paste("wrs2_asc_desc/wrs2_asc_desc.shp")
@@ -173,11 +176,14 @@ raster.elevation.aux <- raster(raster.elevation)
 res(raster.elevation.aux) <- res(fic.st) # The raster elevation aux resolution is the same of raster fmask
 
 # Resample images
-beginCluster(clusters) 
-raster.elevation <- resample(raster.elevation, raster.elevation.aux, method="ngb")
-endCluster()
+#beginCluster(clusters) 
+raster.elevation <- projectRaster(raster.elevation, raster.elevation.aux, method="ngb")
+#endCluster()
 
 proc.time()
+
+print("Calling GC")
+gc()
 
 #################### Resampling satellite bands images #####################################
 
@@ -192,7 +198,7 @@ proc.time()
 image.rec <- NULL; # Used in landsat code
 imageResample <- function() {
   beginCluster(clusters)
-  image_resample <- resample(fic.st, raster.elevation, method="ngb")
+  image_resample <- projectRaster(fic.st, raster.elevation, method="ngb")
   endCluster()
   return(image_resample)
 }
