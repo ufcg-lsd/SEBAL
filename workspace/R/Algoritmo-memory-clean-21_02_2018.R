@@ -36,7 +36,7 @@ g <- 9.81		# Gravity
 rho <- 1.15		# Air density
 cp <- 1004		# Specific heat of air
 Gsc <- 0.082		# Solar constant (0.0820 MJ m-2 min-1)
-clusters <- 2		# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
+clusters <- 7		# Number of clusters used in image processing - some raster library methods are naturally coded to run in a clustered way
 
 ######################### Reading sensor parameters #####################################
 
