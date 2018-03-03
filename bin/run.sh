@@ -95,10 +95,13 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU, Memory, Disk, and NFS monitoring..."
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.csv" 2> /tmp/cpu &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.csv" 2> /tmp/mem &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.csv" 2> /tmp/disk &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-nfs-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_nfs_usage.csv" 2> /tmp/nfs &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.csv" 2> /tmp/cpu-usage &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_saturation.csv" 2> /tmp/cpu-saturation &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.csv" 2> /tmp/mem-usage &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_saturation.csv" 2> /tmp/mem-saturation &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.csv" 2> /tmp/disk-usage &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_saturation.csv" 2> /tmp/disk-saturation &
+  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-nfs-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_nfs_usage.csv" 2> /tmp/nfs-usage &
 }
 
 # This function executes R script
