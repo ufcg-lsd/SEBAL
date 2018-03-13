@@ -177,9 +177,9 @@ raster.elevation.aux <- raster(raster.elevation)
 res(raster.elevation.aux) <- res(fic.st) # The raster elevation aux resolution is the same of raster fmask
 
 # Resample images
-#beginCluster(clusters) 
-raster.elevation <- projectRaster(raster.elevation, raster.elevation.aux, method="ngb")
-#endCluster()
+beginCluster(clusters) 
+raster.elevation <- resample(raster.elevation, raster.elevation.aux, method="ngb")
+endCluster()
 
 proc.time()
 
@@ -199,7 +199,7 @@ gc()
 image.rec <- NULL; # Used in landsat code
 imageResample <- function() {
   beginCluster(clusters)
-  image_resample <- projectRaster(fic.st, raster.elevation, method="ngb")
+  image_resample <- resample(fic.st, raster.elevation, method="ngb")
   endCluster()
   return(image_resample)
 }
