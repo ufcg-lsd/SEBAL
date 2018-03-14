@@ -1,6 +1,6 @@
 landsat<-function(){
   if (n.sensor<8){
-    # Radiância
+    # RadiÃ¢ncia
     rad<-list()
     if (n.sensor==5) r<-7 else r<-8
     for(i in 1:r){
@@ -9,20 +9,20 @@ landsat<-function(){
       rad[[i]][rad_subset]<-0
     }
     
-    #Reflectância
+    #ReflectÃ¢ncia
     ref<-list()
     for(i in 1:r){
       ref[[i]]<-pi*rad[[i]]*d_sun_earth$dist[Dia.juliano]^2/
         (p.s$ESUN[i]*costheta)
     }
     
-    #Albedo de superfície
+    #Albedo de superfÃ­cie
     alb_temp<-ref[[1]]*p.s$wb[1]+ref[[2]]*p.s$wb[2]+ref[[3]]*p.s$wb[3]+ref[[4]]*p.s$wb[4]+
       ref[[5]]*p.s$wb[5]+ref[[r]]*p.s$wb[r]
     alb_temp<-(alb_temp-0.03)/tal[]^2
     
-    #Radiação de onda curta incidente
-    Rs_temp<-1367*costheta*tal[]/d_sun_earth$dist[Dia.juliano]^2 # Céu claro
+    #RadiaÃ§Ã£o de onda curta incidente
+    Rs_temp<-1367*costheta*tal[]/d_sun_earth$dist[Dia.juliano]^2 # CÃ©u claro
     
     #NDVI,SAVI,LAI e EVI
     NDVI_temp<-(ref[[4]]-ref[[3]])/(ref[[4]]+ref[[3]])
@@ -46,21 +46,21 @@ landsat<-function(){
     Eo_temp <- 0.95+0.01*LAI_temp
     Eo_temp[NDVI_temp<0 | LAI_temp>2.99]<-0.98
     
-    #Temperatura de Superfície em Kelvin (TS)
-    if (n.sensor==5) k1<-607.76 else k1<-666.09   #Constante Temperatura de superfície
-    if (n.sensor==7) k2<-1260.56 else k2<-1282.71 #Constante Temperatura de superfície
+    #Temperatura de SuperfÃ­cie em Kelvin (TS)
+    if (n.sensor==5) k1<-607.76 else k1<-666.09   #Constante Temperatura de superfÃ­cie
+    if (n.sensor==7) k2<-1260.56 else k2<-1282.71 #Constante Temperatura de superfÃ­cie
     if (n.sensor==5) TS_temp<-k2/log((Enb_temp*k1/rad[[6]])+1) else TS_temp<-k2/log((Enb_temp*k1/rad[[7]])+1)
     
-    #Radiação de onda longa emitida pela superfície (RLsup)
+    #RadiaÃ§Ã£o de onda longa emitida pela superfÃ­cie (RLsup)
     RLsup_temp<-Eo_temp*5.67*10^-8*TS_temp^4
     
-    #Emissividade atmosférica (Ea)
-    Ea_temp<-0.85*(-1*log(tal[]))^0.09 # Céu Claro
+    #Emissividade atmosfÃ©rica (Ea)
+    Ea_temp<-0.85*(-1*log(tal[]))^0.09 # CÃ©u Claro
     
-    #Radiação de onda longa emitida pela atmosfera (RLatm)
+    #RadiaÃ§Ã£o de onda longa emitida pela atmosfera (RLatm)
     RLatm_temp<-Ea_temp*5.67*10^-8*(table.sw$V7[hour.image.station]+273.15)^4 # Ajustar
     
-    #Saldo de radiação Instantânea (Rn)
+    #Saldo de radiaÃ§Ã£o InstantÃ¢nea (Rn)
     Rn_temp<- Rs_temp-Rs_temp*alb_temp+RLatm_temp-RLsup_temp-(1-Eo_temp)*RLatm_temp
     Rn_temp[Rn_temp<0]<-0
     
@@ -87,26 +87,26 @@ landsat<-function(){
     
     output<-stack(Rn,TS,NDVI,EVI,LAI,G,alb)
   } else {
-    # Radiância
+    # RadiÃ¢ncia
     rad.mult<-as.numeric(MTL$V2[MTL$V1==grep(pattern ="RADIANCE_MULT_BAND_10 ",
                                              MTL$V1, value = TRUE)])
     rad.add<-as.numeric(MTL$V2[MTL$V1==grep(pattern ="RADIANCE_ADD_BAND_10 ",
                                             MTL$V1, value = TRUE)])
     rad10<- image.rec[[7]][]*rad.mult+rad.add
     
-    #Reflectância
+    #ReflectÃ¢ncia
     ref<-list()
     for(i in 1:6){
       ref[[i]]<-(image.rec[[i]][]*0.00002-0.1)/costheta
     }
     
-    #Albedo de superfície
+    #Albedo de superfÃ­cie
     alb_temp<-ref[[1]]*p.s$wb[1]+ref[[2]]*p.s$wb[2]+ref[[3]]*p.s$wb[3]+ref[[4]]*p.s$wb[4]+
       ref[[5]]*p.s$wb[5]+ref[[6]]*p.s$wb[6]
     alb_temp<-(alb_temp-0.03)/tal[]^2
     
-    #Radiação de onda curta incidente
-    Rs_temp<-1367*costheta*tal[]/d_sun_earth$dist[Dia.juliano]^2 # Céu claro
+    #RadiaÃ§Ã£o de onda curta incidente
+    Rs_temp<-1367*costheta*tal[]/d_sun_earth$dist[Dia.juliano]^2 # CÃ©u claro
     
     #NDVI,SAVI,LAI e EVI
     NDVI_temp<-(ref[[4]]-ref[[3]])/(ref[[4]]+ref[[3]])
@@ -132,21 +132,21 @@ landsat<-function(){
     Eo_temp <- 0.95+0.01*LAI_temp
     Eo_temp[NDVI_temp<0 | LAI_temp>2.99]<-0.98
     
-    #Temperatura de Superfície em Kelvin (TS)
-    k1<-774.8853      #Constante Temperatura de superfície
-    k2<-1321.0789     #Constante Temperatura de superfície
+    #Temperatura de SuperfÃ­cie em Kelvin (TS)
+    k1<-774.8853      #Constante Temperatura de superfÃ­cie
+    k2<-1321.0789     #Constante Temperatura de superfÃ­cie
     TS_temp<-k2/log((Enb_temp*k1/rad10)+1)
     
-    #Radiação de onda longa emitida pela superfície (RLsup)
+    #RadiaÃ§Ã£o de onda longa emitida pela superfÃ­cie (RLsup)
     RLsup_temp<-Eo_temp*5.67*10^-8*TS_temp^4
     
-    #Emissividade atmosférica (Ea)
-    Ea_temp<-0.85*(-1*log(tal[]))^0.09 # Céu Claro
+    #Emissividade atmosfÃ©rica (Ea)
+    Ea_temp<-0.85*(-1*log(tal[]))^0.09 # CÃ©u Claro
     
-    #Radiação de onda longa emitida pela atmosfera (RLatm)
+    #RadiaÃ§Ã£o de onda longa emitida pela atmosfera (RLatm)
     RLatm_temp<-Ea_temp*5.67*10^-8*(table.sw$V7[hour.image.station]+273.15)^4 # Ajustar
     
-    #Saldo de radiação Instantânea (Rn)
+    #Saldo de radiaÃ§Ã£o InstantÃ¢nea (Rn)
     Rn_temp<- Rs_temp-Rs_temp*alb_temp+RLatm_temp-RLsup_temp-(1-Eo_temp)*RLatm_temp
     Rn_temp[Rn_temp<0]<-0
     
@@ -175,3 +175,5 @@ landsat<-function(){
   } 
   return(output)
 }
+
+
