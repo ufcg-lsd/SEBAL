@@ -149,9 +149,7 @@ proc.time()
 # This operation can be done in a parallel way by Clusters, projectRaster is implemented to naturally be executed by clusters
 # The number of used clusters is given by the 'clusters' constant
 
-#beginCluster(clusters)
 fic.st <- projectRaster(fic.st, crs=WGS84)
-#endCluster()
 
 proc.time()
 
@@ -206,7 +204,7 @@ imageResample <- function() {
 
 res <- NULL;
 tryCatch({
-  res <- evalWithTimeout({
+  res <- withTimeout({
     image.rec <- imageResample();
   }, timeout=3600);
 }, TimeoutException=function(ex) {
@@ -224,7 +222,7 @@ gc()
 
 # Reading file Station weather
 fic.sw <- dados$File.Station.Weather[1]
-table.sw <- (read.csv(fic.sw, sep=";", header=FALSE, stringsAsFactors=FALSE))
+table.sw <- read.csv(fic.sw, sep=";", header=FALSE, stringsAsFactors=FALSE)
 hour.image <- (as.numeric(substr(MTL$V2[MTL$V1 == grep(pattern="SCENE_CENTER_TIME", MTL$V1, value=T)], 3, 4))+
                  as.numeric(substr(MTL$V2[MTL$V1 == grep(pattern="SCENE_CENTER_TIME", MTL$V1, value=T)], 6, 7))/60)*100
 hour.image.station<-which.min(abs(table.sw$V3[]-hour.image))
@@ -248,7 +246,7 @@ outputLandsat <- function() {
 # timeout now is 7200 (cause: Azure slowness)
 res <- NULL;
 tryCatch({
-  res <- evalWithTimeout({
+  res <- withTimeout({
     output <- outputLandsat();
   }, timeout=7200);
 }, TimeoutException=function(ex) {
@@ -279,7 +277,7 @@ outputMask <- function() {
 
 res <- NULL;
 tryCatch({
-  res <- evalWithTimeout({
+  res <- withTimeout({
     output <- outputMask();
   }, timeout=10800);
 }, TimeoutException=function(ex) {
@@ -308,7 +306,7 @@ outputWriteRaster <- function() {
 
 res <- NULL;
 tryCatch({
-  res <- evalWithTimeout({
+  res <- withTimeout({
     outputWriteRaster();
   }, timeout=10800);
 }, TimeoutException=function(ex) {
@@ -681,7 +679,7 @@ phase2 <- function() {
 }
 
 tryCatch({
-  res <- evalWithTimeout({
+  res <- withTimeout({
     phase2();
   }, timeout=5400);
 }, TimeoutException=function(ex) {
