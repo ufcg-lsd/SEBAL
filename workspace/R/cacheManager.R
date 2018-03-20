@@ -20,6 +20,10 @@ cacheIsFull <- function(object) {
   UseMethod("cacheIsFull", object)
 }
 
+getObject <- function(object, rasterObject) {
+  UseMethod("getObject", object)
+}
+
 addObject.cacheManager <- function(object, rasterObject) {
   rasterObjectName <- deparse(substitute(rasterObject))
   for(i in c(1:nlayers(rasterObject))) {
@@ -66,6 +70,19 @@ cacheIsFull.cacheManager <- function(object) {
   }
 }
 
+getObject.cacheManager <- function(object, rasterObject, position = 1) {
+  rasterObjectRef <- paste(deparse(substitute(rasterObject)), position, sep = '-') 
+  objectPos <- match(rasterObjectRef, object$objectNameByCache)
+  if(!is.na(objectPos)) {
+    return(object$cache[[objectPos]])
+  } else {
+    tmpFilePath <- object$tmpObjectsPaths[[rasterObjectRef]]
+    rasterObject <- raster(tmpFilePath)
+    object <- putObjectInCache(object, rasterObjectRef, rasterObject, FALSE)
+    rm(rasterObject)
+  }
+}
+
 r1 <- raster(ncols=7000, nrows=7000)
 r1[] <- 1:ncell(r1)
 object.size(r1)
@@ -84,6 +101,8 @@ CM <- addObject(CM, r2)
 CM
 CM <- addObject(CM, r3)
 CM
+
+CM <- getObject(CM, r1)
 
 mem_used()
 
