@@ -1,8 +1,17 @@
 library(raster)
 library(pryr)
 
-CM <- list(tmpObjectsPaths = vector(), tmpDirec = "/tmp/", cacheSize = 2, cache = list(), objectNameByCache = list())
-class(CM) <- append(class(CM), "cacheManager")
+cacheManagerConstructor <- function(tmpDirectory = '/tmp/', cacheManagerSize = 10) {
+  CM <- list(
+    tmpObjectsPaths = vector(), 
+    tmpDirec = tmpDirectory, 
+    cacheSize = cacheManagerSize, 
+    cache = list(), 
+    objectNameByCache = list())
+  
+  class(CM) <- append(class(CM), "cacheManager")
+  return(CM)
+}
 
 addObject <- function(object, rasterObject) {
   UseMethod("addObject", object)
@@ -20,7 +29,7 @@ cacheIsFull <- function(object) {
   UseMethod("cacheIsFull", object)
 }
 
-getObject <- function(object, rasterObject) {
+getObject <- function(object, rasterObject, position = 1) {
   UseMethod("getObject", object)
 }
 
@@ -52,7 +61,7 @@ removeLastObject.cacheManager <- function(object, overWrite) {
   if(overWrite == TRUE) {
     writeRaster(object$cache[[1]], filename = fileName, overwrite = TRUE)
   } else {
-    if(!file.exists(fileName)) {
+    if(!file.exists(paste(fileName, '.gri', sep = ''))) {
       writeRaster(object$cache[[1]], filename = fileName)
     }
   }
@@ -78,31 +87,9 @@ getObject.cacheManager <- function(object, rasterObject, position = 1) {
   } else {
     tmpFilePath <- object$tmpObjectsPaths[[rasterObjectRef]]
     rasterObject <- raster(tmpFilePath)
-    object <- putObjectInCache(object, rasterObjectRef, rasterObject, FALSE)
+    newObject <- putObjectInCache(object, rasterObjectRef, rasterObject, FALSE)
+    eval.parent(substitute(object <- newObject))
     rm(rasterObject)
+    return(newObject$cache[[newObject$cacheSize]])
   }
 }
-
-r1 <- raster(ncols=7000, nrows=7000)
-r1[] <- 1:ncell(r1)
-object.size(r1)
-r2 <- raster(ncols=7000, nrows=7000)
-r2[] <- (1:ncell(r2)) + 4000000
-object.size(r2)
-r3 <- raster(ncols=7000, nrows=7000)
-r3[] <- 1:ncell(r3) + 8000000
-object.size(r3)
-
-mem_used()
-
-CM <- addObject(CM, r1)
-CM
-CM <- addObject(CM, r2)
-CM
-CM <- addObject(CM, r3)
-CM
-
-CM <- getObject(CM, r1)
-
-mem_used()
-
