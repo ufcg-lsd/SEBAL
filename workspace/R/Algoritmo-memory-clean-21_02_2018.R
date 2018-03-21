@@ -24,8 +24,15 @@ setwd(WD) # Working Directory
 # Changing raster tmpdir
 rasterOptions(tmpdir=args[2])
 
+# Cache size
+cacheSize <- args[3]
+
 # Load the source code in landsat.R to this code
 source("landsat2.R")
+
+source("cacheManager.R")
+
+cache <- cacheManagerConstructor(args[2], cacheSize)
 
 # File that stores the Image Directories (TIFs, MTL, FMask)
 dados <- read.csv("dados.csv", sep=";", stringsAsFactors=FALSE)
@@ -112,6 +119,8 @@ getBandsPath <- function(n.sensor){
 
 # Reading
 fic.st <- stack(as.list(getBandsPath(n.sensor)))
+fic.st.nlayers <- nlayers(fic.st)
+cache <- addObject(cache, fic.st)
 
 proc.time()
 
@@ -122,14 +131,18 @@ proc.time()
 
 n.fmask <- length(fichs.imagens)
 Fmask <- raster(fichs.imagens[[n.fmask]])
-fmask <- as.vector(Fmask)
+cache <- addObject(cache, Fmask)
+
+fmask <- as.vector(getObject(cache, Fmask))
 
 if (n.sensor != 8) mask_filter <- 672 else 
   mask_filter <- 2720
-for (i in 1:nlayers(fic.st)) {
-  f <- fic.st[[i]][]
-  f[fmask != mask_filter] <- NaN
-  fic.st[[i]][] <- f 
+for (i in 1:fic.st.nlayers) {
+  #f <- fic.st[[i]][]
+  fic.st <- getObject(cache, fic.st, i)
+  #f[fmask != mask_filter] <- NaN
+  fic.st[fmask != mask_filter] <- NaN
+  fic.st[[i]][] <- f
 }
 
 proc.time()
