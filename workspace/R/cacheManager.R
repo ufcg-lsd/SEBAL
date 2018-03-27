@@ -5,7 +5,7 @@ cacheManagerConstructor <- function(tmpDirectory = '/tmp/', cacheManagerSize = 1
   CM <- list(
     tmpObjectsPaths = vector(), 
     tmpDirec = tmpDirectory, 
-    cacheSize = cacheManagerSize, 
+    cacheSize = max(cacheManagerSize, 2), 
     cache = list(), 
     objectNameByCache = list())
   
@@ -17,11 +17,11 @@ addObject <- function(object, rasterObject) {
   UseMethod("addObject", object)
 }
 
-putObjectInCache <- function(object, objectRef, rasterObject, overWrite) {
+putObjectInCache <- function(object, objectRef, rasterObject) {
   UseMethod("putObjectInCache", object)
 }
 
-removeLastObject <- function(object, overWrite) {
+removeLastObject <- function(object) {
   UseMethod("removeLastObject", object)
 }
 
@@ -33,6 +33,15 @@ getObject <- function(object, rasterObject, position = 1) {
   UseMethod("getObject", object)
 }
 
+updateObject <- function(object, rasterObject, position = 1) {
+  UseMethod("updateObject", object)
+}
+
+cacheWriteRaster <- function(object, rasterObject, tmpFilePath) {
+  UseMethod("cacheWriteRaster", object)
+}
+
+
 addObject.cacheManager <- function(object, rasterObject) {
   rasterObjectName <- deparse(substitute(rasterObject))
   for(i in c(nlayers(rasterObject):1)) {
@@ -40,35 +49,59 @@ addObject.cacheManager <- function(object, rasterObject) {
     
     object$tmpObjectsPaths[[objectRef]] <- paste(object$tmpDirec, objectRef, sep = '')
     
-    object <- putObjectInCache(object, objectRef, rasterObject[[i]], TRUE)
+    object <- putObjectInCache(object, objectRef, rasterObject[[i]])
   }
   rm(list = c(rasterObjectName), envir = as.environment(globalenv()))
   return(object)
 }
 
-putObjectInCache.cacheManager <- function(object, objectRef, rasterObject, overWrite) {
+putObjectInCache.cacheManager <- function(object, objectRef, rasterObject) {
   if(cacheIsFull(object) == TRUE) {
-    object <- removeLastObject(object, overWrite)
+    print("Cache is Full")
+    object <- removeLastObject(object)
   }
   object$cache <- c(object$cache, as.list(rasterObject))
   object$objectNameByCache <- c(object$objectNameByCache, as.list(objectRef))
   return(object)
 }
 
-removeLastObject.cacheManager <- function(object, overWrite) {
+removeLastObject.cacheManager <- function(object) {
   # think about write the raster in disk with a new thread
   fileName <- object$tmpObjectsPaths[[ object$objectNameByCache[[1]] ]]
-  if(overWrite == TRUE) {
-    writeRaster(object$cache[[1]], filename = fileName, overwrite = TRUE)
-  } else {
-    if(!file.exists(paste(fileName, '.grd', sep = ''))) {
-      writeRaster(object$cache[[1]], filename = fileName, overWrite = FALSE)
-    }
-  }
+  print(paste("Writing", fileName, "::", object$cache[[1]]@file@name))
+  
+  cacheWriteRaster(object, object$cache[[1]], fileName)
+  #writeRaster(object$cache[[1]], filename = fileName, overwrite = TRUE)
   
   object$cache <- object$cache[c(-1)]
   object$objectNameByCache <- object$objectNameByCache[c(-1)]
   return(object)
+}
+
+updateObject.cacheManager <- function(object, rasterObject, position = 1) {
+  rasterObjectName <- deparse(substitute(rasterObject))
+  rasterObjectRef <- paste(rasterObjectName, position, sep = '-')
+  objectPos <- match(rasterObjectRef, object$objectNameByCache)
+  if(!is.na(objectPos)) {
+    object$cache <- object$cache[c(-objectPos)]
+    object$objectNameByCache <- object$objectNameByCache[c(-objectPos)]
+  }
+  
+  tmpFilePath <- object$tmpObjectsPaths[[rasterObjectRef]]
+  cacheWriteRaster(object, rasterObject, tmpFilePath)
+  #writeRaster(rasterObject, filename = tmpFilePath, overwrite = TRUE)
+  object <- putObjectInCache(object, rasterObjectRef, rasterObject)
+  rm(list = c(rasterObjectName), envir = as.environment(globalenv()))
+  return(object)
+}
+
+cacheWriteRaster.cacheManager <- function(object, rasterObject, tmpFilePath) {
+  print(paste("writing", rasterObject@file@name, tmpFilePath, sep = ' :: '))
+  if(file.exists(rasterObject@file@name)) {
+    writeRaster(rasterObject, filename = rasterObject@file@name, overwrite = TRUE)
+  } else {
+    writeRaster(rasterObject, filename = tmpFilePath, overwrite = TRUE)
+  }
 }
 
 cacheIsFull.cacheManager <- function(object) {
@@ -86,10 +119,11 @@ getObject.cacheManager <- function(object, rasterObject, position = 1) {
     return(object$cache[[objectPos]])
   } else {
     tmpFilePath <- object$tmpObjectsPaths[[rasterObjectRef]]
+    print("Reading")
     print(tmpFilePath)
     rasterObject <- raster(paste(tmpFilePath, '.grd', sep = ''))
     
-    newObject <- putObjectInCache(object, rasterObjectRef, rasterObject, FALSE)
+    newObject <- putObjectInCache(object, rasterObjectRef, rasterObject)
     eval.parent(substitute(object <- newObject))
     rm(rasterObject)
     return(newObject$cache[[newObject$cacheSize]])
@@ -123,6 +157,8 @@ getObject(CM, r2)
 CM
 getObject(CM, r3)
 CM
+getObject(CM, r1)
+CM
 getObject(CM, r2)
 CM
 getObject(CM, r3)
@@ -133,8 +169,10 @@ mem_used()
 r3 <- getObject(CM, r3)
 
 r3[] <- r3[]*2
-toupper(r3@file@name)
-CM <- addObject(CM, r3)
+
+mem_used()
+
+CM <- updateObject(CM, r3, 1)
 CM
 
 mem_used()
