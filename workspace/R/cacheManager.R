@@ -71,7 +71,6 @@ removeLastObject.cacheManager <- function(object) {
   print(paste("Writing", fileName, "::", object$cache[[1]]@file@name))
   
   cacheWriteRaster(object, object$cache[[1]], fileName)
-  #writeRaster(object$cache[[1]], filename = fileName, overwrite = TRUE)
   
   object$cache <- object$cache[c(-1)]
   object$objectNameByCache <- object$objectNameByCache[c(-1)]
@@ -89,7 +88,6 @@ updateObject.cacheManager <- function(object, rasterObject, position = 1) {
   
   tmpFilePath <- object$tmpObjectsPaths[[rasterObjectRef]]
   cacheWriteRaster(object, rasterObject, tmpFilePath)
-  #writeRaster(rasterObject, filename = tmpFilePath, overwrite = TRUE)
   object <- putObjectInCache(object, rasterObjectRef, rasterObject)
   rm(list = c(rasterObjectName), envir = as.environment(globalenv()))
   return(object)
@@ -97,11 +95,18 @@ updateObject.cacheManager <- function(object, rasterObject, position = 1) {
 
 cacheWriteRaster.cacheManager <- function(object, rasterObject, tmpFilePath) {
   print(paste("writing", rasterObject@file@name, tmpFilePath, sep = ' :: '))
-  if(file.exists(rasterObject@file@name)) {
-    writeRaster(rasterObject, filename = rasterObject@file@name, overwrite = TRUE)
-  } else {
-    writeRaster(rasterObject, filename = tmpFilePath, overwrite = TRUE)
+  tr <- blockSize(rasterObject)
+  # use x to keep layer name
+  r <- writeStart(rasterObject, filename=tmpFilePath, overwrite = TRUE)
+  for (i in 1:tr$n) {
+    v <- getValues(rasterObject, row=tr$row[i], nrows=tr$nrows[i])
+    r <- writeValues(r, v, tr$row[i])
   }
+  if (isTRUE(any(is.factor(rasterObject)))) {
+    levels(r) <- levels(rasterObject)
+  }
+  #r <- setZ(r, getZ(x))
+  r <- writeStop(r)
 }
 
 cacheIsFull.cacheManager <- function(object) {
