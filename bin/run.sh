@@ -1,38 +1,48 @@
 #!/bin/bash
-
-# ${IMAGE_NAME}
-IMAGE_NAME=$1
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/
-IMAGES_DIR_PATH=$2
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/
-RESULTS_DIR_PATH=$3
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}
-OUTPUT_IMAGE_DIR=$4
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTL.txt"
-IMAGE_MTL_PATH=$5
-# ${SEBAL_MOUNT_POINT}/$IMAGES_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_MTLFmask"
-IMAGE_MTL_FMASK_PATH=$6
-# ${SEBAL_MOUNT_POINT}/$RESULTS_DIR_NAME/${IMAGE_NAME}/${IMAGE_NAME}"_station.csv"
-IMAGE_STATION_FILE_PATH=$7
+# ${SAPS_MOUNT_POINT}/${TASK_ID}/$INPUT_DIR
+INPUT_DIR_PATH=$1
+# ${SAPS_MOUNT_POINT}/$OUTPUT_DIR
+OUTPUT_DIR_PATH=$2
+# ${SAPS_MOUNT_POINT}/$PREPROCESS_DIR
+PREPROCESS_DIR_PATH=$3
+# ${SAPS_MOUNT_POINT}/$METADATA_DIR
+METADATA_DIR_PATH=$4
 
 # Global variables
 SANDBOX=$(pwd)
-SEBAL_DIR_PATH=$SANDBOX/SEBAL
 CONF_FILE=sebal.conf
 LIBRARY_PATH=/usr/local/lib
 BOUNDING_BOX_PATH=example/boundingbox_vertices
-TMP_DIR_PATH=/mnt
+TMP_DIR_PATH=/tmp
 
-R_EXEC_DIR=$SEBAL_DIR_PATH/workspace/R
+R_EXEC_DIR=$SANDBOX/workspace/R
 R_ALGORITHM_VERSION=Algoritmo-memory-clean-21_02_2018.R
-#R_ALGORITHM_VERSION=Algoritmo_05022018.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
-OUTPUT_IMAGE_DIR=$RESULTS_DIR_PATH/$IMAGE_NAME
 SCRIPTS_DIR=scripts
-SWIFT_CLI_DIR=swift-client
-LOG4J_PATH=$SEBAL_DIR_PATH/log4j.properties
+LOG4J_PATH=$SANDBOX/log4j.properties
+
+# Required info
+IMAGE_NAME=
+IMAGE_MTL_PATH=
+IMAGE_STATION_FILE_PATH=
+
+# This function get required file names from input path
+function getFileNames {
+  files=( $INPUT_DIR_PATH/*_MTL.txt )
+  for file in "${files[@]}"
+  do
+    filename="${file##*/}"
+    filenameWithoutExtension="${filename%_MTL*}"
+    IMAGE_NAME="$filenameWithoutExtension"
+  done
+
+  IMAGE_MTL_PATH=$INPUT_DIR_PATH/$IMAGE_NAME"_MTL.txt"
+  IMAGE_STATION_FILE_PATH=$INPUT_DIR_PATH/$IMAGE_NAME"_station.csv"
+  
+  echo "ImageName: $IMAGE_NAME;  ImageMTLPath: $IMAGE_MTL_PATH; ImageStationPath: $IMAGE_STATION_FILE_PATH"
+}
 
 # This function clean environment by deleting raster temp dir if exists
 function cleanRasterEnv {
@@ -43,41 +53,14 @@ function cleanRasterEnv {
 
 }
 
-# This function untare image and creates an output dir into mounted dir
-function untarImageAndPrepareDirs {
-  cd $IMAGES_DIR_PATH
-
-  echo "Image file name is $IMAGE_NAME"
-
-  # untar image
-  echo "Untaring image $IMAGE_NAME"
-  cd $IMAGES_DIR_PATH/$IMAGE_NAME
-  sudo tar -xvzf $IMAGE_NAME".tar.gz"
-
-  echo "Creating image output directory"
-  sudo mkdir -p $OUTPUT_IMAGE_DIR
-
-  cd $SANDBOX
-}
-
-# This function calls a pre process java code to prepare a station file of a given image
-function preProcessImage {
-  cd $SEBAL_DIR_PATH
-
-  sudo java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n -Dlog4j.configuration=file:$LOG4J_PATH -Djava.library.path=$LIBRARY_PATH -cp target/SEBAL-0.0.1-SNAPSHOT.jar:target/lib/* org.fogbowcloud.sebal.PreProcessMain $IMAGES_DIR_PATH/ $IMAGE_MTL_PATH $RESULTS_DIR_PATH/ 0 0 9000 9000 1 1 $SEBAL_DIR_PATH/$BOUNDING_BOX_PATH $SEBAL_DIR_PATH/$CONF_FILE $IMAGE_MTL_FMASK_PATH
-  sudo chmod 777 $IMAGE_STATION_FILE_PATH
-  echo -e "\n" >> $IMAGE_STATION_FILE_PATH
-  cd ..
-}
-
 # This function prepare a dados.csv file
 function creatingDadosCSV {
-  echo "Creating dados.csv for image $IMAGE_NAME"
+  echo "Creating dados.csv for image $TASK_ID"
 
   cd $R_EXEC_DIR
 
-  echo "File images;MTL;File Station Weather;File Fmask;Path Output" > dados.csv
-  echo "$IMAGES_DIR_PATH/$IMAGE_NAME;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$IMAGE_MTL_FMASK_PATH;$OUTPUT_IMAGE_DIR" >> dados.csv
+  echo "File images;MTL;File Station Weather;Path Output" > dados.csv
+  echo "$INPUT_DIR_PATH;$IMAGE_MTL_PATH;$IMAGE_STATION_FILE_PATH;$OUTPUT_DIR_PATH" >> dados.csv
 }
 
 # This function creates a raster tmp dir if not exists and start scripts to collect CPU and memory usage
@@ -94,23 +77,23 @@ function prepareEnvAndCollectUsage {
     fi
   fi
 
-  echo "Starting CPU, Memory, Disk, and NFS monitoring..."
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_usage.csv" 2> /tmp/cpu-usage &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-cpu-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_cpu_saturation.csv" 2> /tmp/cpu-saturation &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_usage.csv" 2> /tmp/mem-usage &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-memory-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_mem_saturation.csv" 2> /tmp/mem-saturation &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_usage.csv" 2> /tmp/disk-usage &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-disk-saturation.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_disk_saturation.csv" 2> /tmp/disk-saturation &
-  sudo bash -x $SEBAL_DIR_PATH/$SCRIPTS_DIR/collect-nfs-usage.sh $$ > $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_nfs_usage.csv" 2> /tmp/nfs-usage &
+  echo "Starting CPU and Memory collect..."
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-cpu-usage.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.csv" 2> /tmp/cpu-usage &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-cpu-saturation.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_saturation.csv" 2> /tmp/cpu-saturation &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-memory-usage.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.csv" 2> /tmp/mem-usage &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-memory-saturation.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_saturation.csv" 2> /tmp/mem-saturation &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-disk-usage.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_disk_usage.csv" 2> /tmp/disk-usage &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-disk-saturation.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_disk_saturation.csv" 2> /tmp/disk-saturation &
+  sudo bash -x $SANDBOX/$SCRIPTS_DIR/collect-nfs-usage.sh $$ > $OUTPUT_DIR_PATH/$IMAGE_NAME"_nfs_usage.csv" 2> /tmp/nfs-usage &
 }
 
 # This function executes R script
 function executeRScript {
   for i in `seq $MAX_TRIES`
   do
-
-    (sudo bash $SEBAL_DIR_PATH/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH ; echo $?) | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt"
-    PROCESS_OUTPUT=$(tail -1 $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt")
+    cleanRasterEnv
+    sudo bash $SANDBOX/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+    PROCESS_OUTPUT=$?
 
     echo "executeRScript_process_output=$PROCESS_OUTPUT"
     if [ $PROCESS_OUTPUT -eq 0 ]
@@ -130,15 +113,47 @@ function executeRScript {
   done
 }
 
-function collectRScriptProcTimes {
- echo "Colleting RScript proc times"
- grep -A1 "elapsed" $OUTPUT_IMAGE_DIR/$IMAGE_NAME"_logRScript.txt" | grep ['0123456789'] | awk '{print $3}' | sudo tee $OUTPUT_IMAGE_DIR/$IMAGE_NAME"proc_times.txt" > /dev/null
-}
-
 # This function moves dados.csv to image results dir
 function mvDadosCSV {
-  sudo mv dados.csv $OUTPUT_IMAGE_DIR
+  sudo mv dados.csv $OUTPUT_DIR_PATH
   cd ../..
+}
+
+function killCollectScripts {
+  echo "Killing collect CPU and Memory scripts"
+  ps -ef | grep collect-cpu-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
+  ps -ef | grep collect-memory-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
+}
+
+function generateMetadataFile {
+  METADATA_FILE_PATH=$METADATA_DIR_PATH/outputDescription.txt
+
+  echo "Generating metadata file $METADATA_FILE_PATH"
+  sudo touch $METADATA_FILE_PATH
+
+  EVI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_EVI.nc")
+  LAI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LAI.nc")
+  NDVI_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_NDVI.nc")
+  LSA_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LSA.nc")
+  LST_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_LST.nc")
+  RN_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_Rn.nc")
+  G_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_G.nc")
+  EF_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_EF.nc")
+  ET24H_OUTPUT_FILE_PATH=$(find $OUTPUT_DIR_PATH -iname "*_ET24h.nc")
+
+  CURRENT_DATE=$(date)
+
+  sudo echo "# Worker Implementation Metadata" >> $METADATA_FILE_PATH
+  sudo echo "#$CURRENT_DATE" >> $METADATA_FILE_PATH
+  sudo echo "$EVI_OUTPUT_FILE_PATH # Enhanced vegetation index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LAI_OUTPUT_FILE_PATH # Leaf area index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$NDVI_OUTPUT_FILE_PATH # Normalized different vegetation index data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LSA_OUTPUT_FILE_PATH # Land surface albedo data file path" >> $METADATA_FILE_PATH
+  sudo echo "$LST_OUTPUT_FILE_PATH # Land surface temperature data file path" >> $METADATA_FILE_PATH
+  sudo echo "$RN_OUTPUT_FILE_PATH # Net radiation balance data file path" >> $METADATA_FILE_PATH
+  sudo echo "$G_OUTPUT_FILE_PATH # Ground heat flux data file path" >> $METADATA_FILE_PATH
+  sudo echo "$EF_OUTPUT_FILE_PATH # Evapotranspirative fraction data file path" >> $METADATA_FILE_PATH
+  sudo echo "$ET24H_OUTPUT_FILE_PATH # Evapotranspirative data file path" >> $METADATA_FILE_PATH
 }
 
 function checkProcessOutput {
@@ -155,10 +170,8 @@ function finally {
   exit $PROCESS_OUTPUT
 }
 
-#untarImageAndPrepareDirs
-#checkProcessOutput
-#preProcessImage
-#checkProcessOutput
+getFileNames
+checkProcessOutput
 creatingDadosCSV
 checkProcessOutput
 prepareEnvAndCollectUsage
@@ -166,5 +179,9 @@ checkProcessOutput
 executeRScript
 checkProcessOutput
 mvDadosCSV
-collectRScriptProcTimes
+killCollectScripts
+cleanRasterEnv
+checkProcessOutput
+generateMetadataFile
+checkProcessOutput
 finally

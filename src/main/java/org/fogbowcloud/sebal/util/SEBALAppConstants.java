@@ -1,13 +1,7 @@
 package org.fogbowcloud.sebal.util;
 
 public class SEBALAppConstants {
-	
-	// URL constants
-	public static final String PUBLIC_HTML_STATION_REPOSITORY = "public_html_station_repository";
 
-	// File constants
-	public static final String UNFORMATTED_LOCAL_STATION_FILE_PATH = "unformatted_local_station_file_path";
-	
 	// JSON constants
 	public static final String JSON_STATION_ID = "Estacao";
 	public static final String JSON_STATION_DATE = "Data";
@@ -22,4 +16,10 @@ public class SEBALAppConstants {
 	public static final String JSON_MIN_TEMPERATURE = "TemperaturaMinima";
 	public static final String JSON_MAX_TEMPERATURE = "TemperaturaMaxima";
 	public static final String JSON_SOLAR_RADIATION = "RadiacaoSolar";
+	
+	// File constants
+	public static final String FILE_ENCODING = "UTF-8";
+	
+	// Weather Station constants
+	public static final String DEFAULT_SCENE_CENTER_TIME = "1200";
 }

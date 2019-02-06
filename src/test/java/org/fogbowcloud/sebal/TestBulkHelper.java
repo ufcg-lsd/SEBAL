@@ -33,18 +33,6 @@ public class TestBulkHelper {
 		Assert.assertEquals(50, BulkHelper.calcXInterval(100, 200, 2));
 		Assert.assertEquals(33, BulkHelper.calcXInterval(100, 200, 3));
 	}
-//		
-//	@Test
-//	public void testGetSelectedXPartitionInterval1() {
-//		Assert.assertEquals(0, BulkHelper.calcXInterval(10, 11, 2));
-////		XPartitionInterval selectePartition = BulkHelper.getSelectedPartition(10, 10, 2, 1);
-////		Assert.assertEquals(10, selectePartition.getIBegin());
-////		Assert.assertEquals(10, selectePartition.getIFinal());
-//		
-//		XPartitionInterval selectePartition = BulkHelper.getSelectedPartition(10, 11, 2, 2);
-//		Assert.assertEquals(11, selectePartition.getIBegin());
-//		Assert.assertEquals(11, selectePartition.getIFinal());
-//	}
 	
 	@Test
 	public void testGetSelectedXPartitionInterval2() {

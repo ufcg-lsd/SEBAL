@@ -1,580 +1,316 @@
 package org.fogbowcloud.sebal.parsers;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
+import org.fogbowcloud.sebal.parsers.plugins.StationOperator;
+import org.fogbowcloud.sebal.parsers.plugins.StationOperatorConstants;
+import org.fogbowcloud.sebal.parsers.plugins.ftp.FTPStationOperator;
 import org.fogbowcloud.sebal.util.SEBALAppConstants;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class WeatherStation {
 
-	private static final double R = 6371; // km
-	private static final long A_DAY = 1000 * 60 * 60 * 24;
-
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-			"YYYYMMdd");
-	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat(
-			"yyyyMMdd;hhmm");
+	private Properties properties;
+	private StationOperator stationOperator;
 
 	private static final Logger LOGGER = Logger.getLogger(WeatherStation.class);
 
-	private Map<String, String> cache = new HashMap<String, String>();
-	private JSONArray stations;
-	private Properties properties;
+	private static final Double MIN_WIND_SPEED_VALUE = 0.3;
+	private static final Double MAX_WIND_SPEED_VALUE = 31.0;
+	private static final Double MIN_AIR_TEMP_VALUE = 5.0;
+	private static final Double MAX_AIR_TEMP_VALUE = 55.0;
 
-	public WeatherStation() throws URISyntaxException, HttpException,
-			IOException {
+	public WeatherStation() throws URISyntaxException, HttpException, IOException {
 		this(new Properties());
 	}
 
-	public WeatherStation(Properties properties) throws URISyntaxException,
-			HttpException, IOException {
-		this.stations = new JSONArray(IOUtils.toString(new FileInputStream(
-				"stations.json")));
+	public WeatherStation(Properties properties)
+			throws URISyntaxException, HttpException, IOException {
+		this(properties, new FTPStationOperator(properties));
+	}
+
+	protected WeatherStation(Properties properties, FTPStationOperator stationOperator) {
 		this.properties = properties;
+		this.stationOperator = stationOperator;
 	}
 
-	private List<JSONObject> findNearestStation(double lat, double lon) {
-		List<JSONObject> orderedStations = new LinkedList<JSONObject>();
-		double minDistance = Double.MAX_VALUE;
-		for (int i = 0; i < stations.length(); i++) {
-			JSONObject station = stations.optJSONObject(i);
-			double d = d(lat, lon, station.optDouble("lat"),
-					station.optDouble("lon"));
-			if (d < minDistance) {
-				minDistance = d;
-			}
-			station.put("d", d);
-			orderedStations.add(station);
+	public String getStationData(double lat, double lon, Date date, String sceneCenterTime) {
+		LOGGER.debug("latitude: " + lat + " longitude: " + lon + " date: " + date);
+
+		int daysWindow = 0;
+		List<JSONObject> nearStations = this.stationOperator.findNearestStation(date, lat, lon,
+				daysWindow);
+
+		String stationData = null;
+		if (nearStations != null) {
+			stationData = this.selectStation(date, nearStations, daysWindow, sceneCenterTime);
 		}
-
-		Collections.sort(orderedStations, new Comparator<JSONObject>() {
-
-			@Override
-			public int compare(JSONObject o1, JSONObject o2) {
-				return ((Double) o1.optDouble("d")).compareTo((Double) o2
-						.optDouble("d"));
-			}
-		});
-
-		return orderedStations;
+		return stationData;
 	}
 
-	private double d(double lat1, double lon1, double lat2, double lon2) {
-		double dLat = Math.toRadians(lat2 - lat1);
-		double dLon = Math.toRadians(lon2 - lon1);
-		lat1 = Math.toRadians(lat1);
-		lat2 = Math.toRadians(lat2);
-		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2)
-				* Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return R * c;
-	}
+	protected String selectStation(Date date, List<JSONObject> stations, int numberOfDays,
+			String sceneCenterTime) {
 
-	public void persistStations() throws IOException {
-		JSONArray stations = new JSONArray();
-		for (String line : IOUtils.readLines(new FileInputStream(
-				"stations.html"))) {
-			if (line.contains("var html")) {
-				String[] split = line.split("<br />");
-				JSONObject json = new JSONObject();
-				String split0 = split[0];
-				String split00 = split0
-						.substring(split[0].lastIndexOf(":") + 1,
-								split[0].indexOf("</b>")).trim();
+		Date begindate = new Date(date.getTime() - numberOfDays * StationOperatorConstants.A_DAY);
+		Date endDate = new Date(date.getTime() + numberOfDays * StationOperatorConstants.A_DAY);
 
-				json.put("id", split00.split("-")[0].trim());
-				json.put("name", split00.substring(split00.indexOf("-") + 1)
-						.trim());
-				json.put(
-						"lat",
-						Double.parseDouble(split[1].substring(
-								split[1].indexOf(":") + 1).trim()));
-				json.put(
-						"lon",
-						Double.parseDouble(split[2].substring(
-								split[2].indexOf(":") + 1).trim()));
-				json.put(
-						"altitude",
-						Double.parseDouble(split[3]
-								.substring(split[3].indexOf(":") + 1)
-								.replaceAll("m", "").trim()));
-				stations.put(json);
-			}
-		}
-		IOUtils.write(stations.toString(2), new FileOutputStream(
-				"stations.json"));
-	}
+		List<String> mainHours = getMainHours(sceneCenterTime);
 
-	private JSONArray readStation(String id, String beginDate, String endDate)
-			throws Exception {
+		if (stations != null && !stations.isEmpty()) {
+			LOGGER.debug("beginDate: " + begindate + " endDate: " + endDate);
 
-		String year = beginDate.substring(0, 4);
+			for (JSONObject station : stations) {
+				try {
+					JSONArray stationData = this.stationOperator.readStation(
+							station.optString("id"),
+							StationOperatorConstants.DATE_FORMAT.format(begindate),
+							StationOperatorConstants.DATE_FORMAT.format(endDate));
 
-		String baseUnformattedLocalStationFilePath = getBaseUnformattedLocalStationFilePath(year);
-		File baseUnformattedLocalStationFile = new File(
-				baseUnformattedLocalStationFilePath);
-		baseUnformattedLocalStationFile.mkdirs();
+					Double stationDistance = station.optDouble("distance");
 
-		File unformattedLocalStationFile = getUnformattedStationFile(id, year);
-		String url = getStationFileUrl(id, year);		
-		if (!downloadUnformattedStationFile(unformattedLocalStationFile, url)) {
-			return null;
-		}
+					stationData = removeNonRepresentativeRecords(stationData);
+					stationData = temperatureCorrection(stationData);
+					stationData = windSpeedCorrection(stationData, mainHours);
 
-		List<String> stationData = new ArrayList<String>();
-		readStationFile(unformattedLocalStationFile, stationData);
+					if (validateStationData(stationData, mainHours)) {
+						LOGGER.info("Found Station Data: " + System.lineSeparator()
+								+ stationData.toString());
+						LOGGER.info("Station Distance: [" + stationDistance + "]km");
 
-		JSONArray dataArray = new JSONArray();
-		getHourlyData(beginDate, stationData, dataArray);
-
-		for (int i = 0; i < dataArray.length(); i++) {
-			JSONObject stationDataRecord = dataArray.optJSONObject(i);
-			String airTemp = stationDataRecord
-					.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE);
-			String dewTemp = stationDataRecord
-					.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE);
-			String windSpeed = stationDataRecord
-					.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED);
-
-			if (!airTemp.isEmpty() && !dewTemp.isEmpty()
-					&& !windSpeed.isEmpty()) {
-				unformattedLocalStationFile.delete();
-				return dataArray;
-			}
-		}
-
-		cache.put(url, "FAILED");
-		throw new Exception();
-	}
-
-	protected String getStationFileUrl(String id, String year) {
-		String url = properties.getProperty(SEBALAppConstants.PUBLIC_HTML_STATION_REPOSITORY)
-				+ File.separator + year + File.separator + id + "0-99999-" + year;
-		return url;
-	}
-
-	protected String getBaseUnformattedLocalStationFilePath(String year) {
-		return properties
-				.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year;
-	}
-
-	protected File getUnformattedStationFile(String stationId, String year) {
-		String unformattedLocalStationFilePath = properties.getProperty(SEBALAppConstants.UNFORMATTED_LOCAL_STATION_FILE_PATH)
-				+ File.separator + year + File.separator + stationId + "0-99999-" + year;
-
-		File unformattedLocalStationFile = new File(
-				unformattedLocalStationFilePath);
-		if (unformattedLocalStationFile.exists()) {
-			LOGGER.info("File "
-					+ unformattedLocalStationFile
-					+ " already exists. Will be removed before repeating download");
-			unformattedLocalStationFile.delete();
-		}
-		return unformattedLocalStationFile;
-	}
-
-	private boolean downloadUnformattedStationFile(
-			File unformattedLocalStationFile, String url) throws Exception {
-		try {
-			BasicCookieStore cookieStore = new BasicCookieStore();
-			HttpClient httpClient = HttpClientBuilder.create()
-					.setDefaultCookieStore(cookieStore).build();
-
-			HttpGet fileGet = new HttpGet(url);
-			HttpResponse response = httpClient.execute(fileGet);
-			if (response.getStatusLine().getStatusCode() == 404) {
-				return false;
-			}
-
-			OutputStream outStream = new FileOutputStream(
-					unformattedLocalStationFile);
-			IOUtils.copy(response.getEntity().getContent(), outStream);
-			outStream.close();
-
-			cache.put(url, "SUCCEEDED");
-		} catch (Exception e) {
-			cache.put(url, "FAILED");
-			LOGGER.error("Setting URL " + url + " as FAILED.");
-			throw e;
-		}
-
-		return true;
-	}
-
-	private void readStationFile(File unformattedLocalStationFile,
-			List<String> stationData) throws FileNotFoundException, IOException {
-		BufferedReader br = new BufferedReader(new FileReader(
-				unformattedLocalStationFile));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			stationData.add(line);
-		}
-
-		br.close();
-	}
-
-	// TODO: document these intervals
-	private void getHourlyData(String beginDate, List<String> stationData,
-			JSONArray dataArray) throws JSONException {
-		for (String data : stationData) {
-			if (data.contains(beginDate)) {
-				JSONObject jsonObject = new JSONObject();
-
-				String stationId = data.substring(4, 10);
-				String date = data.substring(15, 23);
-				String time = data.substring(23, 27);
-
-				String latitude = data.substring(28, 34);
-				latitude = changeToLatitudeFormat(latitude);
-
-				String longitude = data.substring(34, 41);
-				longitude = changeToLongitudeFormat(longitude);
-
-				String windSpeed = data.substring(65, 69);
-				windSpeed = changeToWindSpeedFormat(windSpeed);
-
-				String airTemp = data.substring(87, 92);
-				airTemp = changeToAirTempFormat(airTemp);
-
-				String dewTemp = data.substring(93, 98);
-				dewTemp = changeToDewTempFormat(dewTemp);
-
-				jsonObject.put(SEBALAppConstants.JSON_STATION_ID, stationId);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_DATE, date);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_TIME, time);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_LATITUDE,
-						latitude);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_LONGITUDE,
-						longitude);
-				jsonObject.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
-						windSpeed);
-				jsonObject.put(SEBALAppConstants.JSON_AIR_TEMPERATURE, airTemp);
-				jsonObject.put(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE,
-						dewTemp);
-
-				dataArray.put(jsonObject);
-			}
-		}
-	}
-
-	private String changeToLatitudeFormat(String latitude) {
-		StringBuilder sb = new StringBuilder(latitude);
-		if(latitude.contains("+")) {			
-			sb.deleteCharAt(0);
-		}
-		latitude = sb.toString();
-		double latitudeValue = Double.valueOf(latitude) / 1000.0;
-		return String.valueOf(latitudeValue);
-	}
-
-	private String changeToLongitudeFormat(String longitude) {
-		StringBuilder sb = new StringBuilder(longitude);
-		if(longitude.contains("+")) {			
-			sb.deleteCharAt(0);
-		}
-		longitude = sb.toString();
-		double longitudeValue = Double.valueOf(longitude) / 1000.0;
-		return String.valueOf(longitudeValue);
-	}
-
-	private String changeToWindSpeedFormat(String windSpeed)
-			throws NumberFormatException {
-		if (windSpeed.equals("99999")) {
-			windSpeed = "***";
-		} else {
-			windSpeed = formatWindSpeed(windSpeed);
-		}
-		return windSpeed;
-	}
-
-	private String changeToAirTempFormat(String airTemp)
-			throws NumberFormatException {
-		StringBuilder sb;
-		String airTempSign = airTemp.substring(0, 0);
-		sb = new StringBuilder(airTemp);
-		sb.deleteCharAt(0);
-		airTemp = sb.toString();
-		if (airTemp.equals("99999")) {
-			airTemp = "****";
-		} else {
-			airTemp = formatAirTemp(airTemp, airTempSign);
-		}
-		return airTemp;
-	}
-
-	private String changeToDewTempFormat(String dewTemp)
-			throws NumberFormatException {
-		StringBuilder sb;
-		String dewTempSign = dewTemp.substring(0, 0);
-		sb = new StringBuilder(dewTemp);
-		sb.deleteCharAt(0);
-		dewTemp = sb.toString();
-		if (dewTemp.equals("99999")) {
-			dewTemp = "****";
-		} else {
-			dewTemp = formatDewTemp(dewTemp, dewTempSign);
-		}
-		return dewTemp;
-	}
-
-	private String formatWindSpeed(String windSpeed)
-			throws NumberFormatException {
-		double integerConvertion = Integer.parseInt(windSpeed);
-		integerConvertion = integerConvertion / 10.0;
-		return String.valueOf(integerConvertion);
-	}
-
-	private String formatAirTemp(String airTemp, String airTempSign)
-			throws NumberFormatException {
-		double integerConvertion = Integer.parseInt(airTemp);
-		if (airTempSign.equals("-")) {
-			integerConvertion *= -1;
-		}
-
-		integerConvertion = integerConvertion / 10.0;
-		return String.valueOf(integerConvertion);
-	}
-
-	private String formatDewTemp(String dewTemp, String dewTempSign)
-			throws NumberFormatException {
-		double integerConvertion = Integer.parseInt(dewTemp);
-		if (dewTempSign.equals("-")) {
-			integerConvertion *= -1;
-		}
-
-		integerConvertion = integerConvertion / 10.0;
-		return String.valueOf(integerConvertion);
-	}
-
-	protected String readFullRecord(Date date, List<JSONObject> stations,
-			int numberOfDays) {
-		Date begindate = new Date(date.getTime() - numberOfDays * A_DAY);
-		Date endDate = new Date(date.getTime() + numberOfDays * A_DAY);
-
-		for (JSONObject station : stations) {
-			try {
-				JSONArray stationData = readStation(station.optString("id"),
-						DATE_FORMAT.format(begindate),
-						DATE_FORMAT.format(endDate));
-
-				if (stationData != null) {
-					JSONObject closestRecord = null;
-					Long smallestDiff = Long.MAX_VALUE;
-
-					for (int i = 0; i < stationData.length(); i++) {
-						JSONObject stationDataRecord = stationData
-								.optJSONObject(i);
-						String dateValue = stationDataRecord
-								.optString(SEBALAppConstants.JSON_STATION_DATE);
-						String timeValue = stationDataRecord
-								.optString(SEBALAppConstants.JSON_STATION_TIME);
-
-						Date recordDate = DATE_TIME_FORMAT.parse(dateValue
-								+ ";" + timeValue);
-						long diff = Math.abs(recordDate.getTime()
-								- date.getTime());
-						if (diff < smallestDiff) {
-							smallestDiff = diff;
-							closestRecord = stationDataRecord;
-						}
-
-						if (!closestRecord.optString(
-								SEBALAppConstants.JSON_STATION_DATE).isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_TIME)
-										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_LATITUDE)
-										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_STATION_LONGITUDE)
-										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE)
-										.isEmpty()
-								&& !closestRecord.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE)
-										.isEmpty()
-								&& !closestRecord
-										.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)
-										.isEmpty()
-								&& Double.parseDouble(closestRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) >= 0.3) {
-							return generateStationData(stationData,
-									closestRecord);
-						} else if (Double.parseDouble(closestRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)) < 0.3) {
-							closestRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
-							closestRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED, "0.3");
-						}
+						return generateStationData(stationData, stationDistance);
 					}
+				} catch (Exception e) {
+					LOGGER.error("Error while reading full record", e);
 				}
-			} catch (Exception e) {
-				LOGGER.error("Error while reading full record", e);
 			}
+		} else {
+			LOGGER.info("Stations list is empty");
 		}
 
 		return null;
 	}
 
-	private String generateStationData(JSONArray stationData,
-			JSONObject closestRecord) {
-		StringBuilder toReturn = new StringBuilder();
-		for (int i = 0; i < stationData.length(); i++) {
-			checkVariablesAndBuildString(stationData, closestRecord, toReturn,
-					i);
+	protected List<String> getMainHours(String sceneCenterTime) {
+		List<String> result = new ArrayList<String>();
+		Integer size = 2;
+		Integer hour = Integer.parseInt(sceneCenterTime.substring(0, 2));
+		for (int i = 0; i < size; i++, hour = (hour + 1) % 24) {
+			String strHour = hour + "00";
+			if (strHour.length() < 4) {
+				strHour = "0" + strHour;
+			}
+			result.add(i, strHour);
 		}
-		return toReturn.toString().trim();
+		return result;
 	}
 
-	private void checkVariablesAndBuildString(JSONArray stationData,
-			JSONObject closestRecord, StringBuilder toReturn, int i) {
-		JSONObject stationDataRecord = stationData.optJSONObject(i);
+	protected List<String> getHoursInterval(String hour) {
+		List<String> intervalHours = new ArrayList<String>();
 
-		String stationId = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_ID);
-		String dateValue = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_DATE);
-		String timeValue = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_TIME);
-		String latitude = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_LATITUDE);
-		String longitude = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_LONGITUDE);
-		String windSpeed = stationDataRecord
-				.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED);
-		String airTemp = stationDataRecord
-				.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE);
-		String dewTemp = stationDataRecord
-				.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE);
-		String avgAirTemp = stationDataRecord
-				.optString(SEBALAppConstants.JSON_AVG_AIR_TEMPERATURE);
+		Integer intHour = Integer.parseInt(hour.substring(0, 2));
+		Integer lowerBound = (intHour - 6) % 24;
+		Integer upperBound = (intHour + 6) % 24;
+
+		for (Integer i = upperBound; i != ((lowerBound + 1) % 24); i = (i + 1) % 24) {
+			String strHour = i + "00";
+			if (strHour.length() < 4) {
+				strHour = "0" + strHour;
+			}
+			intervalHours.add(strHour);
+		}
+		return intervalHours;
+	}
+
+	protected boolean validateStationData(JSONArray stationData, List<String> mainHours) {
+		boolean result = false;
+		if (stationData != null) {
+			boolean hasAtLeastOneMainHour = hasHoursInStationData(stationData, mainHours);
+
+			List<String> intervalHours = getHoursInterval(mainHours.get(0));
+			int midIndex = intervalHours.size() / 2;
+
+			boolean hasOneHourInFirstPart = hasHoursInStationData(stationData,
+					intervalHours.subList(0, midIndex));
+			boolean hasOneHourInSecondPart = hasHoursInStationData(stationData,
+					intervalHours.subList(midIndex, intervalHours.size()));
+
+			result = hasAtLeastOneMainHour && hasOneHourInFirstPart && hasOneHourInSecondPart;
+		}
+		return result;
+	}
+
+	private boolean hasHoursInStationData(JSONArray stationData, List<String> hours) {
+		boolean hasHour = false;
+		for (int i = 0; i < hours.size() && !hasHour; i++) {
+			if (hasRecord(stationData, SEBALAppConstants.JSON_STATION_TIME, hours.get(i))) {
+				hasHour = true;
+			}
+		}
+		return hasHour;
+	}
+
+	private boolean hasRecord(JSONArray stationData, String key, String value) {
+		boolean result = false;
+		for (int i = 0; i < stationData.length() && !result; i++) {
+			JSONObject stationDataRecord = stationData.optJSONObject(i);
+
+			if (stationDataRecord.optString(key).equals(value)) {
+				result = true;
+			}
+		}
+		return result;
+	}
+
+	protected JSONArray windSpeedCorrection(JSONArray stationData, List<String> mainHours) {
+		JSONArray adjustedStationData = null;
+
+		if (stationData != null) {
+			adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
+
+				String JSONHour = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_TIME);
+
+				Double JSONWindSpeed = Double.parseDouble(
+						stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED));
+
+				if (mainHours.contains(JSONHour)
+						&& JSONWindSpeed > WeatherStation.MAX_WIND_SPEED_VALUE) {
+					adjustedStationData.remove(i);
+					i--;
+				}
+
+				if (JSONWindSpeed < WeatherStation.MIN_WIND_SPEED_VALUE) {
+					stationDataRecord.remove(SEBALAppConstants.JSON_STATION_WIND_SPEED);
+					stationDataRecord.put(SEBALAppConstants.JSON_STATION_WIND_SPEED,
+							WeatherStation.MIN_WIND_SPEED_VALUE);
+				}
+
+			}
+		}
+		return adjustedStationData;
+	}
+
+	protected JSONArray temperatureCorrection(JSONArray stationData) {
+		JSONArray adjustedStationData = null;
+
+		if (stationData != null) {
+			adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
+
+				Double JSONAirTemp = Double.parseDouble(
+						stationDataRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE));
+
+				if (JSONAirTemp < WeatherStation.MIN_AIR_TEMP_VALUE
+						|| JSONAirTemp > WeatherStation.MAX_AIR_TEMP_VALUE) {
+
+					adjustedStationData.remove(i);
+					i--;
+				}
+			}
+		}
+		return adjustedStationData;
+	}
+
+	protected JSONArray removeNonRepresentativeRecords(JSONArray stationData) {
+		JSONArray adjustedStationData = null;
+
+		if (stationData != null) {
+			adjustedStationData = new JSONArray(stationData.toString());
+
+			for (int i = 0; i < adjustedStationData.length(); i++) {
+				JSONObject stationDataRecord = adjustedStationData.optJSONObject(i);
+
+				if (!containsNeededStationValues(stationDataRecord)) {
+					adjustedStationData.remove(i);
+					i--;
+				}
+			}
+		}
+		return adjustedStationData;
+	}
+
+	private boolean containsNeededStationValues(JSONObject data) {
+		String[] neededStationValues = new String[] { SEBALAppConstants.JSON_STATION_DATE,
+				SEBALAppConstants.JSON_STATION_TIME, SEBALAppConstants.JSON_STATION_LATITUDE,
+				SEBALAppConstants.JSON_STATION_LONGITUDE, SEBALAppConstants.JSON_AIR_TEMPERATURE,
+				SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE,
+				SEBALAppConstants.JSON_STATION_WIND_SPEED };
+
+		boolean result = true;
+		for (String value : neededStationValues) {
+			if (data.optString(value).isEmpty() == true) {
+				result = false;
+			}
+		}
+
+		return result;
+	}
+
+	private String generateStationData(JSONArray stationData, Double stationDistance) {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < stationData.length(); i++) {
+			result.append(
+					checkVariablesAndBuildString(stationData.optJSONObject(i), stationDistance));
+		}
+		return result.toString().trim();
+	}
+
+	protected String checkVariablesAndBuildString(JSONObject stationDataRecord,
+			Double stationDistance) {
+
+		String stationId = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_ID);
+		String dateValue = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_DATE);
+		String timeValue = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_TIME);
+		String latitude = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_LATITUDE);
+		String longitude = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_LONGITUDE);
+		String windSpeed = stationDataRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED);
+		String airTemp = stationDataRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE);
+		String dewTemp = stationDataRecord.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE);
+		String avgAirTemp = stationDataRecord.optString(SEBALAppConstants.JSON_AVG_AIR_TEMPERATURE);
 		String relativeHumidity = stationDataRecord
 				.optString(SEBALAppConstants.JSON_RELATIVE_HUMIDITY);
-		String minTemp = stationDataRecord
-				.optString(SEBALAppConstants.JSON_MIN_TEMPERATURE);
-		String maxTemp = stationDataRecord
-				.optString(SEBALAppConstants.JSON_MAX_TEMPERATURE);
-		String solarRad = stationDataRecord
-				.optString(SEBALAppConstants.JSON_SOLAR_RADIATION);
+		String minTemp = stationDataRecord.optString(SEBALAppConstants.JSON_MIN_TEMPERATURE);
+		String maxTemp = stationDataRecord.optString(SEBALAppConstants.JSON_MAX_TEMPERATURE);
+		String solarRad = stationDataRecord.optString(SEBALAppConstants.JSON_SOLAR_RADIATION);
+		String stationDist = stationDistance.toString();
 
-		if (closestRecord.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_STATION_WIND_SPEED) == null) {
-			windSpeed = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_AIR_TEMPERATURE) == null) {
-			airTemp = "NA";
-		}
-		if (closestRecord
-				.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_DEWPOINT_TEMPERATURE) == null) {
-			dewTemp = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_AVG_AIR_TEMPERATURE)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_AVG_AIR_TEMPERATURE) == null) {
-			avgAirTemp = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_RELATIVE_HUMIDITY)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_RELATIVE_HUMIDITY) == null) {
-			relativeHumidity = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_MIN_TEMPERATURE)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_MIN_TEMPERATURE) == null) {
-			minTemp = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_MAX_TEMPERATURE)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_MAX_TEMPERATURE) == null) {
-			maxTemp = "NA";
-		}
-		if (closestRecord.optString(SEBALAppConstants.JSON_SOLAR_RADIATION)
-				.isEmpty()
-				|| closestRecord
-						.optString(SEBALAppConstants.JSON_SOLAR_RADIATION) == null) {
-			solarRad = "NA";
-		}
+		stationId = stationDataCorrection(stationId);
+		avgAirTemp = stationDataCorrection(avgAirTemp);
+		relativeHumidity = stationDataCorrection(relativeHumidity);
+		minTemp = stationDataCorrection(minTemp);
+		maxTemp = stationDataCorrection(maxTemp);
+		solarRad = stationDataCorrection(solarRad);
 
-		toReturn.append(stationId + ";" + dateValue + ";" + timeValue + ";"
-				+ latitude + ";" + longitude + ";" + windSpeed + ";" + airTemp
-				+ ";" + dewTemp + ";" + avgAirTemp + ";" + relativeHumidity
-				+ ";" + minTemp + ";" + maxTemp + ";" + solarRad + ";\n");
+		return stationId + ";" + dateValue + ";" + timeValue + ";" + latitude + ";" + longitude
+				+ ";" + windSpeed + ";" + airTemp + ";" + dewTemp + ";" + avgAirTemp + ";"
+				+ relativeHumidity + ";" + minTemp + ";" + maxTemp + ";" + solarRad + ";"
+				+ stationDist + ";" + System.lineSeparator();
 	}
 
-	public double zx(double lat, double lon) {
-		if (properties.getProperty("altitude_sensor_velocidade") != null) {
-			return Double.parseDouble(properties
-					.getProperty("altitude_sensor_velocidade"));
+	private String stationDataCorrection(String data) {
+		if (data.isEmpty() || data == null) {
+			data = new String("NA");
 		}
-		return 6.;
-	}
-
-	public double d(double lat, double lon) {
-		return 4. * 2 / 3;
-	}
-
-	public double hc(double lat, double lon) {
-		if (properties.getProperty("hc") != null) {
-			return Double.parseDouble(properties.getProperty("hc"));
-		}
-		return 4.0;
-	}
-
-	public String getStationData(double lat, double lon, Date date) {
-		List<JSONObject> station = findNearestStation(lat, lon);
-		return readFullRecord(date, station, 0);
+		return data;
 	}
 
 	public Properties getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public void setProperties(Properties properties) {
 		this.properties = properties;
-	}
-
-	public static void main(String[] args) throws Exception {
-		Properties properties = new Properties();
-		FileInputStream input = new FileInputStream("sebal.conf");
-		properties.load(input);
-
-		WeatherStation weatherStation = new WeatherStation();
-		weatherStation.setProperties(properties);
-		weatherStation.readStation("821980", "19840101", "19840101");
 	}
 }
