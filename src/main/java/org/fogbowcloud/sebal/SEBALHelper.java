@@ -115,14 +115,14 @@ public class SEBALHelper {
 			StringTokenizer tokenizedResponse = new StringTokenizer(responseStr, "\n");
 			while (tokenizedResponse.hasMoreTokens()) {
 				String line = tokenizedResponse.nextToken();
-				
+
 				if (line.contains("central_meridian")) {
 					line = line.replaceAll(Pattern.quote("["), "");
 					line = line.replaceAll(Pattern.quote("]"), "");
-					
+
 					StringTokenizer tokenizedLine = new StringTokenizer(line, ",");
 					tokenizedLine.nextToken();
-					
+
 					int centralMeridian = Integer.parseInt(tokenizedLine.nextToken().trim());
 					zoneToCentralMeridian.put(zoneNumber, centralMeridian);
 					result = centralMeridian;
@@ -282,9 +282,29 @@ public class SEBALHelper {
 		double latitude = Double.valueOf(String.format("%.10g%n", geoPos.getLat()));
 		double longitude = Double.valueOf(String.format("%.10g%n", geoPos.getLon()));
 
+		String sceneCenterTime = SEBALHelper.getSceneCenterTime(product);
+
 		WeatherStation station = new WeatherStation(properties);
 		UTC startTime = product.getStartTime();
-		return station.getStationData(latitude, longitude, startTime.getAsDate());
+		return station.getStationData(latitude, longitude, startTime.getAsDate(), sceneCenterTime);
+	}
+
+	public static String getSceneCenterTime(Product product) {
+		MetadataElement metadataRoot = product.getMetadataRoot();
+
+		String sceneCenterTime = metadataRoot.getElement("L1_METADATA_FILE")
+				.getElement("PRODUCT_METADATA").getAttribute("SCENE_CENTER_TIME").getData()
+				.toString();
+
+		LOGGER.info("Scene Center Time: [" + sceneCenterTime + "]");
+
+		String[] splitedTime = sceneCenterTime.split(":");
+
+		String parsedSceneCenterTime = splitedTime[0] + splitedTime[1];
+
+		LOGGER.info("Parsed Scene Center Time: [" + parsedSceneCenterTime + "]");
+
+		return parsedSceneCenterTime;
 	}
 
 }
