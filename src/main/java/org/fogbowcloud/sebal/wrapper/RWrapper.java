@@ -10,75 +10,28 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.esa.beam.framework.datamodel.Product;
 import org.fogbowcloud.sebal.BoundingBoxVertice;
-import org.fogbowcloud.sebal.ClusteredPixelQuenteFrioChooser;
-import org.fogbowcloud.sebal.PixelQuenteFrioChooser;
 import org.fogbowcloud.sebal.SEBALHelper;
 import org.fogbowcloud.sebal.model.image.BoundingBox;
+import org.fogbowcloud.sebal.util.SEBALAppConstants;
 
 public class RWrapper {
-	
+
 	private Properties properties;
 	private String imageName;
 	private String mtlFilePath;
-    private int iBegin;
-    private int iFinal;
-    private int jBegin;
-    private int jFinal;
-    private String outputDir;
-    private PixelQuenteFrioChooser pixelQuenteFrioChooser;
-    private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
+	private int iBegin;
+	private int iFinal;
+	private int jBegin;
+	private int jFinal;
+	private String outputDir;
+	private List<BoundingBoxVertice> boundingBoxVertices = new ArrayList<BoundingBoxVertice>();
 
 	private static final Logger LOGGER = Logger.getLogger(RWrapper.class);
 
-	public RWrapper(Properties properties) throws IOException {
-		String mtlFilePath = properties.getProperty("mtl_file_path");
-		if (mtlFilePath == null || mtlFilePath.isEmpty()) {
-			LOGGER.error("Property mtl_file_path must be set.");
-			throw new IllegalArgumentException("Property mtl_file_path must be set.");
-		}
-		this.properties = properties;
-		this.mtlFilePath = mtlFilePath;
-		this.imageName = properties.getProperty("image_name");
+	public RWrapper(String outputDir, String imageName, String mtlFile, int iBegin, int iFinal,
+			int jBegin, int jFinal, String boundingBoxFileName, Properties properties)
+			throws IOException {
 
-		String iBeginStr = properties.getProperty("i_begin_interval");
-		String iFinalStr = properties.getProperty("i_final_interval");
-		String jBeginStr = properties.getProperty("j_begin_interval");
-		String jFinalStr = properties.getProperty("j_final_interval");
-
-		if (iBeginStr == null || iFinalStr == null || jBeginStr == null || jFinalStr == null) {
-			LOGGER.error("Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
-			throw new IllegalArgumentException(
-					"Interval properties (i_begin_interval, i_final_interval, j_begin_interval, and j_final_interval) must be set.");
-		}
-		this.iBegin = Integer.parseInt(iBeginStr);
-		this.iFinal = Integer.parseInt(iFinalStr);
-		this.jBegin = Integer.parseInt(jBeginStr);
-		this.jFinal = Integer.parseInt(jFinalStr);
-
-		LOGGER.debug("i interval: (" + iBegin + ", " + iFinal + ")");
-		LOGGER.debug("j interval: (" + jBegin + ", " + jFinal + ")");
-
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(properties.getProperty("bounding_box_file_path"));
-
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-
-		File mtlFile = new File(mtlFilePath);
-		String imageName = mtlFile.getParentFile().getName();
-		String outputDir = properties.getProperty("output_dir_path");
-
-		if (outputDir == null || outputDir.isEmpty()) {
-			this.outputDir = imageName;
-		} else {
-			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-				new File(outputDir).mkdirs();
-			}
-			this.outputDir = outputDir + "/" + imageName;
-		}
-	}
-
-	public RWrapper(String imagesPath, String outputDir, String imageName, String mtlFile, int iBegin, int iFinal, int jBegin,
-			int jFinal, String boundingBoxFileName, Properties properties) throws IOException {
-		
 		this.imageName = imageName;
 		this.mtlFilePath = mtlFile;
 		this.iBegin = iBegin;
@@ -86,60 +39,60 @@ public class RWrapper {
 		this.jBegin = jBegin;
 		this.jFinal = jFinal;
 		this.properties = properties;
-		
+
 		if (outputDir == null) {
 			this.outputDir = imageName;
 		} else {
-			if (!new File(outputDir).exists() || !new File(outputDir).isDirectory()) {
-				new File(outputDir).mkdirs();
+			File outputDirectory = new File(outputDir);
+			if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
+				outputDirectory.mkdirs();
 			}
 			this.outputDir = outputDir + imageName;
 		}
-		
-		this.pixelQuenteFrioChooser = new ClusteredPixelQuenteFrioChooser(properties);
-		boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
-	}
-	
-	public void doTask(String taskType) throws Exception {
-		try {
-        	if(taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
-        		preProcessingPixels(pixelQuenteFrioChooser);
-                return;
-        	}
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(128);
-        }
+
+		this.boundingBoxVertices = SEBALHelper.getVerticesFromFile(boundingBoxFileName);
 	}
 
-	public void preProcessingPixels(PixelQuenteFrioChooser pixelQuenteFrioChooser)
-			throws Exception {
+	public void doTask(String taskType) throws Exception {
+		try {
+			if (taskType.equalsIgnoreCase(TaskType.PREPROCESS)) {
+				this.preProcessingPixels();
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error while trying to get station data", e);
+			throw e;
+		}
+	}
+
+	public void preProcessingPixels() throws Exception {
 		LOGGER.info("Pre processing pixels...");
 
 		long now = System.currentTimeMillis();
-		Product product = SEBALHelper.readProduct(mtlFilePath, boundingBoxVertices);
+		Product product = SEBALHelper.readProduct(this.mtlFilePath, this.boundingBoxVertices);
 
 		BoundingBox boundingBox = null;
-		if (boundingBoxVertices.size() > 3) {
-			boundingBox = SEBALHelper.calculateBoundingBox(boundingBoxVertices, product);
-			LOGGER.debug("bounding_box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
-			LOGGER.debug("bounding_box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
+		if (this.boundingBoxVertices.size() > 3) {
+			boundingBox = SEBALHelper.buildBoundingBox(this.boundingBoxVertices, product);
+			
+			LOGGER.debug("Bounding box: X=" + boundingBox.getX() + " - Y=" + boundingBox.getY());
+			LOGGER.debug("Bounding box: W=" + boundingBox.getW() + " - H=" + boundingBox.getH());
 		}
 
-		String stationData = SEBALHelper.getStationData(properties, product, iBegin, iFinal, jBegin,
-				jFinal, pixelQuenteFrioChooser, boundingBox);
+		String stationData = SEBALHelper.getStationData(this.properties, product, this.iBegin,
+				this.iFinal, this.jBegin, this.jFinal, boundingBox);
 
 		if (stationData != null && !stationData.isEmpty()) {
 			LOGGER.debug("stationData: " + stationData);
-			LOGGER.debug("Pre process time read = " + (System.currentTimeMillis() - now));
-
-			saveWeatherStationInfo(stationData);
-			LOGGER.info("Pre process execution time is " + (System.currentTimeMillis() - now));
+			
+			this.saveWeatherStationInfo(stationData);
+			
+			LOGGER.info(
+					"Pre process execution time [" + (System.currentTimeMillis() - now) + "] ms");
 		} else {
-			LOGGER.error("Error while getting station data");
+			LOGGER.error("Was not possible found a station data that fits the standards!");
 		}
 	}
-	
+
 	private void saveWeatherStationInfo(String stationData) {
 		long now = System.currentTimeMillis();
 		String weatherPixelsFileName = getWeatherFileName();
@@ -147,16 +100,16 @@ public class RWrapper {
 		LOGGER.info("stationFileName=" + weatherPixelsFileName);
 		File outputFile = new File(weatherPixelsFileName);
 		try {
-			FileUtils.write(outputFile, "");
-			FileUtils.write(outputFile, stationData, true);
+			FileUtils.write(outputFile, stationData, SEBALAppConstants.FILE_ENCODING);
 		} catch (IOException e) {
 			LOGGER.error("Error while writing station file.", e);
 		}
+		
 		LOGGER.debug("Saving station data output time=" + (System.currentTimeMillis() - now));
 	}
-	
-    private String getWeatherFileName() {
-    	return SEBALHelper.getWeatherFilePath(outputDir, "", imageName);
-    }
+
+	private String getWeatherFileName() {
+		return SEBALHelper.getWeatherFilePath(this.outputDir, "", this.imageName);
+	}
 
 }

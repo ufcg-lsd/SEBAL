@@ -28,11 +28,10 @@ public class TestFTPStationOperator {
 	@Test
 	public void testFindNearestStationCorrectCalculation() throws URISyntaxException, HttpException, IOException, ParseException {
 		
-		// set up
 		Properties properties = mock(Properties.class);
 		String year = "2002";
 		int numberOfDays = 0;
-		double lat = -3.40;
+		double lat = -3.40; // Maranhao - Moncao
 		double lon = -45.20;
 		
 		String stringDate = "26-01-2002";		
@@ -43,32 +42,74 @@ public class TestFTPStationOperator {
 		
 		JSONObject stationOne = new JSONObject();
 		stationOne.put("id", "82294");
-		stationOne.put("lon", "-40.13333333");
+		stationOne.put("lon", "-44.3068");
 		stationOne.put("altitude", "16.5");
-		stationOne.put("name", "ACARAU - CE");
-		stationOne.put("lat", "-2.88333333");
+		stationOne.put("name", "SAO LUIS - MA");
+		stationOne.put("lat", "-2.53073");
 		
 		JSONObject stationTwo = new JSONObject();
 		stationTwo.put("id", "83096");
-		stationTwo.put("lon", "-37.05");
+		stationTwo.put("lon", "-46.20");
 		stationTwo.put("altitude", "4.72");
-		stationTwo.put("name", "ARACAJU - SE");
-		stationTwo.put("lat", "-10.95");
+		stationTwo.put("name", "ALTO TURIACU - MA");
+		stationTwo.put("lat", "-3.00");
+		
+		JSONObject stationThree = new JSONObject();
+		stationThree.put("id", "80000");
+		stationThree.put("lon", "-34.861");
+		stationThree.put("altitude", "16.5");
+		stationThree.put("name", "JOAO PESSOA - PB");
+		stationThree.put("lat", "-7.11532");
 		
 		JSONArray stations = new JSONArray();
 		stations.put(stationOne);
 		stations.put(stationTwo);
+		stations.put(stationThree);
 		
 		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
+		expectedStation.add(stationTwo);
 		expectedStation.add(stationOne);
 		
 		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
 		doReturn(stations).when(stationOperator).getStations(year);
 		
-		// exercise
 		List<JSONObject> chosenStation = stationOperator.findNearestStation(date, lat, lon, numberOfDays);
 		
-		// expect
+		Assert.assertEquals(expectedStation, chosenStation);
+	}
+	
+	@Test
+	public void testFindNearestStationWithoutNearStations() throws URISyntaxException, HttpException, IOException, ParseException {
+		
+		Properties properties = mock(Properties.class);
+		String year = "2002";
+		int numberOfDays = 0;
+		double lat = -3.40; // Maranhao - Moncao
+		double lon = -45.20;
+		
+		String stringDate = "26-01-2002";		
+		SimpleDateFormat f = new SimpleDateFormat("dd-MM-yyyy");
+		Date d = f.parse(stringDate);
+		long milliseconds = d.getTime();
+		Date date = new Date(milliseconds);
+		
+		JSONObject stationOne = new JSONObject();
+		stationOne.put("id", "80000");
+		stationOne.put("lon", "-34.861");
+		stationOne.put("altitude", "16.5");
+		stationOne.put("name", "JOAO PESSOA - PB");
+		stationOne.put("lat", "-7.11532");
+		
+		JSONArray stations = new JSONArray();
+		stations.put(stationOne);
+		
+		List<JSONObject> expectedStation = new ArrayList<JSONObject>();
+		
+		FTPStationOperator stationOperator = spy(new FTPStationOperator(properties));
+		doReturn(stations).when(stationOperator).getStations(year);
+		
+		List<JSONObject> chosenStation = stationOperator.findNearestStation(date, lat, lon, numberOfDays);
+		
 		Assert.assertEquals(expectedStation, chosenStation);
 	}
 	
