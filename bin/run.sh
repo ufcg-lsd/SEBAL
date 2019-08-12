@@ -16,7 +16,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/tmp
 
 R_EXEC_DIR=$SANDBOX/workspace/R
-R_ALGORITHM_VERSION=Algoritmo_11072019.R
+R_ALGORITHM_VERSION=Algoritmo_19072019.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
@@ -78,8 +78,9 @@ function prepareEnvAndCollectUsage {
   fi
 
   echo "Starting CPU and Memory collect..."
-  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-cpu-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
-  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-memory-usage.sh | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-cpu-usage.sh $(pidof R) | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_cpu_usage.txt" > /dev/null &
+  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-memory-usage.sh $(pidof R) | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_mem_usage.txt" > /dev/null &
+  sudo bash $SANDBOX/$SCRIPTS_DIR/collect-disk-usage.sh $(pidof R) | sudo tee $OUTPUT_DIR_PATH/$IMAGE_NAME"_disk_usage.txt" > /dev/null &
 }
 
 # This function executes R script
@@ -87,7 +88,7 @@ function executeRScript {
   for i in `seq $MAX_TRIES`
   do
     cleanRasterEnv
-    sudo bash $SANDBOX/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH
+    sudo bash $SANDBOX/$SCRIPTS_DIR/executeRScript.sh $R_EXEC_DIR/$R_ALGORITHM_VERSION $R_EXEC_DIR $TMP_DIR_PATH $OUTPUT_DIR_PATH
     PROCESS_OUTPUT=$?
 
     echo "executeRScript_process_output=$PROCESS_OUTPUT"
@@ -118,6 +119,7 @@ function killCollectScripts {
   echo "Killing collect CPU and Memory scripts"
   ps -ef | grep collect-cpu-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
   ps -ef | grep collect-memory-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
+  ps -ef | grep collect-disk-usage.sh | grep -v grep | awk '{print $2}' | xargs sudo kill
 }
 
 function generateMetadataFile {
