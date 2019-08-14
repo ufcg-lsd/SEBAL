@@ -16,7 +16,7 @@ BOUNDING_BOX_PATH=example/boundingbox_vertices
 TMP_DIR_PATH=/tmp
 
 R_EXEC_DIR=$SANDBOX/workspace/R
-R_ALGORITHM_VERSION=Algoritmo_19072019.R
+R_ALGORITHM_VERSION=Algoritmo_12082019.R
 R_RASTER_TMP_DIR=/mnt/rasterTmp
 MAX_TRIES=2
 
